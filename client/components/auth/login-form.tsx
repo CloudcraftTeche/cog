@@ -39,6 +39,8 @@ export default function LoginForm() {
       const res = await api.post("/auth/login", {
         email: email.trim().toLowerCase(),
         password,
+      },{
+        withCredentials:true
       });
 
       if (res.data.success) {

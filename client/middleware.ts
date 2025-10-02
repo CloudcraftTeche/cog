@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-
-const ROLE_ROUTES:any = {
+const ROLE_ROUTES: any = {
   student: "/dashboard/student",
   teacher: "/dashboard/teacher",
   admin: "/dashboard/admin",
   superAdmin: "/dashboard/super-admin",
-} 
+};
 
 type UserRole = keyof typeof ROLE_ROUTES;
 
 interface VerifyResponse {
   success: boolean;
-  userType:any;
+  userType: any;
   data?: {
     accessToken: string;
     user: {
@@ -23,6 +22,7 @@ interface VerifyResponse {
       email: string;
     };
   };
+  accessToken: string;
   message?: string;
 }
 
@@ -52,7 +52,9 @@ function redirectToDashboard(
 }
 
 function isDashboardRoute(pathname: string): boolean {
-  return Object.values(ROLE_ROUTES).some((route:any) => pathname.startsWith(route));
+  return Object.values(ROLE_ROUTES).some((route: any) =>
+    pathname.startsWith(route)
+  );
 }
 
 async function verifyToken(
@@ -107,17 +109,17 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request, true);
   }
 
-  const userRole:string = verificationData?.userType;
-  
-  if (!userRole || !ROLE_ROUTES[userRole] ) {
+  const userRole: string = verificationData?.userType;
+
+  if (!userRole || !ROLE_ROUTES[userRole]) {
     console.error("Invalid or missing user role:", userRole);
     return redirectToLogin(request, true);
   }
 
   const response = NextResponse.next();
 
-  if (verificationData.data?.accessToken) {
-    response.cookies.set("accessToken", verificationData.data.accessToken, {
+  if (verificationData?.accessToken) {
+    response.cookies.set("accessToken", verificationData?.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
