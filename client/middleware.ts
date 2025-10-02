@@ -121,10 +121,7 @@ export async function middleware(request: NextRequest) {
   if (verificationData?.accessToken) {
     response.cookies.set("accessToken", verificationData?.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
       maxAge: 15 * 60,
-      path: "/",
     });
   }
 
