@@ -9,14 +9,14 @@ import StudentDashboard from "@/components/student-dashboard";
 import TeacherDashboard from "@/components/teacher-dashboard";
 
 export default function DashboardPage() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!user) {
       router.replace("/login");
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [user, router]);
 
   if (isLoading) {
     return (
@@ -33,7 +33,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
         <div className="text-center">
