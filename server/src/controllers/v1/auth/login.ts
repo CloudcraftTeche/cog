@@ -36,18 +36,19 @@ const authenticateUser = async (
     const refreshToken = generateRefreshToken(user._id as Types.ObjectId);
 
     await Token.deleteMany({ userId: user._id });
-    await Token.create({ 
-      token: refreshToken, 
+
+    await Token.create({
+      token: refreshToken,
       userId: user._id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: "/",
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      path: "/", 
     });
 
     res.status(200).json({

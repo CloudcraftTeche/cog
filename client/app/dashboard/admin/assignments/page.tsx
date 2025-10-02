@@ -106,7 +106,7 @@ export default function AdminAssignmentsPage() {
     };
 
     fetchData();
-  }, [user?.id, currentPage, searchTerm, selectedGrade,fetchassignments]);
+  }, [user?.id, currentPage, searchTerm, selectedGrade]);
 
   const handleDeleteassignment = async (assignmentId: string) => {
     try {

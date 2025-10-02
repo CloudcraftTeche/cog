@@ -20,8 +20,7 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    const authHeader =
-      (req.headers.Authorization as string) || (req.headers.authorization as string);
+    const authHeader = req.headers.Authorization as string
 
     if (!authHeader) {
       return res.status(401).json({

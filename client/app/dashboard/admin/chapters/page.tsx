@@ -97,7 +97,7 @@ export default function AdminChaptersPage() {
   useEffect(() => {
     if (!user?.id) return
     Promise.all([fetchChapters(), fetchUnits(), fetchGrades()])
-  }, [user?.id, currentPage, searchTerm, selectedGrade, chapter, selectedUnit,fetchChapters])
+  }, [user?.id, currentPage, searchTerm, selectedGrade, chapter, selectedUnit])
 
   const handleDeleteChapter = async (chapterId: string) => {
     try {

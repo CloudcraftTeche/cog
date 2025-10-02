@@ -72,7 +72,7 @@ export default function GradesPage() {
 
   useEffect(() => {
     fetchGrades();
-  }, [fetchGrades]);
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
