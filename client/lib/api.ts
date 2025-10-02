@@ -6,11 +6,6 @@ let failedQueue: {
   reject: (reason?: any) => void;
 }[] = [];
 
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_SERVERURL,
-  withCredentials: true, 
-});
-
 const processQueue = (error: any, token: string | null) => {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) reject(error);
@@ -19,10 +14,14 @@ const processQueue = (error: any, token: string | null) => {
   failedQueue = [];
 };
 
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_SERVERURL,
+  withCredentials: true, 
+});
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
-    
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,9 +40,7 @@ api.interceptors.response.use(
       !originalRequest._retry &&
       !originalRequest.url.includes("/auth/login");
 
-    if (!isUnauthorized) {
-      return Promise.reject(error);
-    }
+    if (!isUnauthorized) return Promise.reject(error);
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
@@ -61,12 +58,16 @@ api.interceptors.response.use(
 
     try {
       const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVERURL}/auth/refresh`,
-        { withCredentials: true }
+        `${process.env.NEXT_PUBLIC_SERVERURL}/auth/verify`,
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
+          },
+        }
       );
 
       const newToken = data.accessToken;
-
       localStorage.setItem("accessToken", newToken);
 
       processQueue(null, newToken);

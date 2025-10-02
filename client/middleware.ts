@@ -46,7 +46,7 @@ async function verifyToken(refreshToken: string): Promise<VerifyResponse | null>
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${refreshToken}`, // ✅ fallback to header
+          Authorization: `Bearer ${refreshToken}`, 
         },
         cache: "no-store",
       }
@@ -69,6 +69,10 @@ export async function middleware(request: NextRequest) {
 
   const refreshToken = request.cookies.get("refreshToken")?.value;
   const accessToken = request.cookies.get("accessToken")?.value;
+
+  console.log(refreshToken,accessToken);
+  
+
 
   if (!refreshToken && !accessToken) {
     return redirectToLogin(request);

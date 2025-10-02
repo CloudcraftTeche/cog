@@ -63,7 +63,9 @@ export function useAuth() {
       if (!token) return;
 
       try {
-        const res = await api.get("/auth/verify");
+        const res = await api.get("/auth/verify", {
+          withCredentials: true,
+        });
         if (res.data.success) {
           const { user, accessToken } = res.data;
           localStorage.setItem("accessToken", accessToken);
