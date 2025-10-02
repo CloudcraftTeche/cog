@@ -1,96 +1,82 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
+import http from "http";
 import config from "./config/config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import compression from "compression";
 import expressRateLimit from "./lib/express_rate_limit";
-import { errorHandler } from "./middleware/errorHandler";
-import http from "http";
-//types
-import type { CorsOptions } from "cors";
-
-// express app
-const app = express();
-const server = http.createServer(app);
-
-// importing routes
 import v1Routes from "./routes/v1/index";
 import { connectToDatabase, disconnectFromDatabase } from "./lib/mongoose";
 import { initializeSocket } from "./config/socket";
 import rabbitmqService from "./services/rabbitmqServices";
 
-//configuring CORS options
-const corsOptions: CorsOptions = {
-  origin(origin, callback) {
+// Express app
+const app = express();
+const server = http.createServer(app);
+
+// CORS options
+const corsOptions = {
+  origin(origin: string | undefined, callback: Function) {
     if (
       config.NODE_ENV === "development" ||
       !origin ||
       config?.whitelistOrigins?.includes(origin)
     ) {
-      {
-        callback(null, true);
-      }
+      callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
 };
-// appllying CORS middleware
+
+// Middleware
 app.use(cors(corsOptions));
-
-// using cookie parser
 app.use(cookieParser());
-
-// using helmet for security
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
-
-// using compression for performance
 app.use(
   compression({
     level: 6,
     threshold: 2048,
   })
 );
-
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-// applying rate limiting
 app.use(expressRateLimit);
 
-// global error handler
-app.use(errorHandler);
+// Routes
+app.use("/api/v1", v1Routes);
 
-// Global error handler
-app.use((error: any, res: express.Response) => {
-  console.error("Global error:", error);
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error({
+    message: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+  });
 
-  res.status(error.status || 500).json({
+  res.status(err.status || 500).json({
     success: false,
-    message: error.message || "Internal server error",
-    ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
+    message: err.message || "Internal server error",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 });
 
+// Server init
 (async () => {
   try {
     await connectToDatabase();
     await rabbitmqService.connect();
     initializeSocket(server);
-    app.use("/api/v1", v1Routes);
 
     server.listen(config.PORT, () => {
       console.info(`🚀 Server running on port ${config.PORT}`);
-      console.info(`📡 Socket.IO server initialized`);
-      console.info(`🐰 RabbitMQ connected`);
-      console.info(`📊 MongoDB connected`);
     });
   } catch (error) {
     console.error("Error during server initialization:", error);
@@ -99,20 +85,14 @@ app.use((error: any, res: express.Response) => {
 })();
 
 // Graceful shutdown
-process.on("SIGTERM", async () => {
-  console.info("SIGTERM received, shutting down gracefully");
+const gracefulShutdown = async () => {
+  console.info("Shutdown signal received, closing gracefully");
   server.close(async () => {
     await disconnectFromDatabase();
     await rabbitmqService.close();
     process.exit(0);
   });
-});
+};
 
-process.on("SIGINT", async () => {
-  console.info("SIGINT received, shutting down gracefully");
-  server.close(async () => {
-    await disconnectFromDatabase();
-    await rabbitmqService.close();
-    process.exit(0);
-  });
-});
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
