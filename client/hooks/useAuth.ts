@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import api from "@/lib/api";
 import { toast } from "sonner";
 
 interface User {
@@ -67,53 +66,8 @@ export function useAuth() {
     }
   }, [clearAuth]);
 
-  // Token verification
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const verifyToken = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
-
-      try {
-        const res = await api.get("/auth/verify", { withCredentials: true });
-        if (res.data.success) {
-          const { user, accessToken } = res.data;
-
-          // Only update state if data changed
-          setAuthState((prev) => {
-            if (
-              prev.token === accessToken &&
-              JSON.stringify(prev.user) === JSON.stringify(user)
-            ) {
-              return prev; // prevent unnecessary re-render
-            }
-            localStorage.setItem("user", JSON.stringify(user));
-            localStorage.setItem("accessToken", accessToken);
-            return {
-              user,
-              token: accessToken,
-              isLoading: false,
-              isAuthenticated: true,
-            };
-          });
-        } else {
-          clearAuth();
-        }
-      } catch {
-        clearAuth();
-      }
-    };
-
-    verifyToken();
-    const interval = setInterval(verifyToken, 14 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [clearAuth]);
-
   const logout = useCallback(async () => {
     try {
-      await api.get("/auth/logout");
       clearAuth();
       router.replace("/login");
       toast.success("Logged out successfully");
