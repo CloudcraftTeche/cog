@@ -24,8 +24,8 @@ const config: Config = {
   DB_URL: process.env.MONGO_URI || "mongodb://localhost:27017/sundySchool",
   NODE_ENV: process.env.NODE_ENV || "development",
   JWT_SECRET: process.env.JWT_SECRET || "your_jwt_secret",
-  whitelistOrigins: process.env.WHITELIST_ORIGINS
-    ? process.env.WHITELIST_ORIGINS.split(",")
+  whitelistOrigins: process.env.WHITELISTORIGINS
+    ? process.env.WHITELISTORIGINS.split(",")
     : ["http://localhost:3000"],
   JWTACCESSTOKENSECRET: process.env.JWTACCESSTOKENSECRET as string,
   JWTREFRESHTOKENSECRET: process.env.JWTREFRESHTOKENSECRET as string,

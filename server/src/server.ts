@@ -18,18 +18,23 @@ const server = http.createServer(app);
 // CORS options
 const corsOptions = {
   origin(origin: string | undefined, callback: Function) {
-    if (
-      config.NODE_ENV === "development" ||
-      !origin ||
-      config?.whitelistOrigins?.includes(origin)
-    ) {
+    if (!origin || config.NODE_ENV === "development" || config.whitelistOrigins?.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`Blocked CORS request from origin: ${origin}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
+  optionsSuccessStatus: 200,
 };
+
+// Apply middleware
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+// Apply middleware
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle preflight requests
 
 // Middleware
 app.use(cors(corsOptions));
