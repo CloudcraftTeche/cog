@@ -1,0 +1,57 @@
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+
+# production
+client/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+
+# Ignore node_modules in both folders
+client/node_modules/
+server/node_modules/
+
+# Next.js build
+client/.next/
+client/out/
+
+# Node.js build
+server/dist/
+
+# Logs
+*.log
+
+# Env files
+*.env
+.env.*
+
+
+# testing
+/coverage
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
