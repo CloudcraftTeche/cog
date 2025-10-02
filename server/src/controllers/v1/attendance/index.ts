@@ -9,7 +9,7 @@ export const createOrUpdateAttendance = async (
   res: Response
 ) => {
   try {
-    const { studentId, status, class: attendanceClass } = req.body;
+    const { studentId, status } = req.body;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -33,7 +33,7 @@ export const createOrUpdateAttendance = async (
       teacherId: req.userId,
       date: new Date(),
       status,
-      class: attendanceClass,
+      class: req.user?.classTeacherFor,
     });
 
     await attendance.save();
