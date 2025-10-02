@@ -13,10 +13,10 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.replace("/login");
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -34,33 +34,13 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-3xl flex items-center justify-center mb-4">
-            <AlertCircle className="h-8 w-8 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600 mb-4">
-            You don't have permission to access this dashboard.
-          </p>
-          <button
-            onClick={() => router.replace("/login")}
-            className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:scale-105 transition-transform"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const renderDashboard = () => {
     switch (user.role) {
       case "admin":
-        return <SuperAdminDashboard />;
+       return <SuperAdminDashboard/>
       case "superAdmin":
         return <SuperAdminDashboard />;
       case "teacher":
