@@ -19,13 +19,10 @@ import {
   AlertTriangle,
   TrendingUp,
   Eye,
-  Send,
   Search,
   Download,
   Bell,
   Target,
-  X,
-  Paperclip,
   UserCheck,
   Timer,
 } from "lucide-react";

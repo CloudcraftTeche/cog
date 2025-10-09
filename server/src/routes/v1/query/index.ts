@@ -1,9 +1,7 @@
 import { Router } from "express";
 import { body, param, query } from "express-validator";
-import { validateRequest } from "@/middleware/validate";
 import {
   createQuery,
-  getMyQueries,
   getAllQueries,
   getQueryById,
   addResponse,
@@ -15,8 +13,9 @@ import {
   getAdminDepartmentQueries,
   assignQueryToMe,
   getTeachers,
-} from "@/controllers/v1/query";
-import { authenticate } from "@/middleware/authenticate";
+} from "../../../controllers/v1/query";
+import { authenticate } from "../../../middleware/authenticate";
+import { validateRequest } from "../../../middleware/validate";
 
 const router = Router();
 
