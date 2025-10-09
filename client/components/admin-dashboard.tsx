@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();

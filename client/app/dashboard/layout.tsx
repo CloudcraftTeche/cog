@@ -19,6 +19,7 @@ import {
   MegaphoneIcon,
   MessageCircleMore,
   CalendarDaysIcon,
+  BadgeHelpIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,8 +46,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     await logout();
   };
 
-  
-
   const navigationItems = useMemo(() => {
     const baseItems = [{ name: "Dashboard", href: "/dashboard", icon: Home }];
 
@@ -71,6 +70,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           name: "Chat",
           href: "/dashboard/admin/chat",
           icon: MessageCircleMore,
+        },
+        {
+          name: "Queries",
+          href: "/dashboard/admin/query",
+          icon: BadgeHelpIcon,
         },
         {
           name: "Announcements",
@@ -114,6 +118,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           icon: CalendarDaysIcon,
         },
         {
+          name: "Queries",
+          href: "/dashboard/teacher/query",
+          icon: BadgeHelpIcon,
+        },
+        {
           name: "Announcements",
           href: "/dashboard/teacher/announcements",
           icon: MegaphoneIcon,
@@ -139,6 +148,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           name: "Chat",
           href: "/dashboard/student/chat",
           icon: MessageCircleMore,
+        },
+        {
+          name: "Queries",
+          href: "/dashboard/student/query",
+          icon: BadgeHelpIcon,
         },
         {
           name: "Announcements",
@@ -167,7 +181,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const getRoleLabel = (role: string) => {
-    return role === "superAdmin" ? "Super Admin" : role.charAt(0).toUpperCase() + role.slice(1);
+    return role === "superAdmin"
+      ? "Super Admin"
+      : role.charAt(0).toUpperCase() + role.slice(1);
   };
 
   if (isLoading) {

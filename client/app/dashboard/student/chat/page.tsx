@@ -80,8 +80,9 @@ export default function StudentChatInterface() {
   const fetchUserProfile = async () => {
     try {
       const response = await api.get("/auth/profile");
-      if (response.data.user) {
-        setUser(response.data.user);
+      
+      if (response.data.data.user) {
+        setUser(response.data.data.user);
       } else {
         throw new Error("Invalid response format");
       }

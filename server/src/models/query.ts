@@ -34,6 +34,12 @@ export interface IQuery extends Document {
   resolvedAt?: Date;
   resolvedBy?: Types.ObjectId;
   tags: string[];
+  lastActivity: Date;
+  sla?: {
+    remaining?: string;
+    completed?: string;
+  };
+  satisfactionRating?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -94,13 +100,61 @@ const QuerySchema = new Schema<IQuery>(
     resolvedAt: Date,
     resolvedBy: { type: Schema.Types.ObjectId, ref: "User" },
     tags: [String],
+    lastActivity: { type: Date, default: Date.now },
+    sla: {
+      remaining: String,
+      completed: String,
+    },
+    satisfactionRating: { type: Number, min: 1, max: 5 },
   },
   { timestamps: true }
 );
 
+// Indexes
 QuerySchema.index({ from: 1, status: 1 });
 QuerySchema.index({ to: 1, status: 1 });
 QuerySchema.index({ status: 1, priority: -1 });
 QuerySchema.index({ createdAt: -1 });
+QuerySchema.index({ assignedTo: 1 });
+QuerySchema.index({ lastActivity: -1 });
+
+// Virtual for calculating SLA
+QuerySchema.virtual("calculatedSLA").get(function () {
+  const now = new Date();
+  const created = this.createdAt;
+  const hoursDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
+
+  const slaHours: Record<string, number> = {
+    urgent: 4,
+    high: 8,
+    medium: 24,
+    low: 48,
+  };
+
+  const targetHours = slaHours[this.priority] || 24;
+  const remaining = targetHours - hoursDiff;
+
+  if (this.status === "resolved" && this.resolvedAt) {
+    const resolutionTime = (this.resolvedAt.getTime() - created.getTime()) / (1000 * 60 * 60);
+    return {
+      completed: `${resolutionTime.toFixed(1)} hours`,
+    };
+  }
+
+  if (remaining > 0) {
+    return {
+      remaining: `${remaining.toFixed(1)} hours`,
+    };
+  } else {
+    return {
+      remaining: `Overdue by ${Math.abs(remaining).toFixed(1)} hours`,
+    };
+  }
+});
+
+QuerySchema.pre("save", function (next) {
+  this.lastActivity = new Date();
+  next();
+});
 
 export const Query = model<IQuery>("Query", QuerySchema);

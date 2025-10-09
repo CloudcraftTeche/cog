@@ -16,6 +16,8 @@ import assignmentRoutes from "./assignment";
 import cloudinaryVideoUpload from "./cloudinary_video_upload";
 import attendanceRoutes from "./attendance";
 import chatRoutes from "./chat";
+import {queryRoutes} from "./query/index";
+
 
 
 router.get("/", (_, res) => {
@@ -30,7 +32,7 @@ router.get("/", (_, res) => {
       email: "",
     },
   });
-});
+});  
 
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
@@ -45,5 +47,7 @@ router.use("/cloudinary-signature", cloudinaryVideoUpload);
 router.use("/announcements", announcementRoutes);
 router.use("/", attendanceRoutes);
 router.use("/chats", chatRoutes);
+router.use("/queries", queryRoutes);
+
 
 export default router;
