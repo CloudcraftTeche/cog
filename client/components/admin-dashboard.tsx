@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Bar,
   BarChart,
@@ -54,14 +54,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    if (user && isAuthenticated) {
-      fetchAllData();
-    }
-  }, [user, isAuthenticated]);
+  const fetchAllData = useCallback(async () => {
+    if (!user || !isAuthenticated) return;
 
-  const fetchAllData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -94,7 +91,11 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, isAuthenticated]);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -104,41 +105,73 @@ export default function AdminDashboard() {
 
   const exportData = async (status = "all") => {
     try {
+      setExporting(true);
       const response = await api.get(`/export/attendance?status=${status}`);
 
       const csvData = convertToCSV(response.data);
       downloadCSV(
         csvData,
-        `attendance-${status}-${new Date().toISOString().split("T")[0]}.csv`
+        `attendance-${status}-${format(new Date(), "yyyy-MM-dd")}.csv`
       );
     } catch (error) {
       console.error("Error exporting data:", error);
+    } finally {
+      setExporting(false);
     }
   };
 
   const convertToCSV = (data: any) => {
-    const header = "Student Name,Email,Class,Teacher,Date,Status\n";
+    if (!data || data.length === 0) {
+      return "No data available\n";
+    }
+
+    const header = '"Student Name","Email","Class","Teacher","Date","Status"\n';
+    
     const rows = data
-      .map(
-        (item: any) =>
-          `"${item.studentId?.name}","${item.studentId?.email}","${
-            item.studentId?.class
-          }","${item.teacherId?.name}","${format(
-            new Date(item.date),
-            "dd-MM-yyyy"
-          )}","${item.status}"`
-      )
+      .map((item: any) => {
+        let formattedDate = "N/A";
+        if (item.date) {
+          try {
+            const dateObj = new Date(item.date);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            formattedDate = `${year}-${month}-${day}`;
+          } catch (e) {
+            formattedDate = "N/A";
+          }
+        }
+
+        const studentName = item.studentId?.name || "N/A";
+        const email = item.studentId?.email || "N/A";
+        const studentClass = item.studentId?.class || "N/A";
+        const teacherName = item.teacherId?.name || "N/A";
+        const status = item.status || "N/A";
+
+        const escapeQuotes = (str: string) => str.replace(/"/g, '""');
+
+        return `"${escapeQuotes(studentName)}","${escapeQuotes(email)}","${escapeQuotes(studentClass)}","${escapeQuotes(teacherName)}","${formattedDate}","${escapeQuotes(status)}"`;
+      })
       .join("\n");
+
     return header + rows;
   };
 
-  const downloadCSV = (csvData: any, filename: any) => {
-    const blob = new Blob([csvData], { type: "text/csv" });
+  const downloadCSV = (csvData: string, filename: string) => {
+    // Add BOM for proper Excel UTF-8 encoding
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvData], { 
+      type: "text/csv;charset=utf-8;" 
+    });
+    
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   };
 
@@ -191,8 +224,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className=" relative overflow-hidden">
-      <nav className="realtive">
+    <div className="relative overflow-hidden">
+      <nav className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-8">
@@ -417,7 +450,73 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Charts Section */}
+            {/* Export Section - Moved up for better visibility */}
+            <div className="relative group mb-10">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-200/50 to-purple-200/50 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+              <div className="relative bg-white/95 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-indigo-100/50">
+                <div className="flex items-center space-x-4 mb-8">
+                  <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-3xl flex items-center justify-center shadow-lg">
+                    <Download className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      Export Attendance Data
+                    </h3>
+                    <p className="text-gray-500 font-medium">
+                      Download comprehensive reports in CSV format
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <button
+                    onClick={() => exportData("all")}
+                    disabled={exporting}
+                    className="group relative overflow-hidden bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Download className={`h-6 w-6 relative z-10 ${exporting ? 'animate-bounce' : ''}`} />
+                    <span className="font-bold text-lg relative z-10">
+                      Export All
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => exportData("present")}
+                    disabled={exporting}
+                    className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <UserCheck className={`h-6 w-6 relative z-10 ${exporting ? 'animate-bounce' : ''}`} />
+                    <span className="font-bold text-lg relative z-10">
+                      Export Present
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => exportData("absent")}
+                    disabled={exporting}
+                    className="group relative overflow-hidden bg-gradient-to-br from-red-500 via-pink-600 to-rose-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-red-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <UserX className={`h-6 w-6 relative z-10 ${exporting ? 'animate-bounce' : ''}`} />
+                    <span className="font-bold text-lg relative z-10">
+                      Export Absent
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => exportData("late")}
+                    disabled={exporting}
+                    className="group relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-amber-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Clock className={`h-6 w-6 relative z-10 ${exporting ? 'animate-bounce' : ''}`} />
+                    <span className="font-bold text-lg relative z-10">
+                      Export Late
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts Section - Rest of the dashboard code remains the same */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
               {/* Students by Grade Chart */}
               <div className="relative group">
@@ -782,67 +881,6 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-200/50 to-purple-200/50 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-              <div className="relative bg-white/95 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-indigo-100/50">
-                <div className="flex items-center space-x-4 mb-8">
-                  <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-3xl flex items-center justify-center shadow-lg">
-                    <Download className="h-7 w-7 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      Export Attendance Data
-                    </h3>
-                    <p className="text-gray-500 font-medium">
-                      Download comprehensive reports
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <button
-                    onClick={() => exportData("all")}
-                    className="group relative overflow-hidden bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <Download className="h-6 w-6 relative z-10" />
-                    <span className="font-bold text-lg relative z-10">
-                      Export All
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => exportData("present")}
-                    className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <UserCheck className="h-6 w-6 relative z-10" />
-                    <span className="font-bold text-lg relative z-10">
-                      Export Present
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => exportData("absent")}
-                    className="group relative overflow-hidden bg-gradient-to-br from-red-500 via-pink-600 to-rose-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-red-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <UserX className="h-6 w-6 relative z-10" />
-                    <span className="font-bold text-lg relative z-10">
-                      Export Absent
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => exportData("late")}
-                    className="group relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 text-white px-8 py-6 rounded-2xl hover:shadow-2xl hover:shadow-amber-500/25 transition-all duration-500 hover:scale-105 flex items-center space-x-3"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <Clock className="h-6 w-6 relative z-10" />
-                    <span className="font-bold text-lg relative z-10">
-                      Export Late
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
           </>
         )}
 
@@ -1022,7 +1060,7 @@ export default function AdminDashboard() {
                               </td>
                               <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-600 font-semibold">
                                 {record?.date
-                                  ? new Date(record.date).toLocaleDateString()
+                                  ? format(new Date(record.date), "dd/MM/yyyy")
                                   : "N/A"}
                               </td>
                               <td className="px-8 py-6 whitespace-nowrap">

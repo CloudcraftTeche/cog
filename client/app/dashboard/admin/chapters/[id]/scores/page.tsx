@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Users, TrendingUp, Calendar, Mail, User, Clock, AlertCircle } from "lucide-react"
+import { Trophy, Users, TrendingUp, Calendar, Mail, User, Clock, AlertCircle, Download, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
@@ -61,8 +61,11 @@ export default function ChapterScoresPage() {
   const chapterId = params?.id as string
   const [scoreData, setScoreData] = useState<ScoreData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
 
-  const fetchScoreData = async () => {
+  const fetchScoreData = useCallback(async () => {
+    if (!chapterId) return
+
     try {
       setLoading(true)
       const response = await api.get(`/chapter/${chapterId}/completed-students`)
@@ -73,18 +76,16 @@ export default function ChapterScoresPage() {
         toast.error("Failed to fetch score data")
       }
     } catch (error: any) {
+      console.error("Score fetch error:", error)
       toast.error("Something went wrong while fetching scores")
-      toast.error("Score fetch error:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [chapterId])
 
   useEffect(() => {
-    if (chapterId) {
-      fetchScoreData()
-    }
-  }, [chapterId,fetchScoreData])
+    fetchScoreData()
+  }, [fetchScoreData])
 
   const getScoreColor = (score: number, maxScore: number) => {
     if (maxScore === 0) return "text-gray-600 bg-gray-100"
@@ -115,10 +116,101 @@ export default function ChapterScoresPage() {
     })
   }
 
+  const formatDateForExcel = (dateString: string | null) => {
+    if (!dateString) return "N/A"
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const handleSendChapterReminder = async (studentId: string) => {
+    try {
+      await api.post(`/chapter/${chapterId}/remind/${studentId}`)
+      toast.success("Reminder sent successfully")
+    } catch (error) {
+      console.error("Failed to send reminder:", error)
+      toast.error("Failed to send Reminder")
+    }
+  }
+
+  const exportToExcel = (type: 'all' | 'completed' | 'pending') => {
+    if (!scoreData) return
+
+    setExporting(true)
+    try {
+      let csvData = ''
+      const chapterTitle = scoreData.chapter.title.replace(/[,"/]/g, '')
+
+      if (type === 'all' || type === 'completed') {
+        csvData += '"Chapter Score Report - Completed Students"\n'
+        csvData += `"Chapter:","${escapeCSV(scoreData.chapter.title)}"\n`
+        csvData += `"Total Questions:","${scoreData.chapter.questionsCount}"\n`
+        csvData += `"Average Score:","${scoreData.statistics.averageScore}"\n`
+        csvData += `"Pass Rate:","${scoreData.statistics.passRate}%"\n\n`
+        
+        csvData += '"Rank","Name","Roll Number","Email","Score","Percentage","Completed Date","Status"\n'
+        
+        scoreData.completedStudents.forEach((student, index) => {
+          const percentage = scoreData.chapter.questionsCount > 0 
+            ? ((student.quizScore / scoreData.chapter.questionsCount) * 100).toFixed(2)
+            : '0'
+          const status = parseFloat(percentage) >= 60 ? 'Pass' : 'Fail'
+          
+          csvData += `"${index + 1}","${escapeCSV(student.name)}","${escapeCSV(student.rollNumber)}","${escapeCSV(student.email)}","${student.quizScore}","${percentage}%","${formatDateForExcel(student.completedAt)}","${status}"\n`
+        })
+        
+        if (type === 'all') {
+          csvData += '\n\n'
+        }
+      }
+
+      if (type === 'all' || type === 'pending') {
+        if (type === 'all') {
+          csvData += '"Pending Students"\n'
+        } else {
+          csvData += '"Chapter Score Report - Pending Students"\n'
+          csvData += `"Chapter:","${escapeCSV(scoreData.chapter.title)}"\n\n`
+        }
+        
+        csvData += '"Name","Roll Number","Email","Status"\n'
+        
+        scoreData.notCompletedStudents.forEach((student) => {
+          csvData += `"${escapeCSV(student.name)}","${escapeCSV(student.rollNumber)}","${escapeCSV(student.email)}","Not Started"\n`
+        })
+      }
+
+      const BOM = "\uFEFF"
+      const blob = new Blob([BOM + csvData], { type: "text/csv;charset=utf-8;" })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.setAttribute("href", url)
+      link.setAttribute("download", `${chapterTitle}-${type}-${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} data exported successfully!`)
+    } catch (error) {
+      console.error("Export error:", error)
+      toast.error("Failed to export data")
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const escapeCSV = (str: string): string => {
+    if (!str) return ''
+    return String(str).replace(/"/g, '""')
+  }
+
   if (loading) {
     return (
-      <div className="">
-        <div className="container mx-auto px-4 ">
+      <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
+        <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/3" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -154,18 +246,54 @@ export default function ChapterScoresPage() {
   const totalStudents = scoreData.completedStudents.length + scoreData.notCompletedStudents.length
   const completionRate = totalStudents > 0 ? Math.round((scoreData.completedStudents.length / totalStudents) * 100) : 0
 
-  const handleSendChapterReminder = async (studentId: string) => {
-    try {
-      await api.post(`/chapter/${chapterId}/remind/${studentId}`)
-      toast.success("Reminder sent successfully")
-    } catch (error) {
-      toast.error("Failed to send Reminder")
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
       <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <Card className="border-0 shadow-xl rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                    <FileSpreadsheet className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-white">
+                    <h3 className="text-xl font-bold mb-1">Export Chapter Reports</h3>
+                    <p className="text-indigo-100 text-sm">Download student performance data in Excel format</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={() => exportToExcel('completed')}
+                    disabled={exporting || scoreData.completedStudents.length === 0}
+                    className="bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded-xl px-6 py-2 font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+                  >
+                    <Download className={`h-4 w-4 mr-2 ${exporting ? 'animate-bounce' : ''}`} />
+                    Export Completed
+                  </Button>
+                  <Button
+                    onClick={() => exportToExcel('pending')}
+                    disabled={exporting || scoreData.notCompletedStudents.length === 0}
+                    className="bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded-xl px-6 py-2 font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+                  >
+                    <Download className={`h-4 w-4 mr-2 ${exporting ? 'animate-bounce' : ''}`} />
+                    Export Pending
+                  </Button>
+                  <Button
+                    onClick={() => exportToExcel('all')}
+                    disabled={exporting}
+                    className="bg-white hover:bg-white/90 text-indigo-600 rounded-xl px-6 py-2 font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    <Download className={`h-4 w-4 mr-2 ${exporting ? 'animate-bounce' : ''}`} />
+                    Export All
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="border-0 shadow-xl rounded-3xl overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
             <CardContent className="p-6">
@@ -293,13 +421,7 @@ export default function ChapterScoresPage() {
                               #{index + 1}
                             </div>
                             <Avatar className="h-16 w-16 border-4 border-white shadow-lg">
-                              <AvatarImage
-                                src={
-                                  student.profilePictureUrl ||
-                                  "/placeholder.svg?height=64&width=64" ||
-                                  "/placeholder.svg"
-                                }
-                              />
+                              <AvatarImage src={student.profilePictureUrl} />
                               <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xl font-bold">
                                 {student.name.charAt(0).toUpperCase()}
                               </AvatarFallback>
@@ -401,14 +523,7 @@ export default function ChapterScoresPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="flex items-center gap-4">
                               <Avatar className="h-16 w-16 border-4 border-orange-200 shadow-lg">
-                                <AvatarImage
-                                  src={
-                                    student.profilePictureUrl ||
-                                    "/placeholder.svg?height=64&width=64&query=default-avatar" ||
-                                    "/placeholder.svg"
-                                  }
-                                  alt={`Avatar of ${student.name}`}
-                                />
+                                <AvatarImage src={student.profilePictureUrl} alt={`Avatar of ${student.name}`} />
                                 <AvatarFallback className="bg-gradient-to-r from-orange-400 to-red-500 text-white text-xl font-bold">
                                   {student.name.charAt(0).toUpperCase()}
                                 </AvatarFallback>
@@ -443,9 +558,7 @@ export default function ChapterScoresPage() {
                               variant="outline"
                               size="sm"
                               className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 hover:border-orange-400 text-orange-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 rounded-xl px-6 py-2 font-semibold transition-all duration-300"
-                              onClick={() => {
-                                handleSendChapterReminder(student?._id)
-                              }}
+                              onClick={() => handleSendChapterReminder(student._id)}
                             >
                               Remind
                             </Button>
