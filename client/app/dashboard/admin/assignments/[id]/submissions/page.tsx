@@ -106,7 +106,7 @@ export default function AdminSubmissions() {
 
   useEffect(() => {
     fetchSubmissions(currentPage, searchTerm);
-  }, [currentPage, searchTerm,fetchSubmissions]);
+  }, [currentPage, searchTerm]);
 
   const handleGradeSubmission = async (
     submissionId: string,
