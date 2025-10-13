@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +22,21 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
+
+  useEffect(() => {
+    try {
+      const rememberMeStored = localStorage.getItem("rememberMe");
+      if (rememberMeStored === "true") {
+        setRememberMe(true);
+        const savedEmail = localStorage.getItem("savedEmail");
+        const savedPassword = localStorage.getItem("savedPassword");
+        if (savedEmail) setEmail(savedEmail);
+        if (savedPassword) setPassword(savedPassword);
+      }
+    } catch (err) {
+      console.error("LocalStorage read error:", err);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,44 +64,47 @@ export default function LoginForm() {
       if (res.data.success) {
         const { user } = res.data.data;
         const accessToken = res.data.accessToken;
+
         const rememberDuration = rememberMe ? 7 : 1;
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + rememberDuration);
-        document.cookie = `rememberMe=${rememberMe}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+        document.cookie = `rememberMe=${encodeURIComponent(
+          rememberMe.toString()
+        )}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
 
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("rememberMe", rememberMe.toString());
-        toast.success("Login successful!");
 
+        if (rememberMe) {
+          localStorage.setItem("savedEmail", email);
+          localStorage.setItem("savedPassword", password);
+        } else {
+          localStorage.removeItem("savedEmail");
+          localStorage.removeItem("savedPassword");
+        }
+
+        toast.success("Login successful!");
         router.replace("/dashboard");
       } else {
-        setError(res.data.message || "Login failed. Please try again.");
+        const message = res.data.message || "Login failed. Please try again.";
+        setError(message);
+        toast.error(message);
       }
     } catch (err) {
+      let message = "An unexpected error occurred";
       if (axios.isAxiosError(err)) {
-        const errorMessage =
-          err.response?.data?.message || "An error occurred. Please try again.";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } else {
-        setError("An unexpected error occurred");
-        toast.error("An unexpected error occurred");
+        message = err.response?.data?.message || message;
       }
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
-  const rememberMeFromStorage = localStorage.getItem("rememberMe");
-  useEffect(() => {
-    if (rememberMeFromStorage === "true") {
-      setRememberMe(true);
-    }
-  }, [rememberMeFromStorage]);
 
   return (
     <div className="w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-6 py-8 bg-transparent">
-      {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
           Login
@@ -97,9 +114,7 @@ export default function LoginForm() {
         </p>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email */}
         <div className="space-y-1">
           <Label
             htmlFor="email"
@@ -120,7 +135,6 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* Password */}
         <div className="space-y-1">
           <Label
             htmlFor="password"
@@ -161,7 +175,7 @@ export default function LoginForm() {
             <Checkbox
               id="remember"
               checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              onCheckedChange={(checked) => setRememberMe(!!checked)}
               disabled={isLoading}
               className="h-4 w-4 border border-gray-300 rounded bg-white/10 text-orange-500 focus:ring-2 focus:ring-offset-0 focus:ring-orange-500"
               aria-checked={rememberMe ? "true" : "false"}
@@ -192,7 +206,6 @@ export default function LoginForm() {
           </Alert>
         )}
 
-        {/* Submit */}
         <Button
           type="submit"
           disabled={isLoading}
