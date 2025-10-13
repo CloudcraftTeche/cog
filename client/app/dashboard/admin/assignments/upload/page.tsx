@@ -33,6 +33,7 @@ import {
   FileUp,
   FileText,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -89,7 +90,7 @@ const compressFile = async (file: File, maxSizeMB = 50): Promise<File> => {
   });
 };
 
-export default function UploadAssignment() {
+export default function AdminUploadAssignment() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -344,10 +345,12 @@ export default function UploadAssignment() {
               reject(new Error("Invalid JSON response from Cloudinary"));
             }
           } else {
-            new Error(
-              `Cloudinary error ${xhr.status}: ${
-                xhr.responseText || "No response"
-              }`
+            reject(
+              new Error(
+                `Cloudinary error ${xhr.status}: ${
+                  xhr.responseText || "No response"
+                }`
+              )
             );
           }
         });
@@ -465,14 +468,23 @@ export default function UploadAssignment() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <div className="p-6 relative">
+      <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 mb-8 rounded-3xl">
+        <div className="max-w-5xl mx-auto px-4 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Sparkles className="h-8 w-8 mr-3" />
+            <h1 className="text-3xl font-bold">Upload Assignment</h1>
+          </div>
+          <p className="text-indigo-100 text-lg">Create engaging assignments and assessments for your students</p>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pb-8">
         {success && (
-          <Alert className="mb-8 border-green-200 bg-green-50/50 backdrop-blur-sm">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              Assignment uploaded successfully! Students can now access this
-              material.
+          <Alert className="mb-8 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg rounded-2xl">
+            <CheckCircle className="h-5 w-5 text-emerald-600" />
+            <AlertDescription className="text-emerald-800 font-medium">
+              Assignment uploaded successfully! Students can now access this material.
             </AlertDescription>
           </Alert>
         )}
@@ -485,44 +497,55 @@ export default function UploadAssignment() {
           className="space-y-8"
         >
           <div className="flex justify-center">
-            <TabsList className="grid w-full max-w-sm sm:max-w-lg grid-cols-3 h-10 sm:h-12">
+            <TabsList className="grid w-full max-w-md grid-cols-3 h-14 bg-gradient-to-r from-slate-100 to-slate-200 rounded-2xl p-2">
               <TabsTrigger
                 value="video"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
               >
-                <Video className="w-4 h-4" /> <span>Video</span>
+                <Video className="w-5 h-5" /> <span className="font-medium">Video</span>
               </TabsTrigger>
-              <TabsTrigger value="text" className="flex items-center space-x-2">
-                <BookOpen className="w-4 h-4" /> <span>Text</span>
+              <TabsTrigger
+                value="text"
+                className="flex items-center space-x-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
+                <BookOpen className="w-5 h-5" /> <span className="font-medium">Text</span>
               </TabsTrigger>
-              <TabsTrigger value="pdf" className="flex items-center space-x-2">
-                <FileText className="w-4 h-4" /> <span>PDF</span>
+              <TabsTrigger
+                value="pdf"
+                className="flex items-center space-x-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
+              >
+                <FileText className="w-5 h-5" /> <span className="font-medium">PDF</span>
               </TabsTrigger>
             </TabsList>
           </div>
+
           <form onSubmit={handleSubmit} className="space-y-8">
-            <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <div className="flex items-center space-x-2">
+            <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+              <CardHeader className="pb-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
                   <Badge
                     variant="secondary"
-                    className="bg-blue-100 text-blue-700"
+                    className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-0 px-4 py-1 rounded-full"
                   >
                     Basic Info
                   </Badge>
                 </div>
-                <CardTitle className="text-xl">Assignment Details</CardTitle>
-                <CardDescription className="text-slate-600">
+                <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Assignment Details
+                </CardTitle>
+                <CardDescription className="text-slate-600 text-base">
                   Basic information about your educational assignment
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className=" flex md:flex-row flex-col flex-wrap  gap-4 md:items-center max-w-2xl">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="title"
-                      className="text-sm font-medium text-slate-700"
-                    >
+              <CardContent className="space-y-6 p-8">
+                <div className="flex md:flex-row flex-col flex-wrap gap-6 md:items-center justify-between">
+                  <div className="space-y-3">
+                    <Label htmlFor="title" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mr-2"></div>
                       Assignment Title
                     </Label>
                     <Input
@@ -530,16 +553,14 @@ export default function UploadAssignment() {
                       placeholder="Enter a descriptive title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="h-10 sm:h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 rounded-xl transition-all duration-300"
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="grade"
-                      className="text-sm font-medium text-slate-700"
-                    >
-                      Grade Level *
+                  <div className="space-y-3">
+                    <Label htmlFor="grade" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full mr-2"></div>
+                      Grade Level
                     </Label>
                     <Select
                       onValueChange={(val) => setGrade(val)}
@@ -548,41 +569,47 @@ export default function UploadAssignment() {
                     >
                       <SelectTrigger
                         id="grade"
-                        className="h-10 sm:h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 rounded-xl transition-all duration-300"
                       >
                         <SelectValue placeholder="Select grade" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         {grades?.map(({ grade: g }) => (
-                          <SelectItem key={g} value={String(g)}>
-                            {g}
+                          <SelectItem key={g} value={String(g)} className="rounded-lg">
+                            Grade {g}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date *</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="startDate" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full mr-2"></div>
+                      Start Date
+                    </Label>
                     <Input
                       id="startDate"
                       type="date"
                       onChange={(e) => setStartDate(e.target.value)}
+                      className="h-12 border-2 border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 rounded-xl transition-all duration-300"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">End Date *</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="endDate" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mr-2"></div>
+                      End Date
+                    </Label>
                     <Input
                       id="endDate"
                       type="date"
                       onChange={(e) => setEndDate(e.target.value)}
+                      className="h-12 border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 rounded-xl transition-all duration-300"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="description"
-                    className="text-sm font-medium text-slate-700"
-                  >
+                <div className="space-y-3">
+                  <Label htmlFor="description" className="text-sm font-semibold text-slate-700 flex items-center">
+                    <div className="w-2 h-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full mr-2"></div>
                     Description
                   </Label>
                   <Textarea
@@ -591,37 +618,45 @@ export default function UploadAssignment() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    className="border-slate-200 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                    className="border-2 border-slate-200 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 rounded-xl resize-none transition-all duration-300"
                     required
                   />
                 </div>
               </CardContent>
             </Card>
+
             <TabsContent value="video" className="space-y-8">
-              <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center space-x-2">
+              <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                <CardHeader className="pb-4 bg-gradient-to-br from-purple-50 to-pink-50">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <Video className="w-5 h-5 text-white" />
+                    </div>
                     <Badge
                       variant="secondary"
-                      className="bg-purple-100 text-purple-700"
+                      className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-0 px-4 py-1 rounded-full"
                     >
-                      <Video className="w-3 h-3 mr-1" />
                       Video
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl">Video Upload</CardTitle>
-                  <CardDescription className="text-slate-600">
+                  <CardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Video Upload
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 text-base">
                     Upload your video assignment file (Max {MAX_FILE_SIZE_MB}MB)
                     <br />
                     <span className="text-xs text-blue-600">
-                      Large files will be automatically compressed for faster
-                      upload
+                      Large files will be automatically compressed for faster upload
                     </span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="video-upload">Upload Video</Label>
+                <CardContent className="p-8">
+                  <div className="space-y-3">
+                    <Label htmlFor="video-upload" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mr-2"></div>
+                      Upload Video
+                    </Label>
                     <Input
                       id="video-upload"
                       type="file"
@@ -630,13 +665,13 @@ export default function UploadAssignment() {
                         const file = e.target.files?.[0] || null;
                         setVideoFile(file);
                       }}
-                      className="border-slate-200 focus:border-blue-500 focus:ring-blue-500 cursor-pointer"
+                      className="h-12 border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 rounded-xl cursor-pointer transition-all duration-300"
                       required={contentType === "video"}
                       disabled={uploading || isCompressing}
                     />
                     {videoFile && (
-                      <div className="space-y-2">
-                        <p className="text-sm text-slate-500">
+                      <div className="space-y-2 p-4 bg-purple-50 rounded-xl">
+                        <p className="text-sm text-slate-600">
                           Selected: {videoFile.name} (
                           {(videoFile.size / (1024 * 1024)).toFixed(2)} MB)
                         </p>
@@ -658,63 +693,81 @@ export default function UploadAssignment() {
                 </CardContent>
               </Card>
             </TabsContent>
+
             <TabsContent value="text" className="space-y-8">
-              <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center space-x-2">
+              <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                <CardHeader className="pb-4 bg-gradient-to-br from-emerald-50 to-teal-50">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-white" />
+                    </div>
                     <Badge
                       variant="secondary"
-                      className="bg-green-100 text-green-700"
+                      className="bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-0 px-4 py-1 rounded-full"
                     >
-                      <BookOpen className="w-3 h-3 mr-1" />
                       Text
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl">Text Content</CardTitle>
-                  <CardDescription className="text-slate-600">
+                  <CardTitle className="text-2xl bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                    Text Content
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 text-base">
                     Add text content for the assignment
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 p-8">
                   <div className="space-y-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Textarea
                         placeholder="Enter or paste the assignment text here..."
                         value={textContent}
                         onChange={(e) => setTextContent(e.target.value)}
-                        rows={10}
-                        className="border-slate-200 focus:border-blue-500 focus:ring-blue-500 resize-none font-serif text-sm leading-relaxed min-h-[300px] sm:min-h-[400px]"
+                        rows={12}
+                        className="border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 rounded-xl resize-none font-serif text-sm leading-relaxed min-h-[400px] transition-all duration-300"
                         required={contentType === "text"}
                       />
-                      <p className="text-xs text-slate-500">
-                        {textContent.length} characters
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-slate-500">{textContent.length} characters</p>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                          <span className="text-xs text-emerald-600 font-medium">Ready for students</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+
             <TabsContent value="pdf" className="space-y-8">
-              <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center space-x-2">
+              <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-red-500 to-orange-500"></div>
+                <CardHeader className="pb-4 bg-gradient-to-br from-red-50 to-orange-50">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
                     <Badge
                       variant="secondary"
-                      className="bg-red-100 text-red-700"
+                      className="bg-gradient-to-r from-red-100 to-orange-100 text-red-700 border-0 px-4 py-1 rounded-full"
                     >
-                      <FileText className="w-3 h-3 mr-1" />
                       PDF
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl">PDF Upload</CardTitle>
-                  <CardDescription className="text-slate-600">
-                    Upload your PDF document for the assignment (Max
-                    {MAX_FILE_SIZE_MB}MB)
+                  <CardTitle className="text-2xl bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                    PDF Upload
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 text-base">
+                    Upload your PDF document for the assignment (Max {MAX_FILE_SIZE_MB}MB)
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Label htmlFor="pdf-upload">Upload PDF</Label>
+                <CardContent className="p-8">
+                  <div className="space-y-3">
+                    <Label htmlFor="pdf-upload" className="text-sm font-semibold text-slate-700 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full mr-2"></div>
+                      Upload PDF
+                    </Label>
                     <Input
                       id="pdf-upload"
                       type="file"
@@ -723,13 +776,13 @@ export default function UploadAssignment() {
                         const file = e.target.files?.[0] || null;
                         setPdfFile(file);
                       }}
-                      className="border-slate-200 focus:border-blue-500 focus:ring-blue-500 cursor-pointer"
+                      className="h-12 border-2 border-slate-200 focus:border-red-500 focus:ring-4 focus:ring-red-100 rounded-xl cursor-pointer transition-all duration-300"
                       required={contentType === "pdf"}
                       disabled={uploading || isCompressing}
                     />
                     {pdfFile && (
-                      <div className="space-y-2">
-                        <p className="text-sm text-slate-500">
+                      <div className="space-y-2 p-4 bg-red-50 rounded-xl">
+                        <p className="text-sm text-slate-600">
                           Selected: {pdfFile.name} (
                           {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB)
                         </p>
@@ -746,53 +799,56 @@ export default function UploadAssignment() {
                 </CardContent>
               </Card>
             </TabsContent>
-            <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader className="pb-4">
+
+            <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-orange-500 to-red-500"></div>
+              <CardHeader className="pb-4 bg-gradient-to-br from-orange-50 to-red-50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="flex items-center space-x-2 mb-2">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-white" />
+                      </div>
                       <Badge
                         variant="secondary"
-                        className="bg-orange-100 text-orange-700"
+                        className="bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border-0 px-4 py-1 rounded-full"
                       >
                         Quiz
                       </Badge>
                     </div>
-                    <CardTitle className="text-xl">
+                    <CardTitle className="text-2xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                       Assessment Questions
                     </CardTitle>
-                    <CardDescription className="text-slate-600">
-                      Create questions to test student understanding for this
-                      assignment
+                    <CardDescription className="text-slate-600 text-base">
+                      Create questions to test student understanding for this assignment
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 p-8">
                 <div className="grid gap-2 mb-4">
                   <Label
                     htmlFor="excel-upload"
-                    className="text-sm font-medium text-slate-700 flex items-center"
+                    className="text-sm font-semibold text-slate-700 flex items-center"
                   >
-                    <FileUp className="w-4 h-4 mr-2" /> Import Questions from
-                    Excel
+                    <FileUp className="w-5 h-5 mr-2" /> Import Questions from Excel
                   </Label>
                   <Input
                     id="excel-upload"
                     type="file"
                     accept=".xlsx, .xls"
                     onChange={handleExcelUpload}
-                    className="cursor-pointer h-10 sm:h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="cursor-pointer h-12 border-2 border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 rounded-xl transition-all duration-300"
                   />
                 </div>
                 {questions.map((question, questionIndex) => (
                   <div
                     key={question.id}
-                    className="border border-slate-200 rounded-xl p-4 sm:p-6 space-y-4 bg-slate-50/30"
+                    className="border-2 border-slate-200 rounded-2xl p-6 space-y-4 bg-gradient-to-br from-slate-50 to-white"
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-semibold text-slate-800 flex items-center">
-                        <span className="w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm mr-2">
+                        <span className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center text-sm mr-3 shadow-md">
                           {questionIndex + 1}
                         </span>
                         Question {questionIndex + 1}
@@ -803,16 +859,14 @@ export default function UploadAssignment() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeQuestion(question.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-slate-700">
-                        Question
-                      </Label>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-slate-700">Question</Label>
                       <Input
                         placeholder="Enter your question..."
                         value={question.question}
@@ -823,14 +877,12 @@ export default function UploadAssignment() {
                             e.target.value
                           )
                         }
-                        className="h-10 sm:h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                        className="h-11 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 rounded-lg transition-all duration-300"
                         required
                       />
                     </div>
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium text-slate-700">
-                        Answer Options
-                      </Label>
+                      <Label className="text-sm font-semibold text-slate-700">Answer Options</Label>
                       <RadioGroup
                         value={question.correctAnswer.toString()}
                         onValueChange={(value: string) =>
@@ -844,10 +896,10 @@ export default function UploadAssignment() {
                         {question.options.map((option, optionIndex) => (
                           <div
                             key={optionIndex}
-                            className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
+                            className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all duration-300 ${
                               optionIndex === question.correctAnswer
-                                ? "bg-green-50 border-green-200"
-                                : "bg-white border-slate-200 hover:bg-slate-50"
+                                ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 shadow-sm"
+                                : "bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                             }`}
                           >
                             <RadioGroupItem
@@ -873,7 +925,7 @@ export default function UploadAssignment() {
                             {optionIndex === question.correctAnswer && (
                               <Badge
                                 variant="secondary"
-                                className="bg-green-100 text-green-700 text-xs"
+                                className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 text-xs border-0 px-3 py-1 rounded-full"
                               >
                                 Correct Answer
                               </Badge>
@@ -884,12 +936,12 @@ export default function UploadAssignment() {
                     </div>
                   </div>
                 ))}
-                <div className=" w-full flex sm:justify-end justify-center">
+                <div className="w-full flex sm:justify-end justify-center">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={addQuestion}
-                    className="border-blue-200 text-blue-700 hover:bg-blue-50 bg-transparent"
+                    className="border-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 bg-transparent rounded-lg px-6 py-3 transition-all duration-300"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Question
@@ -897,17 +949,18 @@ export default function UploadAssignment() {
                 </div>
               </CardContent>
             </Card>
+
             {(uploading || isCompressing) && (
-              <Card className="my-8 border-blue-200 bg-blue-50/50 backdrop-blur-sm">
+              <Card className="my-8 border-0 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg rounded-2xl">
                 <CardContent className="pt-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-blue-800">
+                      <span className="text-sm font-semibold text-blue-800">
                         {isCompressing
                           ? "Compressing file..."
                           : "Uploading file..."}
                       </span>
-                      <span className="text-sm text-blue-600">
+                      <span className="text-sm text-blue-600 font-medium">
                         {isCompressing ? "Please wait" : `${uploadProgress}%`}
                       </span>
                     </div>
@@ -924,23 +977,24 @@ export default function UploadAssignment() {
                 </CardContent>
               </Card>
             )}
+
             <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 asChild
-                className="px-4 sm:px-6 bg-transparent w-full sm:w-auto"
+                className="px-6 sm:px-8 h-12 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-xl w-full sm:w-auto transition-all duration-300"
               >
                 <Link href="/dashboard/admin/assignments">Cancel</Link>
               </Button>
               <Button
                 type="submit"
                 disabled={loading || uploading || isCompressing}
-                className="px-6 sm:px-8 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                className="px-8 sm:px-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {loading || uploading || isCompressing ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="w-5 h-5 animate-spin mr-3" />
                     {isCompressing
                       ? "Compressing..."
                       : uploading
@@ -949,7 +1003,7 @@ export default function UploadAssignment() {
                   </>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4 mr-2" />
+                    <Upload className="w-5 h-5 mr-3" />
                     Upload Assignment & Quiz
                   </>
                 )}

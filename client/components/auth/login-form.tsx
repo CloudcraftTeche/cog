@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,19 +36,28 @@ export default function LoginForm() {
     }
 
     try {
-      const res = await api.post("/auth/login", {
-        email: email.trim().toLowerCase(),
-        password,
-      },{
-        withCredentials:true
-      });
+      const res = await api.post(
+        "/auth/login",
+        {
+          email: email.trim().toLowerCase(),
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
       if (res.data.success) {
         const { user } = res.data.data;
         const accessToken = res.data.accessToken;
+        const rememberDuration = rememberMe ? 7 : 1;
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + rememberDuration);
+        document.cookie = `rememberMe=${rememberMe}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("accessToken", accessToken);
-
+        localStorage.setItem("rememberMe", rememberMe.toString());
         toast.success("Login successful!");
 
         router.replace("/dashboard");
@@ -69,6 +78,12 @@ export default function LoginForm() {
       setIsLoading(false);
     }
   };
+  const rememberMeFromStorage = localStorage.getItem("rememberMe");
+  useEffect(() => {
+    if (rememberMeFromStorage === "true") {
+      setRememberMe(true);
+    }
+  }, [rememberMeFromStorage]);
 
   return (
     <div className="w-full max-w-md sm:max-w-lg mx-auto px-4 sm:px-6 py-8 bg-transparent">
@@ -148,6 +163,11 @@ export default function LoginForm() {
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked as boolean)}
               disabled={isLoading}
+              className="h-4 w-4 border border-gray-300 rounded bg-white/10 text-orange-500 focus:ring-2 focus:ring-offset-0 focus:ring-orange-500"
+              aria-checked={rememberMe ? "true" : "false"}
+              aria-label="Remember me"
+              value="true"
+              name="remember"
             />
             <Label
               htmlFor="remember"
