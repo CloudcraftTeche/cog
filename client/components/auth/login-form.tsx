@@ -44,8 +44,8 @@ export default function LoginForm() {
       });
 
       if (res.data.success) {
-        const { user, accessToken } = res.data.data;
-
+        const { user } = res.data.data;
+        const accessToken = res.data.accessToken;
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("accessToken", accessToken);
 
