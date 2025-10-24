@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 let isRefreshing = false;
 let failedQueue: {
@@ -16,38 +16,56 @@ const processQueue = (error: any, token: string | null) => {
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SERVERURL,
-  withCredentials: true, 
+  withCredentials: true,
+  timeout: 30000,
 });
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = typeof window !== "undefined" 
+      ? localStorage.getItem("accessToken") 
+      : null;
+    
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as InternalAxiosRequestConfig & { 
+      _retry?: boolean;
+      _retryCount?: number;
+    };
 
-    const isUnauthorized =
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    const shouldRefresh =
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes("/auth/login");
+      !originalRequest.url?.includes("/auth/login") &&
+      !originalRequest.url?.includes("/auth/verify") &&
+      !originalRequest.url?.includes("/auth/refresh");
 
-    if (!isUnauthorized) return Promise.reject(error);
+    if (!shouldRefresh) {
+      return Promise.reject(error);
+    }
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       })
         .then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
           return api(originalRequest);
         })
         .catch((err) => Promise.reject(err));
@@ -62,20 +80,53 @@ api.interceptors.response.use(
         {
           withCredentials: true,
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
+            Authorization: `Bearer ${
+              typeof window !== "undefined" 
+                ? localStorage.getItem("accessToken") || ""
+                : ""
+            }`,
           },
         }
       );
 
-      const newToken = data.accessToken;
-      localStorage.setItem("accessToken", newToken);
+      if (data.success && data.accessToken) {
+        const newToken = data.accessToken;
+        
+        if (typeof window !== "undefined") {
+          localStorage.setItem("accessToken", newToken);
+          
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+          }
+          
+          const expiry = Date.now() + 15 * 60 * 1000;
+          localStorage.setItem("tokenExpiry", expiry.toString());
+        }
 
-      processQueue(null, newToken);
+        processQueue(null, newToken);
 
-      originalRequest.headers.Authorization = `Bearer ${newToken}`;
-      return api(originalRequest);
-    } catch (refreshError) {
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+        
+        return api(originalRequest);
+      } else {
+        throw new Error("Token refresh failed");
+      }
+    } catch (refreshError: any) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("tokenExpiry");
+      }
+      
       processQueue(refreshError, null);
+      
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+        const returnUrl = encodeURIComponent(window.location.pathname);
+        window.location.href = `/login?returnUrl=${returnUrl}&sessionExpired=true`;
+      }
+      
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

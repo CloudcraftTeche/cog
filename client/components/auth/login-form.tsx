@@ -29,9 +29,8 @@ export default function LoginForm() {
       if (rememberMeStored === "true") {
         setRememberMe(true);
         const savedEmail = localStorage.getItem("savedEmail");
-        const savedPassword = localStorage.getItem("savedPassword");
         if (savedEmail) setEmail(savedEmail);
-        if (savedPassword) setPassword(savedPassword);
+        // ✅ NEVER load password from localStorage for security
       }
     } catch (err) {
       console.error("LocalStorage read error:", err);
@@ -78,11 +77,11 @@ export default function LoginForm() {
 
         if (rememberMe) {
           localStorage.setItem("savedEmail", email);
-          localStorage.setItem("savedPassword", password);
         } else {
           localStorage.removeItem("savedEmail");
-          localStorage.removeItem("savedPassword");
         }
+
+        localStorage.removeItem("savedPassword");
 
         toast.success("Login successful!");
         router.replace("/dashboard");
