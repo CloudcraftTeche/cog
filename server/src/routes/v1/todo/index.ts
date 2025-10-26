@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../../middleware/authenticate";
-import { getStudentAssignments, getStudentStreak, getStudentTodoOverview } from "@/controllers/v1/todoList";
+import { getStudentAssignments, getStudentStreak, getStudentTodoOverview } from "../../../controllers/v1/todo";
 
 
 const router = Router();

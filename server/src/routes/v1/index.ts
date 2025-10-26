@@ -18,7 +18,7 @@ import attendanceRoutes from "./attendance";
 import chatRoutes from "./chat";
 import {queryRoutes} from "./query/index";
 import teacherChaptersRoutes from "./teacherChapter";
-import todoListRoutes from "./todoList/index";
+import todoListRoutes from "./todo";
 
 
 
