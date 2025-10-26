@@ -146,7 +146,7 @@ export default function StudentDetailsPage() {
   if (isLoadingData) return null
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8 p-2">
       <Card className="border-0 shadow-2xl bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 rounded-3xl">
         <CardContent className="p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">

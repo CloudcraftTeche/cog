@@ -208,7 +208,7 @@ export default function EditChapterPage() {
   }
 
   return (
-    <div className="">
+    <div className="p-4">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex justify-center">

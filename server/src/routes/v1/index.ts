@@ -17,6 +17,8 @@ import cloudinaryVideoUpload from "./cloudinary_video_upload";
 import attendanceRoutes from "./attendance";
 import chatRoutes from "./chat";
 import {queryRoutes} from "./query/index";
+import teacherChaptersRoutes from "./teacherChapter";
+import todoListRoutes from "./todoList/index";
 
 
 
@@ -48,6 +50,9 @@ router.use("/announcements", announcementRoutes);
 router.use("/", attendanceRoutes);
 router.use("/chats", chatRoutes);
 router.use("/queries", queryRoutes);
+router.use("/teacher-chapter", teacherChaptersRoutes);
+router.use("/todo-list", todoListRoutes);
+
 
 
 export default router;

@@ -3,7 +3,7 @@ import { AuthenticatedRequest } from "../middleware/authenticate";
 
 const expressRateLimit = rateLimit({
   windowMs: 60000,
-  max: 60,
+  max: 100,
   message: "Too many requests, please try again later.",
   skipFailedRequests: true,
   standardHeaders: "draft-8",
@@ -14,7 +14,7 @@ export default expressRateLimit;
 
 export const messageRateLimit = rateLimit({
   windowMs: 60 * 1000, 
-  max: 30, 
+  max: 50, 
   message: {
     message: 'Too many messages sent, please slow down',
     retryAfter: 60,
@@ -42,7 +42,7 @@ export const chatCreationRateLimit = rateLimit({
 
 export const searchRateLimit = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 30,
   message: {
     message: 'Too many search requests, please wait',
     retryAfter: 60,

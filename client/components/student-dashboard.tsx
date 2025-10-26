@@ -166,9 +166,7 @@ export default function StudentDashboard() {
     return "Good Evening";
   }, []);
 
-  // ========================
-  // Fetch Data
-  // ========================
+ 
   useEffect(() => {
     if (!user?.id) return;
 
@@ -347,17 +345,6 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="text-purple-600" />
-              Submission Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-64">
-            <SubmissionStatusChart data={submissionStatusData} />
-          </CardContent>
-        </Card>
       </div>
 
       <Card className="border-none shadow-xl">

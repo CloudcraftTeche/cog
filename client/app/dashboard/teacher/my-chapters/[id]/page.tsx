@@ -3,6 +3,9 @@
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import api from "@/lib/api";
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import {
   Card,
@@ -26,9 +29,6 @@ import {
   FileText,
   Award,
 } from "lucide-react";
-import api from "@/lib/api";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 
 interface Option {
   label: "A" | "B" | "C" | "D";
@@ -48,7 +48,7 @@ interface Chapter {
   contentType: "video" | "text";
   videoUrl?: string;
   textContent?: string;
-  questions: Question[];
+  questions?: Question[];
   isCompleted: boolean;
   canAccess: boolean;
   chapterIndex: number;
@@ -59,7 +59,7 @@ interface Chapter {
   createdAt: Date;
 }
 
-export default function ChapterDetailPage() {
+export default function TeacherChapterDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { id } = useParams() as { id: string };
@@ -79,7 +79,9 @@ export default function ChapterDetailPage() {
 
     const fetchChapter = async () => {
       try {
-        const response = await api.get(`/chapter/${id}/student/${user?.id}`);
+        const response = await api.get(
+          `/teacher-chapter/${id}/teacher/${user.id}`
+        );
         const chapterData = response.data?.data;
         if (chapterData) {
           setChapter(chapterData);
@@ -109,9 +111,12 @@ export default function ChapterDetailPage() {
     setSelectedAnswers((prev) => ({ ...prev, [qIndex]: value }));
   };
 
-  const allAnswered = chapter?.questions?.every(
-    (_, i) => selectedAnswers[i] !== undefined
-  );
+  const hasQuiz = !!(chapter?.questions && chapter.questions.length > 0);
+  const allAnswered = hasQuiz
+    ? (chapter?.questions ?? []).every(
+        (_, i) => selectedAnswers[i] !== undefined
+      )
+    : false;
 
   const getCorrectAnswersCount = () => {
     return (
@@ -127,19 +132,42 @@ export default function ChapterDetailPage() {
     return Math.round((correctCount / chapter.questions.length) * 100);
   };
 
+  const refetchChapterData = async () => {
+    if (!user?.id || !id) return;
+    try {
+      const response = await api.get(
+        `/teacher-chapter/${id}/teacher/${user.id}`
+      );
+      const chapterData = response.data?.data;
+      if (chapterData) {
+        setChapter(chapterData);
+        setCompleted(chapterData.isCompleted || false);
+        setQuizScore(chapterData.quizScore || 0);
+        if (chapterData.isCompleted) setSubmitted(true);
+      }
+    } catch (err) {
+      console.error("Error refetching chapter data:", err);
+    }
+  };
+
   const submitQuiz = async () => {
     if (!chapter || !user?.id) return;
     setSubmittingCompletion(true);
     try {
       const score = calculateQuizScore();
       setQuizScore(score);
-      await api.post(`/student/${user?.id}/complete-chapter`, {
+
+      await api.post(`/teacher-chapter/${user.id}/complete-chapter`, {
         chapterId: chapter._id,
         quizScore: score,
       });
+
       setSubmitted(true);
       setCompleted(true);
       setChapter((prev) => (prev ? { ...prev, isCompleted: true } : null));
+
+      await refetchChapterData();
+      router.push("/dashboard/teacher/my-chapters");
       toast.success("Quiz submitted successfully.");
     } catch (err: any) {
       toast.error(
@@ -151,33 +179,37 @@ export default function ChapterDetailPage() {
     }
   };
 
-  const handleNextChapter = async () => {
-    if (!chapter) return;
+  const markAsComplete = async () => {
+    if (!chapter || !user?.id) return;
+    setSubmittingCompletion(true);
     try {
-      const chaptersResponse = await api.get(
-        `/chapter/${id}/student/${user?.id}`
-      );
-      const chapters = chaptersResponse.data || [];
-      const currentIndex = chapters.findIndex(
-        (c: any) => c._id === chapter._id
-      );
-      const nextChapter = chapters[currentIndex + 1];
-      if (nextChapter?.isAccessible) {
-        router.push(`/dashboard/student/chapters/${nextChapter._id}`);
+      await api.post(`/teacher-chapter/${user.id}/complete-chapter`, {
+        chapterId: chapter._id,
+        quizScore: 0,
+      });
+      if (!hasQuiz) {
+        router.push("/dashboard/teacher/my-chapters");
       } else {
-        router.push("/dashboard/student/chapters");
+        setCompleted(true);
+        setChapter((prev) => (prev ? { ...prev, isCompleted: true } : null));
+        await refetchChapterData();
+        toast.success("Chapter marked as complete.");
       }
-    } catch {
-      router.push("/dashboard/student/chapters");
+    } catch (err: any) {
+      toast.error("Unable to complete chapter. Please try again.");
+    } finally {
+      setSubmittingCompletion(false);
     }
+  };
+
+  const handleNextChapter = async () => {
+    router.push("/dashboard/teacher/my-chapters");
   };
 
   const handleRetake = () => {
     setSelectedAnswers({});
     setSubmitted(false);
     setQuizScore(0);
-    setCompleted(false);
-    setChapter((prev) => (prev ? { ...prev, isCompleted: false } : null));
   };
 
   const currentScore = submitted
@@ -222,7 +254,7 @@ export default function ChapterDetailPage() {
               <AlertCircle className="w-8 h-8 text-white" />
             </div>
             <p className="text-xl text-gray-700 font-medium mb-6">{error}</p>
-            <Link href="/chapters">
+            <Link href="/dashboard/teacher/chapters">
               <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Chapters
@@ -242,7 +274,7 @@ export default function ChapterDetailPage() {
             <p className="text-xl text-gray-700 font-medium mb-6">
               Chapter not found.
             </p>
-            <Link href="/chapters">
+            <Link href="/dashboard/teacher/chapters">
               <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Chapters
@@ -258,7 +290,7 @@ export default function ChapterDetailPage() {
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full animate-float"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-float animate-float-delayed"></div>
         <div className="absolute bottom-20 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-teal-400/20 rounded-full animate-float"></div>
       </div>
 
@@ -302,6 +334,15 @@ export default function ChapterDetailPage() {
                     )}
                     {chapter.contentType}
                   </Badge>
+                  {hasQuiz && (
+                    <Badge
+                      variant="outline"
+                      className="text-purple-600 border-purple-300"
+                    >
+                      <Target className="h-3 w-3 mr-1" />
+                      Quiz Included
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -317,7 +358,7 @@ export default function ChapterDetailPage() {
               </span>
             </div>
             <Progress
-              value={((chapter.chapterIndex + 1) / chapter.totalChapters) * 100}
+              value={(chapter.chapterIndex / chapter.totalChapters) * 100}
               className="h-2 bg-gray-200"
             />
           </div>
@@ -343,19 +384,10 @@ export default function ChapterDetailPage() {
                       chapter.videoUrl.includes("watch?v=")
                         ? chapter.videoUrl.split("watch?v=")[1].split("&")[0]
                         : chapter.videoUrl.split("/").pop()
-                    }`}
+                    }?rel=0&modestbranding=1&iv_load_policy=3`}
                     title="YouTube Video"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      const fallback = document.createElement("div");
-                      fallback.innerHTML =
-                        "<p class='text-center text-gray-600 mt-4'>This video cannot be embedded. <a href='" +
-                        chapter.videoUrl +
-                        "' target='_blank' class='text-purple-600 underline'>Watch on YouTube</a></p>";
-                      e.currentTarget.parentElement?.appendChild(fallback);
-                    }}
                   ></iframe>
                 ) : (
                   <video
@@ -379,21 +411,21 @@ export default function ChapterDetailPage() {
           </CardContent>
         </Card>
 
-        {chapter.questions && chapter.questions.length > 0 && (
+        {hasQuiz ? (
           <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/70 backdrop-blur-sm">
             <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
               <CardTitle className="text-xl md:text-2xl flex items-center gap-3 text-gray-800">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                   <Target className="w-5 h-5 text-white" />
                 </div>
-                Quiz
+                Optional Quiz
               </CardTitle>
               <CardDescription className="text-gray-600 text-base">
-                Answer the questions below to complete this chapter.
+                Test your understanding (optional but recommended)
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-8">
-              {chapter.questions.map((q, index) => (
+              {chapter.questions?.map((q, index) => (
                 <div key={index} className="space-y-4">
                   <p className="font-semibold text-lg text-gray-800">
                     Q{index + 1}: {q.questionText}
@@ -486,28 +518,84 @@ export default function ChapterDetailPage() {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button
-                      variant="outline"
-                      onClick={handleRetake}
-                      className="bg-white border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50 text-gray-700 font-medium px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-                    >
-                      Retake Quiz
-                    </Button>
-                    {completed && (
+                    {!completed && (
                       <Button
-                        onClick={handleNextChapter}
-                        className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                        variant="outline"
+                        onClick={handleRetake}
+                        className="bg-white border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50 text-gray-700 font-medium px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
                       >
-                        Next Chapter <ArrowRight className="ml-2 w-5 h-5" />
+                        Retake Quiz
                       </Button>
                     )}
+                    <Button
+                      onClick={handleNextChapter}
+                      className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                    >
+                      {completed ? "Continue Learning" : "Next Chapter"}{" "}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
+        ) : (
+          !completed && (
+            <div className="flex justify-center">
+              <Button
+                className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                disabled={submittingCompletion}
+                onClick={markAsComplete}
+              >
+                {submittingCompletion ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                )}
+                Mark as Complete
+              </Button>
+            </div>
+          )
+        )}
+
+        {completed && !hasQuiz && (
+          <div className="flex justify-center">
+            <Button
+              onClick={handleNextChapter}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              Continue Learning <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
         )}
       </div>
+
+      <style jsx global>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+        @keyframes float-delayed {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-15px);
+          }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float-delayed 8s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

@@ -5,7 +5,6 @@ import mongoose, { Schema } from "mongoose";
 import {ApiError} from "../../../utils/ApiError";
 import { Student, Teacher } from "../../../models/user";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
-import { Grade } from "../../../models/grade";
 import { Chapter } from "../../../models/chapter";
 
 export const submitAssignment = async (req: Request, res: Response, next: NextFunction) => {

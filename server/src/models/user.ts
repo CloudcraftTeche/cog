@@ -1,7 +1,6 @@
 import { Schema, model, Document, Types, Model } from "mongoose";
 import bcrypt from "bcrypt";
 
-
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -24,7 +23,6 @@ export interface IUser extends Document {
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
-
 
 const UserSchema = new Schema<IUser>(
   {
@@ -62,10 +60,10 @@ const UserSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-    discriminatorKey: "role", 
+    discriminatorKey: "role",
     toJSON: {
       virtuals: true,
-       transform: (_doc, ret: any) => {
+      transform: (_doc, ret: any) => {
         if (ret.password) delete ret.password;
         if (ret.__v) delete ret.__v;
         return ret;
@@ -74,7 +72,6 @@ const UserSchema = new Schema<IUser>(
     toObject: { virtuals: true },
   }
 );
-
 
 UserSchema.pre<IUser>("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -89,9 +86,7 @@ UserSchema.methods.comparePassword = function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-
 export const User = model<IUser>("User", UserSchema);
-
 
 export interface IStudent extends IUser {
   rollNumber: string;
@@ -125,16 +120,27 @@ export interface ITeacher extends IUser {
   classTeacherFor: string;
   qualifications?: string;
   createdBy: Types.ObjectId;
+  completedChapters: {
+    chapter: Types.ObjectId;
+    completedAt: Date;
+    quizScore: number;
+  }[];
 }
 
 const TeacherSchema = new Schema<ITeacher>({
   classTeacherFor: { type: String, required: true, trim: true },
   qualifications: { type: String, trim: true },
+  completedChapters: [
+    {
+      chapter: { type: Schema.Types.ObjectId, ref: "TeacherChapter" },
+      completedAt: { type: Date, default: Date.now },
+      quizScore: { type: Number, default: 0 },
+    },
+  ],
   createdBy: { type: Schema.Types.ObjectId, ref: "Admin", required: true },
 });
 
 export const Teacher = User.discriminator<ITeacher>("teacher", TeacherSchema);
-
 
 export interface IAdmin extends IUser {}
 export interface ISuperAdmin extends IUser {}

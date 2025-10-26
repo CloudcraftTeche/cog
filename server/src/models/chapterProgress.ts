@@ -11,7 +11,6 @@ export interface IChapterProgress extends Document {
   completedAt?: Date;
   updatedAt: Date;
   createdAt: Date;
-
   progressPercentage: number;
 }
 

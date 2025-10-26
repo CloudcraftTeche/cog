@@ -20,6 +20,8 @@ import {
   MessageCircleMore,
   CalendarDaysIcon,
   BadgeHelpIcon,
+  BookImage,
+  BookMarked,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -67,6 +69,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           icon: Upload,
         },
         {
+          name: "Teacher-Chapters",
+          href: "/dashboard/admin/teacher-chapters",
+          icon: BookMarked,
+        },
+        {
           name: "Chat",
           href: "/dashboard/admin/chat",
           icon: MessageCircleMore,
@@ -75,6 +82,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           name: "Queries",
           href: "/dashboard/admin/query",
           icon: BadgeHelpIcon,
+        },
+        {
+          name: "Attendance",
+          href: "/dashboard/admin/attendance",
+          icon: CalendarDaysIcon,
         },
         {
           name: "Announcements",
@@ -101,6 +113,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           name: "Chapters",
           href: "/dashboard/teacher/chapters",
           icon: BookOpen,
+        },
+        {
+          name: "My-Chapters",
+          href: "/dashboard/teacher/my-chapters",
+          icon: BookImage,
         },
         {
           name: "Assignments",
@@ -134,6 +151,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (user?.role === "student") {
       return [
         ...baseItems,
+        {
+          name: "Todo-List",
+          href: "/dashboard/student/todo-list",
+          icon: CalendarDaysIcon,
+        },
         {
           name: "Chapters",
           href: "/dashboard/student/chapters",
