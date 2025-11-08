@@ -44,7 +44,7 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
           {announcement.type === "image" && announcement.mediaUrl && (
             <div className="relative overflow-hidden">
               <Image
-                src={announcement.mediaUrl || "/placeholder.svg"}
+                src={announcement.mediaUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"}
                 alt={announcement.title}
                 className="w-full h-52 object-cover group-hover:scale-110 transition-transform duration-500"
                 width={100}

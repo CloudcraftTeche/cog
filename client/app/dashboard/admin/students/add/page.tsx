@@ -234,7 +234,7 @@ export default function AddStudentPage() {
                   <Avatar className="h-28 w-28 ring-4 ring-white shadow-2xl">
                     {previewUrl ? (
                       <Image
-                        src={previewUrl || "/placeholder.svg"}
+                        src={previewUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"}
                         height={50}
                         width={50}
                         alt="Profile preview"

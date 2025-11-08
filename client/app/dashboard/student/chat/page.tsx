@@ -1,5 +1,5 @@
-"use client"
-import React, { useState, useEffect, useRef } from "react";
+"use client";
+import { useState, useEffect, useRef } from "react";
 import {
   MessageCircle,
   Users,
@@ -14,7 +14,7 @@ import {
   BookOpen,
   Download,
   FileText,
-  Image,
+  ImageIcon,
   AlertCircle,
   Eye,
   Loader,
@@ -22,6 +22,7 @@ import {
   X,
   RefreshCw,
   Send,
+  Menu,
 } from "lucide-react";
 import api from "@/lib/api";
 
@@ -39,6 +40,7 @@ export default function StudentChatInterface() {
   const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState<any>(false);
   const [error, setError] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export default function StudentChatInterface() {
   const fetchUserProfile = async () => {
     try {
       const response = await api.get("/auth/profile");
-      
+
       if (response.data.data.user) {
         setUser(response.data.data.user);
       } else {
@@ -262,7 +264,9 @@ export default function StudentChatInterface() {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return (
+      Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+    );
   };
 
   const getRoleIcon = (role: any) => {
@@ -316,38 +320,63 @@ export default function StudentChatInterface() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex-col md:flex-row">
       {error && (
-        <div className="fixed top-0 left-0 right-0 bg-red-500 text-white px-4 py-2 text-center z-50 flex items-center justify-center gap-2">
-          <AlertTriangle className="w-4 h-4" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-4">
+        <div className="fixed top-0 left-0 right-0 bg-red-500 text-white px-3 sm:px-4 py-2 text-center z-50 flex items-center justify-center gap-2 text-sm sm:text-base">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span className="flex-1 truncate">{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 p-1 flex-shrink-0"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col shadow-lg">
-        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+      {!selectedChat && (
+        <div className="md:hidden  bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-3 z-20 border-b border-blue-400">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold">My Chats</h1>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors"
+            >
+              {sidebarOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`fixed md:static inset-y-0 left-0 z-30 w-full sm:w-80 md:w-1/3 bg-white border-r border-gray-200 flex flex-col shadow-lg transition-transform duration-300 pt-0 md:pt-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl font-bold">My Chats</h1>
-              <p className="text-blue-100 text-sm">
+            <div className="flex-1">
+              <h1 className="text-lg sm:text-xl font-bold">My Chats</h1>
+              <p className="text-blue-100 text-xs sm:text-sm truncate">
                 {user?.name} • {user?.class || user?.rollNumber || "Student"}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg"
+                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-all"
                 title="Refresh"
               >
                 <RefreshCw
                   className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
                 />
               </button>
-              <button className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg">
+              <button className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-all">
                 <Settings className="w-5 h-5" />
               </button>
             </div>
@@ -360,7 +389,7 @@ export default function StudentChatInterface() {
               placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-20 border border-blue-300 rounded-lg placeholder-blue-200 text-white focus:outline-none focus:ring-2 focus:ring-white focus:bg-opacity-30"
+              className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-20 border border-blue-300 rounded-lg placeholder-blue-200 text-white focus:outline-none focus:ring-2 focus:ring-white focus:bg-opacity-30 text-sm sm:text-base"
             />
           </div>
         </div>
@@ -369,45 +398,48 @@ export default function StudentChatInterface() {
           {filteredChats.length === 0 ? (
             <div className="text-center p-8 text-gray-500">
               <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>No chats found</p>
+              <p className="text-sm sm:text-base">No chats found</p>
             </div>
           ) : (
             filteredChats.map((chat) => (
               <div
                 key={chat._id}
-                onClick={() => setSelectedChat(chat)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors ${
+                onClick={() => {
+                  setSelectedChat(chat);
+                  setSidebarOpen(false);
+                }}
+                className={`p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors ${
                   selectedChat?._id === chat._id
                     ? "bg-blue-100 border-r-4 border-r-blue-500"
                     : ""
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 text-sm sm:text-base">
                     {chat.chatType === "class" ? (
-                      <Users className="w-6 h-6" />
+                      <Users className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
                       chat.name?.charAt(0)?.toUpperCase() || "?"
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-900 truncate">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="font-medium text-gray-900 truncate text-sm sm:text-base">
                         {chat.name || "Unnamed Chat"}
                       </h3>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 flex-shrink-0">
                         {formatTime(chat.lastActivity)}
                       </span>
                     </div>
                     {chat.lastMessage && (
-                      <p className="text-sm text-gray-600 truncate mt-1">
+                      <p className="text-xs sm:text-sm text-gray-600 truncate mt-1">
                         <span className="font-medium">
                           {chat.lastMessage.sender?.name || "Unknown"}:
                         </span>
-                        {chat.lastMessage.content}
+                        {" " + chat.lastMessage.content}
                       </p>
                     )}
-                    <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${
                           chat.chatType === "class"
@@ -420,7 +452,7 @@ export default function StudentChatInterface() {
                           : "Study Group"}
                       </span>
                       {chat.unreadCount > 0 && (
-                        <span className="w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse flex-shrink-0">
                           {chat.unreadCount}
                         </span>
                       )}
@@ -433,61 +465,77 @@ export default function StudentChatInterface() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className="flex-1 flex flex-col mt-0 md:mt-0">
         {selectedChat ? (
           <>
-            <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
+            <div className="p-3 sm:p-4 border-b border-gray-200 bg-white shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0  justify-between w-full">
+                  
+                 <div className=" flex gap-3">
+                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 text-xs sm:text-sm">
                     {selectedChat.chatType === "class" ? (
-                      <Users className="w-5 h-5" />
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                     ) : (
                       selectedChat.name?.charAt(0)?.toUpperCase() || "?"
                     )}
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-gray-900 truncate text-sm sm:text-base">
                       {selectedChat.name || "Unnamed Chat"}
                     </h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500 truncate">
                       {selectedChat.participants?.length || 0} members
                       {selectedChat.chatType === "class" && " • Moderated"}
                     </p>
                   </div>
+                 </div>
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
                 </div>
                 {selectedChat.chatType === "class" && (
-                  <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Messages need approval
+                  <div className=" items-center gap-1 flex-shrink-0 hidden sm:flex">
+                    <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                      <span className="hidden sm:inline">Needs approval</span>
                     </span>
                   </div>
                 )}
               </div>
 
               {pinnedMessages.length > 0 && (
-                <div className="mt-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
+                <div className="mt-3 p-2 sm:p-3 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <Pin className="w-4 h-4 text-yellow-600" />
-                    <span className="text-sm font-medium text-yellow-800">
+                    <Pin className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 flex-shrink-0" />
+                    <span className="text-xs font-medium text-yellow-800">
                       Pinned by Teacher
                     </span>
                   </div>
-                  {pinnedMessages.slice(0, 2).map((msg) => (
+                  {pinnedMessages.slice(0, 1).map((msg) => (
                     <div
                       key={msg._id}
-                      className="text-sm text-gray-700 p-2 bg-white rounded border-l-4 border-yellow-400"
+                      className="text-xs text-gray-700 p-2 bg-white rounded border-l-4 border-yellow-400 line-clamp-2"
                     >
                       <strong>{msg.sender?.name || "Unknown"}:</strong>
-                      {msg.content}
+                      {" " + msg.content}
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50">
               {refreshing && (
                 <div className="text-center py-2">
                   <Loader className="w-4 h-4 animate-spin text-blue-500 mx-auto" />
@@ -495,9 +543,11 @@ export default function StudentChatInterface() {
               )}
 
               {messages.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No messages yet. Start the conversation!</p>
+                <div className="text-center text-gray-500 mt-8 sm:mt-12">
+                  <MessageCircle className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm sm:text-base">
+                    No messages yet. Start the conversation!
+                  </p>
                 </div>
               ) : (
                 messages.map((message) => {
@@ -505,24 +555,24 @@ export default function StudentChatInterface() {
                   return (
                     <div
                       key={message._id}
-                      className={`flex gap-3 ${
+                      className={`flex gap-2 sm:gap-3 ${
                         isOwnMessage ? "flex-row-reverse" : ""
                       } group`}
                     >
                       {!isOwnMessage && (
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                           {message.sender?.name?.charAt(0)?.toUpperCase() ||
                             "?"}
                         </div>
                       )}
                       <div
-                        className={`flex-1 max-w-lg ${
+                        className={`flex-1 max-w-xs sm:max-w-sm ${
                           isOwnMessage ? "flex flex-col items-end" : ""
                         }`}
                       >
                         {!isOwnMessage && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm text-gray-900">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-medium text-xs sm:text-sm text-gray-900">
                               {message.sender?.name || "Unknown User"}
                             </span>
                             {getRoleIcon(message.sender?.role)}
@@ -533,15 +583,15 @@ export default function StudentChatInterface() {
                         )}
 
                         <div
-                          className={`rounded-2xl p-3 ${
+                          className={`rounded-lg sm:rounded-2xl p-2 sm:p-3 text-sm sm:text-base ${
                             isOwnMessage
                               ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
                               : "bg-white border border-gray-200 shadow-sm"
                           }`}
                         >
                           {message.replyTo && (
-                            <div className="mb-2 p-2 bg-black bg-opacity-10 rounded-lg text-sm">
-                              <div className="text-xs opacity-70 mb-1">
+                            <div className="mb-2 p-2 bg-black bg-opacity-10 rounded-lg text-xs">
+                              <div className="opacity-70 mb-1">
                                 Replying to:
                               </div>
                               <div className="truncate">
@@ -560,24 +610,24 @@ export default function StudentChatInterface() {
 
                           {message.attachments &&
                             message.attachments.length > 0 && (
-                              <div className="mt-3 space-y-2">
+                              <div className="mt-2 sm:mt-3 space-y-2">
                                 {message.attachments.map(
                                   (attachment: any, index: number) => (
                                     <div
                                       key={index}
-                                      className={`p-3 rounded-lg border ${
+                                      className={`p-2 sm:p-3 rounded-lg border text-xs sm:text-sm ${
                                         isOwnMessage
                                           ? "bg-white bg-opacity-20"
                                           : "bg-gray-50"
                                       }`}
                                     >
-                                      <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-red-100 rounded-lg">
-                                          <FileText className="w-5 h-5 text-red-600" />
+                                      <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="p-1 sm:p-2 bg-red-100 rounded-lg flex-shrink-0">
+                                          <FileText className="w-4 h-4 text-red-600" />
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                           <p
-                                            className={`font-medium text-sm ${
+                                            className={`font-medium truncate ${
                                               isOwnMessage
                                                 ? "text-white"
                                                 : "text-gray-900"
@@ -598,7 +648,7 @@ export default function StudentChatInterface() {
                                           </p>
                                         </div>
                                         <button
-                                          className={`p-2 rounded-lg ${
+                                          className={`p-1 sm:p-2 rounded-lg flex-shrink-0 ${
                                             isOwnMessage
                                               ? "hover:bg-white hover:bg-opacity-20"
                                               : "hover:bg-gray-100"
@@ -615,7 +665,7 @@ export default function StudentChatInterface() {
                         </div>
 
                         <div
-                          className={`mt-1 flex items-center gap-2 text-xs ${
+                          className={`mt-1 flex items-center gap-1 sm:gap-2 text-xs flex-wrap ${
                             isOwnMessage ? "justify-end" : ""
                           }`}
                         >
@@ -626,12 +676,12 @@ export default function StudentChatInterface() {
                               </span>
                               {getMessageStatus(message.status)}
                               {message.moderationStatus === "pending" && (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
                                   Pending
                                 </span>
                               )}
                               {message.moderationStatus === "rejected" && (
-                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full">
+                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
                                   Rejected
                                 </span>
                               )}
@@ -680,7 +730,7 @@ export default function StudentChatInterface() {
                                       onClick={() =>
                                         handleReaction(message._id, emoji)
                                       }
-                                      className="p-1 hover:bg-gray-100 rounded text-lg"
+                                      className="p-1 hover:bg-gray-100 rounded text-base sm:text-lg"
                                     >
                                       {emoji}
                                     </button>
@@ -698,34 +748,34 @@ export default function StudentChatInterface() {
             </div>
 
             {selectedChat.chatType === "class" && (
-              <div className="px-4 py-2 border-t border-gray-100 bg-white">
-                <div className="flex gap-2">
-                  <button className="px-3 py-2 bg-green-100 text-green-700 text-sm rounded-lg hover:bg-green-200 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    View Assignments
+              <div className="px-3 sm:px-4 py-2 border-t border-gray-100 bg-white overflow-x-auto">
+                <div className="flex gap-2 flex-nowrap">
+                  <button className="px-2 sm:px-3 py-2 bg-green-100 text-green-700 text-xs sm:text-sm rounded-lg hover:bg-green-200 flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
+                    <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Assignments</span>
                   </button>
-                  <button className="px-3 py-2 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Download Materials
+                  <button className="px-2 sm:px-3 py-2 bg-blue-100 text-blue-700 text-xs sm:text-sm rounded-lg hover:bg-blue-200 flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
+                    <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Materials</span>
                   </button>
-                  <button className="px-3 py-2 bg-purple-100 text-purple-700 text-sm rounded-lg hover:bg-purple-200 flex items-center gap-2">
-                    <Eye className="w-4 h-4" />
-                    View Grades
+                  <button className="px-2 sm:px-3 py-2 bg-purple-100 text-purple-700 text-xs sm:text-sm rounded-lg hover:bg-purple-200 flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
+                    <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Grades</span>
                   </button>
                 </div>
               </div>
             )}
 
-            <div className="p-4 border-t border-gray-200 bg-white">
+            <div className="p-3 sm:p-4 border-t border-gray-200 bg-white">
               <div className="flex items-end gap-2">
                 <button
-                  className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                  className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg flex-shrink-0"
                   disabled={
                     selectedChat.chatType === "class" &&
                     !selectedChat.settings?.allowFileSharing
                   }
                 >
-                  <Image className="w-5 h-5" width={16} height={16} />
+                  <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <div className="flex-1 relative">
                   <textarea
@@ -734,23 +784,23 @@ export default function StudentChatInterface() {
                     onKeyPress={handleKeyPress}
                     placeholder={
                       selectedChat.chatType === "class"
-                        ? "Type a message... (will be reviewed by teacher)"
+                        ? "Type a message... (will be reviewed)"
                         : "Type a message..."
                     }
-                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full p-2 sm:p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm sm:text-base"
                     rows={1}
                     disabled={sending}
                   />
                 </div>
-                <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg">
-                  <Smile className="w-5 h-5" />
+                <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg flex-shrink-0">
+                  <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim() || sending}
-                  className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-500 disabled:hover:to-purple-600"
+                  className="p-2 sm:p-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-500 disabled:hover:to-purple-600 flex-shrink-0"
                 >
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
 
@@ -766,15 +816,15 @@ export default function StudentChatInterface() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center p-4">
             <div className="text-center">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-12 h-12 text-white" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">
                 Welcome to Chat!
               </h3>
-              <p className="text-gray-500 max-w-sm">
+              <p className="text-gray-500 max-w-sm text-xs sm:text-sm">
                 Select a chat from the sidebar to start chatting with your
                 teachers and classmates
               </p>

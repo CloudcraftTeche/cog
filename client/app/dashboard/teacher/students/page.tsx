@@ -175,7 +175,7 @@ export default function StudentsPage() {
                         <div className="flex items-center gap-4">
                           <div className="relative">
                             <Avatar className="h-16 w-16 ring-4 ring-white shadow-lg">
-                              <AvatarImage src={student.profilePictureUrl || "/placeholder.svg"} alt={student.name} />
+                              <AvatarImage src={student.profilePictureUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"} alt={student.name} />
                               <AvatarFallback className={`bg-gradient-to-r ${gradient} text-white font-bold text-xl`}>
                                 {student.name.charAt(0)}
                               </AvatarFallback>

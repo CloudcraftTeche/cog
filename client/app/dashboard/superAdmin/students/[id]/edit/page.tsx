@@ -301,7 +301,7 @@ export default function EditStudentPage() {
                   <Avatar className="h-28 w-28 ring-4 ring-white/50 shadow-2xl">
                     {previewUrl || currentProfileUrl ? (
                       <Image
-                        src={previewUrl || currentProfileUrl || "/placeholder.svg"}
+                        src={previewUrl || currentProfileUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"}
                         height={112}
                         width={112}
                         alt="Profile preview"

@@ -296,8 +296,8 @@ export default function ChapterScoresPage() {
                               <AvatarImage
                                 src={
                                   student.profilePictureUrl ||
-                                  "/placeholder.svg?height=64&width=64" ||
-                                  "/placeholder.svg"
+                                  "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg?height=64&width=64" ||
+                                  "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"
                                 }
                               />
                               <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xl font-bold">
@@ -404,8 +404,8 @@ export default function ChapterScoresPage() {
                                 <AvatarImage
                                   src={
                                     student.profilePictureUrl ||
-                                    "/placeholder.svg?height=64&width=64&query=default-avatar" ||
-                                    "/placeholder.svg"
+                                    "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg?height=64&width=64&query=default-avatar" ||
+                                    "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"
                                   }
                                   alt={`Avatar of ${student.name}`}
                                 />

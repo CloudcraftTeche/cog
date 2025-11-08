@@ -154,9 +154,9 @@ export default function StudentDetailsPage() {
               <AvatarImage
                 src={
                   student.profilePictureUrl ||
-                  "/placeholder.svg?height=80&width=80" ||
-                  "/placeholder.svg" ||
-                  "/placeholder.svg"
+                  "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg?height=80&width=80" ||
+                  "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg" ||
+                  "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"
                 }
               />
               <AvatarFallback className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-3xl font-bold">

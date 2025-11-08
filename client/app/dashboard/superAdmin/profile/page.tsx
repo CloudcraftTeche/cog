@@ -74,7 +74,7 @@ export default function ProfilePage() {
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={formData.name} />
+                    <AvatarImage src={user?.avatar || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"} alt={formData.name} />
                     <AvatarFallback className="bg-gradient-to-r from-red-400 to-red-600 text-white text-xl font-semibold">
                       {formData.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>

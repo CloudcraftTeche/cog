@@ -151,7 +151,7 @@ export default function StudentDetailsPage() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={student.profilePictureUrl || "/placeholder.svg?height=80&width=80"} />
+              <AvatarImage src={student.profilePictureUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg?height=80&width=80"} />
               <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-2xl">
                 {student.name.charAt(0).toUpperCase()}
               </AvatarFallback>

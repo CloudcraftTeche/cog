@@ -303,7 +303,7 @@ export default function EditStudentPage() {
                     {previewUrl || currentProfileUrl ? (
                       <Image
                         src={
-                          previewUrl || currentProfileUrl || "/placeholder.svg"
+                          previewUrl || currentProfileUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"
                         }
                         height={96}
                         width={96}

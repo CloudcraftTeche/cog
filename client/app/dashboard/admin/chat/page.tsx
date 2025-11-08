@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Users,
@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Sparkles,
   Bell,
+  Menu,
 } from "lucide-react";
 import api from "@/lib/api";
 import { socketService } from "@/hooks/useSocket";
@@ -74,6 +75,8 @@ export default function AdminChatDashboard() {
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(
     new Map()
   );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moderationPanelOpen, setModerationPanelOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -413,12 +416,14 @@ export default function AdminChatDashboard() {
     return (
       <div className="flex h-screen bg-slate-900">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
+          <div className="text-center px-4">
             <div className="relative">
               <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
               <Sparkles className="w-6 h-6 text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
             </div>
-            <p className="text-white/80 text-lg">Loading Admin Dashboard...</p>
+            <p className="text-white/80 text-base sm:text-lg">
+              Loading Admin Dashboard...
+            </p>
           </div>
         </div>
       </div>
@@ -426,117 +431,160 @@ export default function AdminChatDashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-900">
+    <div className="flex h-screen bg-slate-900 flex-col lg:flex-row">
       {error && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-slide-down">
-          <AlertTriangle className="w-5 h-5" />
-          <span>{error}</span>
+        <div className="fixed top-4 right-4 bg-red-500 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-slide-down text-xs sm:text-sm md:text-base max-w-xs sm:max-w-sm">
+          <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <span className="line-clamp-2">{error}</span>
           <button
             onClick={() => setError(null)}
-            className="ml-2 hover:bg-red-600 p-1 rounded"
+            className="ml-2 hover:bg-red-600 p-1 rounded flex-shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
         </div>
       )}
 
-      <div className="w-1/3 bg-white/95 backdrop-blur-xl border-r border-white/20 flex flex-col shadow-2xl">
-        <div className="p-6 bg-indigo-600 text-white">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Crown className="w-6 h-6 text-amber-300" />
-                Admin Control
+      {!selectedChat && (
+        <div className="lg:hidden  bg-indigo-600 text-white px-3 sm:px-4 py-2.5 sm:py-3 z-20 border-b border-indigo-500">
+          <div className="flex items-center justify-between h-10">
+            <h1 className="text-base sm:text-lg font-bold flex items-center gap-2 min-w-0">
+              <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 flex-shrink-0" />
+              <span className="truncate">Admin</span>
+            </h1>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+            >
+              {sidebarOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-full xs:w-72 sm:w-80 lg:w-96 bg-white/95 backdrop-blur-xl border-r border-white/20 flex flex-col shadow-2xl transition-transform duration-300 pt-0 lg:pt-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <div className="p-3 xs:p-4 sm:p-4 lg:p-3 bg-indigo-600 text-white flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 mb-4 lg:mb-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base xs:text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2 truncate">
+                <Crown className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-amber-300 flex-shrink-0" />
+                <span className="truncate hidden xs:inline">Admin Control</span>
+                <span className="xs:hidden truncate">Admin</span>
               </h1>
-              <p className="text-white/80 text-sm mt-1">
-                {user?.name} • System Administrator
+              <p className="text-white/80 text-xs xs:text-sm mt-1 truncate">
+                {user?.name} • System Admin
               </p>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowModerationPanel(!showModerationPanel)}
-                className="p-3 text-white hover:bg-white/20 rounded-xl transition-all duration-200 relative group"
-                title="Moderation Panel"
-              >
-                <Flag className="w-5 h-5" />
-                {pendingMessages.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                    {pendingMessages.length}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="p-3 text-white hover:bg-white/20 rounded-xl transition-all duration-200 group"
-                title="Create Chat"
-              >
-                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
-              </button>
-              <button
-                onClick={() => initializeData()}
-                className="p-3 text-white hover:bg-white/20 rounded-xl transition-all duration-200"
-                title="Refresh"
-              >
-                <RefreshCw className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 text-white hover:bg-white/20 rounded-lg transition-all flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="relative">
-            <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60" />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setShowModerationPanel(!showModerationPanel);
+                setModerationPanelOpen(!moderationPanelOpen);
+              }}
+              className="p-2 xs:p-2.5 sm:p-3 text-white hover:bg-white/20 rounded-lg transition-all duration-200 relative group flex-shrink-0"
+              title="Moderation Panel"
+            >
+              <Flag className="w-4 h-4 xs:w-5 xs:h-5" />
+              {pendingMessages.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse font-semibold">
+                  {pendingMessages.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="p-2 xs:p-2.5 sm:p-3 text-white hover:bg-white/20 rounded-lg transition-all duration-200 group flex-shrink-0"
+              title="Create Chat"
+            >
+              <Plus className="w-4 h-4 xs:w-5 xs:h-5 group-hover:rotate-90 transition-transform duration-200" />
+            </button>
+            <button
+              onClick={() => initializeData()}
+              className="p-2 xs:p-2.5 sm:p-3 text-white hover:bg-white/20 rounded-lg transition-all duration-200 flex-shrink-0"
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4 xs:w-5 xs:h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-2 xs:px-3 sm:px-4 py-2 xs:py-3 sm:py-4 ">
+          <div className="relative ">
+            <Search className="w-4 h-4 xs:w-5 xs:h-5 absolute left-2 xs:left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-blue-700/60 " />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:bg-white/30 transition-all duration-200"
+              className="w-full pl-8 xs:pl-10 sm:pl-12 pr-2 xs:pr-3 sm:pr-4 py-1.5 xs:py-2 sm:py-3 bg-yellow-300/80 border-bg-yellow-300/30 rounded-lg xs:rounded-xl  placeholder-blue-800/60 focus:outline-none focus:ring-2 transition-all duration-200 text-xs xs:text-sm text-blue-700/60"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto p-1.5 xs:p-2 sm:p-4 space-y-1.5 xs:space-y-2 sm:space-y-4">
           {filteredChats.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No conversations yet</p>
-              <p className="text-gray-400 text-sm">
-                Create your first chat to get started
+            <div className="text-center py-8 xs:py-10 sm:py-12 px-2">
+              <MessageCircle className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-2 xs:mb-3 sm:mb-4" />
+              <p className="text-gray-500 text-sm xs:text-base">
+                No conversations
+              </p>
+              <p className="text-gray-400 text-xs xs:text-sm">
+                Create your first chat
               </p>
             </div>
           ) : (
             filteredChats.map((chat) => (
               <div
                 key={chat._id}
-                onClick={() => setSelectedChat(chat)}
-                className={`p-4 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
+                onClick={() => {
+                  setSelectedChat(chat);
+                  setSidebarOpen(false);
+                }}
+                className={`p-2 xs:p-3 sm:p-4 rounded-lg xs:rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg text-xs xs:text-sm ${
                   selectedChat?._id === chat._id
-                    ? "bg-indigo-500 text-white shadow-xl transform scale-[1.02]"
-                    : "bg-white/80 hover:bg-white/90 backdrop-blur-sm"
+                    ? "bg-indigo-500 text-white shadow-xl"
+                    : "bg-white/80 hover:bg-white/90"
                 }`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-2 xs:gap-3 sm:gap-4">
                   <div
-                    className={`w-14 h-14 ${
+                    className={`w-8 h-8 xs:w-10 xs:h-10 sm:w-14 sm:h-14 ${
                       chat.chatType === "class"
                         ? "bg-emerald-500"
                         : chat.chatType === "private"
                         ? "bg-purple-500"
                         : "bg-orange-500"
-                    } rounded-2xl flex items-center justify-center text-white font-bold shadow-lg`}
+                    } rounded-lg xs:rounded-xl flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0`}
                   >
                     {chat.chatType === "class" ||
                     chat.chatType === "broadcast" ? (
-                      <Users className="w-7 h-7" />
+                      <Users className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6" />
                     ) : (
-                      <span className="text-lg">
+                      <span className="text-xs xs:text-sm">
                         {chat.name.charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-1 gap-2">
                       <h3
-                        className={`font-semibold truncate ${
+                        className={`font-semibold truncate text-xs xs:text-sm ${
                           selectedChat?._id === chat._id
                             ? "text-white"
                             : "text-gray-900"
@@ -545,7 +593,7 @@ export default function AdminChatDashboard() {
                         {chat.name}
                       </h3>
                       <span
-                        className={`text-xs ${
+                        className={`text-xs flex-shrink-0 ${
                           selectedChat?._id === chat._id
                             ? "text-white/80"
                             : "text-gray-500"
@@ -556,7 +604,7 @@ export default function AdminChatDashboard() {
                     </div>
                     {chat.lastMessage && (
                       <p
-                        className={`text-sm truncate mb-2 ${
+                        className={`text-xs truncate mb-1.5 ${
                           selectedChat?._id === chat._id
                             ? "text-white/90"
                             : "text-gray-600"
@@ -568,9 +616,9 @@ export default function AdminChatDashboard() {
                         {" " + chat.lastMessage.content}
                       </p>
                     )}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`text-xs px-3 py-1 rounded-full border font-medium ${
+                        className={`text-xs px-2 py-0.5 xs:px-2.5 xs:py-1 sm:px-3 sm:py-1 rounded-full border font-medium ${
                           selectedChat?._id === chat._id
                             ? "bg-white/20 text-white border-white/30"
                             : getChatTypeBadge(chat.chatType)
@@ -580,7 +628,7 @@ export default function AdminChatDashboard() {
                           chat.chatType.slice(1)}
                       </span>
                       {chat.unreadCount > 0 && (
-                        <span className="w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse shadow-lg">
+                        <span className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse flex-shrink-0">
                           {chat.unreadCount}
                         </span>
                       )}
@@ -596,67 +644,77 @@ export default function AdminChatDashboard() {
       <div className="flex-1 flex flex-col bg-white/5 backdrop-blur-xl">
         {selectedChat ? (
           <>
-            <div className="p-6 bg-white/90 backdrop-blur-xl border-b border-white/20 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="p-2 sm:p-2 bg-white/90 backdrop-blur-xl border-b border-white/20 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-2 min-w-0">
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
                   <div
-                    className={`w-12 h-12 ${
+                    className={`w-10 h-10 sm:w-12 sm:h-12 ${
                       selectedChat.chatType === "class"
                         ? "bg-emerald-500"
                         : selectedChat.chatType === "private"
                         ? "bg-purple-500"
                         : "bg-orange-500"
-                    } rounded-2xl flex items-center justify-center text-white font-bold shadow-lg`}
+                    } rounded-2xl flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0`}
                   >
                     {selectedChat.chatType === "class" ||
                     selectedChat.chatType === "broadcast" ? (
-                      <Users className="w-6 h-6" />
+                      <Users className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
                       <span>{selectedChat.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2 truncate">
                       {selectedChat.name}
                       {selectedChat.chatType === "broadcast" && (
-                        <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
+                        <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium flex-shrink-0">
                           BROADCAST
                         </span>
                       )}
                     </h2>
-                    <p className="text-gray-600 flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      {selectedChat.participants.length} participants
+                    <p className="text-gray-600 flex items-center gap-2 text-xs sm:text-sm truncate">
+                      <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">
+                        {selectedChat.participants.length} participants
+                      </span>
                       {socketService.isConnected() && (
-                        <span className="text-green-600 text-xs">
+                        <span className="text-green-600 text-xs flex-shrink-0">
                           • Connected
                         </span>
                       )}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {pendingMessages.length > 0 && (
-                    <span className="px-3 py-1 bg-amber-100 text-amber-800 text-sm rounded-full font-medium flex items-center gap-1">
-                      <Bell className="w-4 h-4" />
-                      {pendingMessages.length} pending
+                    <span className="px-2 sm:px-3 py-1 bg-amber-100 text-amber-800 text-xs sm:text-sm rounded-full font-medium  items-center gap-1 hidden sm:flex">
+                      <Bell className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">
+                        {pendingMessages.length} pending
+                      </span>
                     </span>
                   )}
-                  <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                  <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0">
                     <MoreVertical className="w-5 h-5" />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
               {messages.length === 0 ? (
-                <div className="text-center py-16">
-                  <MessageCircle className="w-20 h-20 text-white/40 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                <div className="text-center py-12 sm:py-16">
+                  <MessageCircle className="w-16 h-16 sm:w-20 sm:h-20 text-white/40 mx-auto mb-4" />
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
                     No messages yet
                   </h3>
-                  <p className="text-white/70">
+                  <p className="text-white/70 text-sm sm:text-base">
                     Start the conversation by sending the first message
                   </p>
                 </div>
@@ -666,32 +724,32 @@ export default function AdminChatDashboard() {
                   return (
                     <div
                       key={message._id}
-                      className={`flex gap-4 ${
+                      className={`flex gap-2 sm:gap-2 ${
                         isOwnMessage ? "flex-row-reverse" : ""
                       } group`}
                     >
                       <div
-                        className={`w-10 h-10 ${
+                        className={`w-5 h-5 sm:w-6 sm:h-6 ${
                           isOwnMessage ? "bg-purple-500" : "bg-gray-500"
-                        } rounded-full flex items-center justify-center text-white font-semibold shadow-lg flex-shrink-0`}
+                        } rounded-full flex items-center justify-center text-white font-semibold shadow-lg flex-shrink-0 text-xs sm:text-sm`}
                       >
                         {message.sender.name.charAt(0).toUpperCase()}
                       </div>
                       <div
-                        className={`flex-1 max-w-lg ${
+                        className={`flex-1 max-w-xs sm:max-w-lg ${
                           isOwnMessage ? "flex flex-col items-end" : ""
                         }`}
                       >
                         <div
-                          className={`flex items-center gap-3 mb-2 ${
-                            isOwnMessage ? "flex-row-reverse" : ""
+                          className={`flex items-center gap-2 sm:gap-3 mb-2 flex-wrap ${
+                            isOwnMessage ? "flex-row-reverse justify-end" : ""
                           }`}
                         >
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-white text-sm sm:text-sm">
                             {message.sender.name}
                           </span>
                           {getRoleIcon(message.sender.role)}
-                          <span className="text-white/60 text-sm">
+                          <span className="text-white/60 text-xs">
                             {formatTime(message.createdAt)}
                           </span>
                           {getMessageStatus(message.status)}
@@ -712,24 +770,26 @@ export default function AdminChatDashboard() {
                           )}
                         </div>
                         <div
-                          className={`rounded-2xl p-4 border shadow-lg ${
+                          className={`rounded-2xl p-3 sm:p-4 border shadow-lg text-sm sm:text-base ${
                             isOwnMessage
                               ? "bg-purple-600 text-white border-purple-400/30"
                               : "bg-white/10 backdrop-blur-sm border-white/20 text-white"
                           }`}
                         >
-                          <p className="leading-relaxed">{message.content}</p>
+                          <p className="leading-relaxed break-words">
+                            {message.content}
+                          </p>
                         </div>
 
                         {message.moderationStatus === "pending" &&
                           showModerationPanel &&
                           !isOwnMessage && (
-                            <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
                               <button
                                 onClick={() =>
                                   handleModerateMessage(message._id, "approved")
                                 }
-                                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25"
+                                className="px-3 sm:px-4 py-1 sm:py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25"
                               >
                                 Approve
                               </button>
@@ -737,7 +797,7 @@ export default function AdminChatDashboard() {
                                 onClick={() =>
                                   handleModerateMessage(message._id, "rejected")
                                 }
-                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25"
+                                className="px-3 sm:px-4 py-1 sm:py-2 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-red-500/25"
                               >
                                 Reject
                               </button>
@@ -745,7 +805,7 @@ export default function AdminChatDashboard() {
                                 onClick={() =>
                                   handleModerateMessage(message._id, "flagged")
                                 }
-                                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-amber-500/25"
+                                className="px-3 sm:px-4 py-1 sm:py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-amber-500/25"
                               >
                                 Flag
                               </button>
@@ -757,12 +817,12 @@ export default function AdminChatDashboard() {
                 })
               )}
               {typingUsersArray.length > 0 && (
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
-                    <Loader className="w-5 h-5 animate-spin" />
+                <div className="flex gap-2 sm:gap-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold shadow-lg flex-shrink-0">
+                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3">
-                    <p className="text-white/80 text-sm">
+                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-3 sm:px-4 py-2 sm:py-3">
+                    <p className="text-white/80 text-xs sm:text-sm">
                       {typingUsersArray.join(", ")}{" "}
                       {typingUsersArray.length === 1 ? "is" : "are"} typing...
                     </p>
@@ -772,13 +832,13 @@ export default function AdminChatDashboard() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-6 bg-white/90 backdrop-blur-xl border-t border-white/20">
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
+            <div className="p-3 sm:p-6 bg-white/90 backdrop-blur-xl border-t border-white/20">
+              <div className="flex items-end gap-2 sm:gap-4">
+                <div className="flex-1 min-w-0">
                   <textarea
                     placeholder={
                       selectedChat.chatType === "broadcast"
-                        ? "Type your broadcast message..."
+                        ? "Type broadcast message..."
                         : "Type your message..."
                     }
                     value={
@@ -794,7 +854,7 @@ export default function AdminChatDashboard() {
                         handleTyping();
                       }
                     }}
-                    className="w-full p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all duration-200 bg-white/80 backdrop-blur-sm shadow-inner"
+                    className="w-full p-2 sm:p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all duration-200 bg-white/80 backdrop-blur-sm shadow-inner text-sm sm:text-base"
                     rows={1}
                     disabled={sending}
                   />
@@ -807,27 +867,27 @@ export default function AdminChatDashboard() {
                       ? !broadcastMessage.trim()
                       : !newMessage.trim())
                   }
-                  className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25 hover:scale-105"
+                  className="p-2 sm:p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25 hover:scale-105 flex-shrink-0"
                 >
                   {sending ? (
-                    <Loader className="w-6 h-6 animate-spin" />
+                    <Loader className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                   ) : (
-                    <Send className="w-6 h-6" />
+                    <Send className="w-5 h-5 sm:w-6 sm:h-6" />
                   )}
                 </button>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center p-4">
             <div className="text-center">
-              <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
-                <MessageCircle className="w-16 h-16 text-white/60" />
+              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+                <MessageCircle className="w-12 h-12 sm:w-16 sm:h-16 text-white/60" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">
                 Welcome to Admin Control
               </h3>
-              <p className="text-white/70 text-lg max-w-md">
+              <p className="text-white/70 text-sm sm:text-lg max-w-md">
                 Select a conversation from the sidebar to start monitoring and
                 managing communications
               </p>
@@ -838,36 +898,36 @@ export default function AdminChatDashboard() {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-purple-500" />
-                  Create New Chat
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 truncate">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 flex-shrink-0" />
+                  <span className="truncate">Create New Chat</span>
                 </h2>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     resetCreateModal();
                   }}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Chat Type
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   {["class", "private", "broadcast"].map((type) => (
                     <button
                       key={type}
                       onClick={() => setChatType(type as any)}
-                      className={`p-3 rounded-xl border-2 transition-all duration-200 ${
+                      className={`p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 text-xs sm:text-sm ${
                         chatType === type
                           ? `border-purple-500 bg-purple-50 text-purple-700`
                           : "border-gray-200 hover:border-gray-300 text-gray-600"
@@ -875,13 +935,13 @@ export default function AdminChatDashboard() {
                     >
                       <div className="text-center">
                         {type === "class" && (
-                          <Users className="w-5 h-5 mx-auto mb-1" />
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1" />
                         )}
                         {type === "private" && (
-                          <MessageCircle className="w-5 h-5 mx-auto mb-1" />
+                          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1" />
                         )}
                         {type === "broadcast" && (
-                          <Bell className="w-5 h-5 mx-auto mb-1" />
+                          <Bell className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1" />
                         )}
                         <div className="text-xs font-medium capitalize">
                           {type}
@@ -900,7 +960,7 @@ export default function AdminChatDashboard() {
                   <select
                     value={selectedGrade}
                     onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                    className="w-full p-2 sm:p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-sm"
                   >
                     <option value="">Choose a grade...</option>
                     {grades.map((g) => (
@@ -918,16 +978,16 @@ export default function AdminChatDashboard() {
                     Find User
                   </label>
                   <div className="relative">
-                    <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                    <Search className="w-4 h-4 sm:w-5 sm:h-5 absolute left-3 top-3 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search by name or email..."
+                      placeholder="Search by name..."
                       value={userSearch}
                       onChange={(e) => {
                         setUserSearch(e.target.value);
                         searchUsers(e.target.value);
                       }}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                     />
                   </div>
                   {userResults.length > 0 && (
@@ -936,20 +996,20 @@ export default function AdminChatDashboard() {
                         <div
                           key={u._id}
                           onClick={() => setSelectedUser(u)}
-                          className={`p-3 cursor-pointer hover:bg-white transition-colors flex items-center gap-3 ${
+                          className={`p-2 sm:p-3 cursor-pointer hover:bg-white transition-colors flex items-center gap-2 sm:gap-3 text-sm ${
                             selectedUser?._id === u._id
                               ? "bg-purple-50 border-l-4 border-purple-500"
                               : ""
                           }`}
                         >
-                          <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                             {u.name.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">
                               {u.name}
                             </p>
-                            <p className="text-sm text-gray-500 capitalize">
+                            <p className="text-xs text-gray-500 capitalize">
                               {u.role}
                             </p>
                           </div>
@@ -958,8 +1018,8 @@ export default function AdminChatDashboard() {
                     </div>
                   )}
                   {selectedUser && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                      <p className="text-sm text-green-700 font-medium">
+                    <div className="mt-3 p-2 sm:p-3 bg-green-50 border border-green-200 rounded-xl">
+                      <p className="text-xs sm:text-sm text-green-700 font-medium">
                         Selected: {selectedUser.name} ({selectedUser.role})
                       </p>
                     </div>
@@ -973,25 +1033,25 @@ export default function AdminChatDashboard() {
                     Broadcast Message
                   </label>
                   <textarea
-                    placeholder="Type your announcement message..."
+                    placeholder="Type your announcement..."
                     value={broadcastMessage}
                     onChange={(e) => setBroadcastMessage(e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none h-24"
+                    className="w-full p-2 sm:p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none h-20 sm:h-24 text-sm"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    This message will be sent to all users in the system
+                    This message will be sent to all users
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3 p-6 bg-gray-50 rounded-b-3xl">
+            <div className="flex gap-2 sm:gap-3 p-4 sm:p-6 bg-gray-50 rounded-b-3xl flex-col-reverse sm:flex-row">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetCreateModal();
                 }}
-                className="flex-1 px-6 py-3 text-gray-700 border-2 border-gray-200 rounded-xl hover:bg-gray-100 font-medium transition-all duration-200"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 text-gray-700 border-2 border-gray-200 rounded-xl hover:bg-gray-100 font-medium transition-all duration-200 text-sm"
               >
                 Cancel
               </button>
@@ -1002,7 +1062,7 @@ export default function AdminChatDashboard() {
                   (chatType === "private" && !selectedUser) ||
                   (chatType === "broadcast" && !broadcastMessage.trim())
                 }
-                className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25 text-sm"
               >
                 Create Chat
               </button>
@@ -1012,38 +1072,40 @@ export default function AdminChatDashboard() {
       )}
 
       {showModerationPanel && (
-        <div className="fixed inset-y-0 right-0 w-96 bg-white/95 backdrop-blur-xl shadow-2xl border-l border-white/20 z-40 transform transition-transform duration-300">
-          <div className="p-6 bg-amber-500 text-white">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Flag className="w-5 h-5" />
+        <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white/95 backdrop-blur-xl shadow-2xl border-l border-white/20 z-40 transform transition-transform duration-300 flex flex-col">
+          <div className="p-4 sm:p-6 bg-amber-500 text-white flex-shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 truncate">
+                <Flag className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                 Moderation Center
               </h3>
               <button
                 onClick={() => setShowModerationPanel(false)}
-                className="p-2 text-white hover:bg-white/20 rounded-xl transition-colors"
+                className="p-2 text-white hover:bg-white/20 rounded-xl transition-colors flex-shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
             <div className="mb-4">
-              <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-sm sm:text-base">
                 <Bell className="w-4 h-4 text-amber-500" />
                 Pending Messages ({pendingMessages.length})
               </h4>
             </div>
 
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div className="space-y-3 sm:space-y-4">
               {pendingMessages.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check className="w-8 h-8 text-green-600" />
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                   </div>
-                  <p className="text-gray-500">All messages approved!</p>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-500 text-sm">
+                    All messages approved!
+                  </p>
+                  <p className="text-gray-400 text-xs">
                     No pending moderation tasks
                   </p>
                 </div>
@@ -1051,14 +1113,14 @@ export default function AdminChatDashboard() {
                 pendingMessages.map((message) => (
                   <div
                     key={message._id}
-                    className="p-4 border-2 border-amber-200 rounded-2xl bg-amber-50 shadow-sm"
+                    className="p-3 sm:p-4 border-2 border-amber-200 rounded-2xl bg-amber-50 shadow-sm"
                   >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                         {message.sender.name.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-xs sm:text-sm truncate">
                           {message.sender.name}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -1066,15 +1128,15 @@ export default function AdminChatDashboard() {
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-700 mb-4 bg-white p-3 rounded-lg">
+                    <p className="text-xs sm:text-sm text-gray-700 mb-3 sm:mb-4 bg-white p-2 sm:p-3 rounded-lg break-words">
                       {message.content}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-col sm:flex-row">
                       <button
                         onClick={() =>
                           handleModerateMessage(message._id, "approved")
                         }
-                        className="flex-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg font-medium transition-colors"
+                        className="flex-1 px-2 sm:px-3 py-1 sm:py-2 bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm rounded-lg font-medium transition-colors"
                       >
                         Approve
                       </button>
@@ -1082,7 +1144,7 @@ export default function AdminChatDashboard() {
                         onClick={() =>
                           handleModerateMessage(message._id, "rejected")
                         }
-                        className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium transition-colors"
+                        className="flex-1 px-2 sm:px-3 py-1 sm:py-2 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm rounded-lg font-medium transition-colors"
                       >
                         Reject
                       </button>
@@ -1090,7 +1152,7 @@ export default function AdminChatDashboard() {
                         onClick={() =>
                           handleModerateMessage(message._id, "flagged")
                         }
-                        className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg font-medium transition-colors"
+                        className="flex-1 px-2 sm:px-3 py-1 sm:py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm rounded-lg font-medium transition-colors"
                       >
                         Flag
                       </button>
@@ -1101,6 +1163,13 @@ export default function AdminChatDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
     </div>
   );

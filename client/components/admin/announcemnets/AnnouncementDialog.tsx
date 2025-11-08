@@ -207,7 +207,7 @@ export function AnnouncementDialog({ open, onOpenChange, onSubmit, announcement 
                   </Card>
                 ) : (
                   <div className="relative rounded-2xl overflow-hidden shadow-lg">
-                    <Image src={mediaPreview || "/placeholder.svg"} className="w-full h-64 object-cover" alt="Preview" width={100} height={100} />
+                    <Image src={mediaPreview || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"} className="w-full h-64 object-cover" alt="Preview" width={100} height={100} />
                     <Button
                       type="button"
                       variant="destructive"

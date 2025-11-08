@@ -189,7 +189,7 @@ export default function AddTeacherPage() {
                     <Avatar className="h-28 w-28 ring-4 ring-white/50 shadow-2xl">
                       {previewUrl ? (
                         <Image
-                          src={previewUrl || "/placeholder.svg"}
+                          src={previewUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"}
                           alt="Profile preview"
                           className="object-cover"
                           height={112}

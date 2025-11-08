@@ -100,7 +100,7 @@ export function AnnouncementCard({ announcement, onDelete, onTogglePin, onEdit }
         {announcement.type === "image" && announcement.mediaUrl && (
           <div className="relative overflow-hidden rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow duration-300">
             <Image
-              src={announcement.mediaUrl || "/placeholder.svg"}
+              src={announcement.mediaUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"}
               alt="Announcement"
               className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"
               width={100}

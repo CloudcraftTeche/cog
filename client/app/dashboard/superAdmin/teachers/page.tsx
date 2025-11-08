@@ -156,7 +156,7 @@ export default function TeachersPage() {
                     <div className="flex items-center space-x-4">
                       <div className="relative">
                         <Avatar className={`h-16 w-16 ring-4 ring-gradient-to-r ${cardColor} shadow-xl`}>
-                          <AvatarImage src={teacher.profilePictureUrl || "/placeholder.svg"} alt={teacher.name} />
+                          <AvatarImage src={teacher.profilePictureUrl || "https://png.pngtree.com/png-vector/20210604/ourmid/pngtree-gray-network-placeholder-png-image_3416659.jpg"} alt={teacher.name} />
                           <AvatarFallback className={`bg-gradient-to-r ${cardColor} text-white font-bold text-xl`}>
                             {teacher.name.charAt(0)}
                           </AvatarFallback>
