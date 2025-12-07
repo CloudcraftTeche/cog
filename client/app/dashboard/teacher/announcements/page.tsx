@@ -17,7 +17,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import api from "@/lib/api";
-export interface Announcement {
+ interface Announcement {
   _id: string;
   title: string;
   content: string;
@@ -31,7 +31,7 @@ export interface Announcement {
   createdAt: string;
   updatedAt: string;
 }
-export const formatDate = (dateString: string) => {
+ const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
