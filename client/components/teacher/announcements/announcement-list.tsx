@@ -4,8 +4,22 @@ import type React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
-import { Announcement } from "@/app/dashboard/teacher/announcements/page";
+
 import Image from "next/image";
+ interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  type: "text" | "image" | "video";
+  mediaUrl?: string;
+  accentColor: string;
+  isPinned: boolean;
+  targetAudience: "all" | "specific";
+  targetGrades: Array<{ _id: string; grade: string }>;
+  createdBy?: { _id: string; name: string };
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface AnnouncementListProps {
   announcements: Announcement[];

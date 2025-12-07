@@ -1,4 +1,36 @@
-import { Announcement, formatDate } from "@/app/dashboard/teacher/announcements/page";
+
+"use client"
+ interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  type: "text" | "image" | "video";
+  mediaUrl?: string;
+  accentColor: string;
+  isPinned: boolean;
+  targetAudience: "all" | "specific";
+  targetGrades: Array<{ _id: string; grade: string }>;
+  createdBy?: { _id: string; name: string };
+  createdAt: string;
+  updatedAt: string;
+}
+ const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+  });
+};
 import { Pin, Calendar, Users, Image, Video, FileText} from 'lucide-react';
  const AnnouncementCard = ({ announcement, onClick }: { 
   announcement: Announcement; 
