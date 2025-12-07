@@ -1,10 +1,10 @@
+"use client"
 import React from 'react';
 import { LoadingSpinner } from './student/dashboard/LoadingSpinner';
 import { ErrorAlert } from './student/dashboard/ErrorAlert';
 import { DashboardHeader } from './student/dashboard/DashboardHeader';
 import { OverviewSection } from './student/dashboard/OverviewSection';
 import { ProgressSection } from './student/dashboard/ProgressSection';
-import { ChaptersSection } from './student/dashboard/ChaptersSection';
 import { AssignmentsSection } from './student/dashboard/AssignmentsSection';
 import { PerformanceSection } from './student/dashboard/PerformanceSection';
 import { AttendanceSection } from './student/dashboard/AttendanceSection';
