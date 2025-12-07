@@ -1,0 +1,200 @@
+"use client";
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Video,
+  FileText,
+  Edit,
+  MoreVertical,
+  Trash2,
+  Eye,
+  EyeOff,
+  Lock,
+  LockOpen,
+} from "lucide-react";
+interface TeacherChapter {
+  _id: string;
+  title: string;
+  description: string;
+  chapterNumber: number;
+  contentType: "video" | "text";
+  videoUrl?: string;
+  textContent?: string;
+  gradeId: {
+    _id: string;
+    grade: string;
+  };
+  unitId: string;
+  unitName?: string;
+  createdAt: Date;
+  isPublished: boolean;
+  requiresPreviousChapter: boolean;
+  hasQuestions: boolean;
+  questionsCount: number;
+  teacherProgress?: Array<{
+    teacherId: string;
+    status: string;
+  }>;
+}
+interface TeacherChapterCardProps {
+  chapter: TeacherChapter;
+  index: number;
+  unitName?: string;
+  onViewStatistics: (chapterId: string) => void;
+  onEdit: (chapterId: string) => void;
+  onDelete: (chapterId: string) => void;
+}
+export default function TeacherChapterCard({
+  chapter,
+  index,
+  unitName,
+  onViewStatistics,
+  onEdit,
+  onDelete,
+}: TeacherChapterCardProps) {
+  const completedCount =
+    chapter.teacherProgress?.filter((p) => p.status === "completed").length || 0;
+  const displayUnitName = unitName || chapter.unitName || "N/A";
+  return (
+    <Card className="border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105 bg-white overflow-hidden rounded-3xl group">
+      <CardContent className="p-0">
+        <div
+          className={`h-3 ${
+            chapter.contentType === "video"
+              ? "bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500"
+              : "bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500"
+          }`}
+        />
+        <div className="p-8 space-y-6">
+          <div className="flex items-start gap-5">
+            <div
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-xl transform group-hover:scale-110 transition-transform duration-300 ${
+                index % 4 === 0
+                  ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600"
+                  : index % 4 === 1
+                  ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600"
+                  : index % 4 === 2
+                  ? "bg-gradient-to-br from-orange-500 via-red-500 to-pink-600"
+                  : "bg-gradient-to-br from-purple-500 via-pink-500 to-rose-600"
+              }`}
+            >
+              {chapter.contentType === "video" ? (
+                <Video className="h-8 w-8 text-white" />
+              ) : (
+                <FileText className="h-8 w-8 text-white" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                <h3 className="text-xl font-bold text-gray-900 truncate">
+                  {chapter.title}
+                </h3>
+                <Badge
+                  className={`capitalize text-sm font-semibold px-3 py-1 rounded-full ${
+                    chapter.contentType === "video"
+                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
+                      : "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-emerald-200"
+                  }`}
+                >
+                  {chapter.contentType}
+                </Badge>
+              </div>
+              <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+                {chapter.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {chapter.isPublished ? (
+              <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 px-3 py-1 rounded-full">
+                <Eye className="h-3 w-3 mr-1" />
+                Published
+              </Badge>
+            ) : (
+              <Badge className="bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border-gray-200 px-3 py-1 rounded-full">
+                <EyeOff className="h-3 w-3 mr-1" />
+                Draft
+              </Badge>
+            )}
+            {chapter.requiresPreviousChapter ? (
+              <Badge className="bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 border-orange-200 px-3 py-1 rounded-full">
+                <Lock className="h-3 w-3 mr-1" />
+                Sequential
+              </Badge>
+            ) : (
+              <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200 px-3 py-1 rounded-full">
+                <LockOpen className="h-3 w-3 mr-1" />
+                Open Access
+              </Badge>
+            )}
+            {chapter.hasQuestions && (
+              <Badge className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200 px-3 py-1 rounded-full">
+                📝 {chapter.questionsCount} Quiz
+              </Badge>
+            )}
+          </div>
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 rounded-2xl p-4 space-y-2 text-sm border border-gray-100">
+            <InfoRow label="Grade" value={`Grade ${chapter.gradeId.grade}`} />
+            <InfoRow label="Chapter" value={chapter.chapterNumber} />
+            <InfoRow label="Unit" value={displayUnitName} />
+            <InfoRow
+              label="Created"
+              value={new Date(chapter.createdAt).toLocaleDateString()}
+            />
+            <InfoRow label="Completed" value={`${completedCount} teachers`} />
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(chapter._id)}
+              className="flex-1 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-800 font-semibold rounded-xl transition-all duration-300"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-4 bg-gradient-to-r from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-300"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 rounded-xl shadow-xl border-0"
+              >
+                <DropdownMenuItem
+                  onClick={() => onDelete(chapter._id)}
+                  className="text-red-600 focus:text-red-600 cursor-pointer hover:bg-red-50 rounded-lg"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Chapter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+function InfoRow({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-gray-600 font-medium">{label}:</span>
+      <span className="font-bold text-gray-900">{value}</span>
+    </div>
+  );
+}
