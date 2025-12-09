@@ -10,7 +10,7 @@ import {
   uploadToCloudinary,
   deleteFromCloudinary,
 } from "../../../config/cloudinary";
-import { User } from "@/models/user/User.model";
+import { User } from "../../../models/user/User.model";
 export const submitAssignment = async (
   req: AuthenticatedRequest,
   res: Response,
