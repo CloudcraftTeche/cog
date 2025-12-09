@@ -7,6 +7,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 import SuperAdminDashboard from "@/components/admin-dashboard";
 import StudentDashboard from "@/components/student-dashboard";
 import TeacherDashboard from "@/components/teacher-dashboard";
+import AdminDashboard from "@/components/admin-dashboard";
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -36,11 +37,15 @@ export default function DashboardPage() {
   if (!user) {
     return null;
   }
+  if (user.role==="admin"&&user.name === "Pastor") {
+    return <SuperAdminDashboard/>;
+  }
 
   const renderDashboard = () => {
-    switch (user.role) {
+
+    switch (user.role ) {
       case "admin":
-        return <SuperAdminDashboard />;
+        return <AdminDashboard />;
       case "superAdmin":
         return <SuperAdminDashboard />;
       case "teacher":
