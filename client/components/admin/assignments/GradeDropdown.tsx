@@ -25,7 +25,7 @@ export const GradeDropdown: React.FC<GradeDropdownProps> = ({
   isLoading = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const gradeAssignments = assignments.filter(a => a.gradeId === grade._id);
+  const gradeAssignments = assignments.filter(a => a.gradeId._id === grade._id);
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="border-2 border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-300 py-3">
