@@ -51,7 +51,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigationItems = useMemo(() => {
     const baseItems = [{ name: "Dashboard", href: "/dashboard", icon: Home }];
 
-    if (user?.role === "admin" || user?.role === "superAdmin") {
+    if (
+      (user?.role === "admin" && user.name !== "Pastor") ||
+      user?.role === "superAdmin"
+    ) {
       return [
         ...baseItems,
         { name: "Teachers", href: "/dashboard/admin/teachers", icon: Users },
@@ -90,6 +93,61 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {
           name: "Announcements",
           href: "/dashboard/admin/announcements",
+          icon: MegaphoneIcon,
+        },
+      ];
+    }
+    if (user?.role === "admin" && user.name == "Pastor") {
+      return [
+        ...baseItems,
+        {
+          name: "Teachers",
+          href: "/dashboard/super-admin/teachers",
+          icon: Users,
+        },
+        {
+          name: "Students",
+          href: "/dashboard/super-admin/students",
+          icon: GraduationCap,
+        },
+        {
+          name: "Chapters",
+          href: "/dashboard/super-admin/chapters",
+          icon: BookOpen,
+        },
+        {
+          name: "Grades",
+          href: "/dashboard/super-admin/grades",
+          icon: SchoolIcon,
+        },
+        {
+          name: "Assignments",
+          href: "/dashboard/super-admin/assignments",
+          icon: Upload,
+        },
+        {
+          name: "Teacher-Chapters",
+          href: "/dashboard/super-admin/teacher-chapters",
+          icon: BookMarked,
+        },
+        {
+          name: "Chat",
+          href: "/dashboard/super-admin/chat",
+          icon: MessageCircleMore,
+        },
+        {
+          name: "Queries",
+          href: "/dashboard/super-admin/query",
+          icon: BadgeHelpIcon,
+        },
+        {
+          name: "Attendance",
+          href: "/dashboard/super-admin/attendance",
+          icon: CalendarDaysIcon,
+        },
+        {
+          name: "Announcements",
+          href: "/dashboard/super-admin/announcements",
           icon: MegaphoneIcon,
         },
       ];
@@ -327,7 +385,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
               <div className="hidden sm:block min-w-0">
                 <h2 className="text-sm sm:text-base font-black bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent truncate">
-                  {user?.role ? getRoleLabel(user.role) : "U"} Dashboard
+                  {user?.name !== "Pastor"
+                    ? user?.role
+                      ? getRoleLabel(user.role)
+                      : "U"
+                    : "Pastor"}
+                  Dashboard
                 </h2>
                 <p className="text-xs text-gray-500 font-medium truncate">
                   Welcome back, {user?.name}
@@ -342,7 +405,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     {user?.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.role ? getRoleLabel(user.role) : "U"}
+                    {user?.name !== "Pastor"
+                      ? user?.role
+                        ? getRoleLabel(user.role)
+                        : "U"
+                      : "Pastor"}
                   </p>
                 </div>
                 <DropdownMenu>
