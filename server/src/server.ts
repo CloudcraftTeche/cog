@@ -39,8 +39,8 @@ const createApp = (): Application => {
     })
   );
   app.use(compression({ level: 6, threshold: 2048 }));
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(express.json({ limit: "100mb" }));
+  app.use(express.urlencoded({ limit: "100mb", extended: true }));
   app.use(expressRateLimit);
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });

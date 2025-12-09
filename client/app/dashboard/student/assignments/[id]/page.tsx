@@ -22,7 +22,7 @@ export default function AssignmentDetailPage() {
       const [assignmentRes, submissionsRes] = await Promise.all([
         api.get(`/assignments/${id}`),
         api
-          .get("/assignments/my/submissions")
+          .get("/assignments/my/submissions/all")
           .catch(() => ({ data: { success: false, data: [] } })),
       ]);
       if (assignmentRes.data.success) {

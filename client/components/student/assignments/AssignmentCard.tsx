@@ -1,5 +1,11 @@
-"use client"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+"use client";
+
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,121 +20,189 @@ import {
   Lock,
   AlertCircle,
   BookOpen,
+  Sparkles,
+  Play,
 } from "lucide-react";
 import Link from "next/link";
-import { IAssignment, UserRole } from "@/types/assignment.types";
-import { 
-  getGradeName, 
-  formatDate, 
-  getTimeRemaining, 
-  getTimeProgress,
-  getAssignmentStatus 
-} from "@/utils/assignmentHelpers";
+import { IAssignment } from "@/types/assignment.types";
+
 interface AssignmentCardProps {
   assignment: IAssignment;
-  userRole?: UserRole;
+  userRole?: "student" | "teacher" | "admin";
   isSubmitted?: boolean;
 }
-export function AssignmentCard({ 
-  assignment, 
-  userRole = "student", 
-  isSubmitted = false 
+
+export function AssignmentCard({
+  assignment,
+  userRole = "student",
+  isSubmitted = false,
 }: AssignmentCardProps) {
+  const now = new Date();
   const startDate = new Date(assignment.startDate);
   const endDate = new Date(assignment.endDate);
-  const { isUpcoming, isActive, isEnded, isLocked } = getAssignmentStatus(assignment);
+
+  const isUpcoming = now < startDate;
+  const isActive =
+    now >= startDate && now <= endDate && assignment.status === "active";
+  const isEnded = now > endDate || assignment.status === "ended";
+  const isLocked = assignment.status === "locked";
+
+  const getTimeRemaining = () => {
+    if (isEnded) return "Ended";
+    if (isUpcoming) return `Starts ${formatDate(startDate)}`;
+
+    const diff = endDate.getTime() - now.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) return `${days}d ${hours}h left`;
+    if (hours > 0) return `${hours}h left`;
+    return "Due soon!";
+  };
+
+  const getTimeProgress = () => {
+    if (isUpcoming) return 0;
+    if (isEnded) return 100;
+
+    const total = endDate.getTime() - startDate.getTime();
+    const elapsed = now.getTime() - startDate.getTime();
+    return Math.min(100, Math.max(0, (elapsed / total) * 100));
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const contentTypeConfig = {
     video: {
       icon: Video,
       label: "Video",
-      colors: "bg-blue-100 text-blue-700 border-blue-200",
-      accent: "bg-blue-600"
+      gradient: "from-primary to-info",
+      bg: "bg-primary/10",
+      text: "text-primary",
+      border: "border-primary/20",
+      iconBg: "bg-gradient-to-br from-primary to-info",
     },
     text: {
       icon: FileText,
       label: "Text",
-      colors: "bg-green-100 text-green-700 border-green-200",
-      accent: "bg-green-600"
+      gradient: "from-success to-primary",
+      bg: "bg-success/10",
+      text: "text-success",
+      border: "border-success/20",
+      iconBg: "bg-gradient-to-br from-success to-primary",
     },
     pdf: {
       icon: File,
       label: "PDF",
-      colors: "bg-purple-100 text-purple-700 border-purple-200",
-      accent: "bg-purple-600"
+      gradient: "from-destructive to-warning",
+      bg: "bg-destructive/10",
+      text: "text-destructive",
+      border: "border-destructive/20",
+      iconBg: "bg-gradient-to-br from-destructive to-warning",
     },
   }[assignment.contentType];
+
   const ContentTypeIcon = contentTypeConfig.icon;
-  const gradeName = getGradeName(assignment);
+
   const getStatusBadge = () => {
     if (isSubmitted && userRole === "student") {
       return (
-        <Badge className="bg-green-100 text-green-700 border-green-200 shadow-sm">
-          <CheckCircle2 className="w-3 h-3 mr-1" />
+        <Badge className="bg-gradient-to-r from-success to-primary text-success-foreground border-0 shadow-lg shadow-success/20 px-3">
+          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
           Submitted
         </Badge>
       );
     }
     if (isLocked) {
       return (
-        <Badge className="bg-gray-100 text-gray-700 border-gray-200">
-          <Lock className="w-3 h-3 mr-1" />
+        <Badge
+          variant="secondary"
+          className="bg-muted/80 text-muted-foreground border-0"
+        >
+          <Lock className="w-3.5 h-3.5 mr-1.5" />
           Locked
         </Badge>
       );
     }
     if (isEnded) {
       return (
-        <Badge className="bg-red-100 text-red-700 border-red-200 shadow-sm">
-          <AlertCircle className="w-3 h-3 mr-1" />
+        <Badge className="bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground border-0 shadow-lg shadow-destructive/20 px-3">
+          <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
           Ended
         </Badge>
       );
     }
     if (isUpcoming) {
       return (
-        <Badge className="bg-amber-100 text-amber-700 border-amber-200 shadow-sm">
-          <Clock className="w-3 h-3 mr-1" />
+        <Badge className="bg-gradient-to-r from-warning to-warning/80 text-warning-foreground border-0 shadow-lg shadow-warning/20 px-3">
+          <Clock className="w-3.5 h-3.5 mr-1.5" />
           Upcoming
         </Badge>
       );
     }
     return (
-      <Badge className="bg-blue-100 text-blue-700 border-blue-200 shadow-sm">
-        <div className="w-1.5 h-1.5 rounded-full bg-blue-700 mr-1.5 animate-pulse" />
+      <Badge className="bg-gradient-to-r from-primary to-info text-primary-foreground border-0 shadow-lg shadow-primary/20 px-3">
+        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
         Active
       </Badge>
     );
   };
+
+  const gradeName =
+    typeof assignment.gradeId === "object" ? assignment.gradeId.grade : "";
+
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-blue-100 hover:-translate-y-1 bg-white border-gray-200">
-      <div className={`absolute top-0 left-0 w-full h-1 ${contentTypeConfig.accent}`} />
-      <div className="absolute top-1 left-0 w-full h-0.5 bg-gray-100">
+    <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 bg-gradient-to-br from-card via-card to-muted/30 border-border/50">
+      <div
+        className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${contentTypeConfig.gradient}`}
+      />
+
+      <div
+        className={`absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br ${contentTypeConfig.gradient} opacity-10 blur-2xl group-hover:opacity-20 transition-opacity duration-500`}
+      />
+
+      {/* Progress bar */}
+      <div className="absolute top-1.5 left-0 w-full h-0.5 bg-muted/50">
         <div
-          className={`h-full transition-all ${
-            isEnded ? "bg-red-500" : isActive && getTimeProgress(startDate, endDate) > 75 ? "bg-amber-500" : "bg-blue-500"
+          className={`h-full transition-all duration-300 rounded-full ${
+            isEnded
+              ? "bg-destructive"
+              : isActive && getTimeProgress() > 75
+                ? "bg-gradient-to-r from-warning to-destructive"
+                : `bg-gradient-to-r ${contentTypeConfig.gradient}`
           }`}
-          style={{ width: `${getTimeProgress(startDate, endDate)}%` }}
+          style={{ width: `${getTimeProgress()}%` }}
         />
       </div>
-      <CardHeader className="pt-6 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div className={`p-3 rounded-xl border shadow-sm ${contentTypeConfig.colors}`}>
-              <ContentTypeIcon className="w-5 h-5" />
+
+      <CardHeader className="pt-8 pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4 min-w-0 flex-1">
+            <div
+              className={`p-3 rounded-2xl ${contentTypeConfig.iconBg} text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-300`}
+            >
+              <ContentTypeIcon className="w-6 h-6" />
             </div>
-            <div className="space-y-1.5 min-w-0 flex-1">
-              <h3 className="font-semibold text-gray-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+            <div className="space-y-2 min-w-0 flex-1">
+              <h3 className="font-bold text-lg text-card-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
                 {assignment.title}
               </h3>
-              <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
-                <span className={`font-medium px-2 py-0.5 rounded-full ${contentTypeConfig.colors}`}>
+              <div className="flex items-center gap-2 text-xs flex-wrap">
+                <span
+                  className={`font-semibold px-2.5 py-1 rounded-full ${contentTypeConfig.bg} ${contentTypeConfig.text}`}
+                >
                   {contentTypeConfig.label}
                 </span>
                 {gradeName && (
-                  <>
-                    <span className="hidden sm:inline text-gray-300">•</span>
-                    <span className="hidden sm:inline">{gradeName}</span>
-                  </>
+                  <span className="text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                    {gradeName}
+                  </span>
                 )}
               </div>
             </div>
@@ -136,63 +210,90 @@ export function AssignmentCard({
           <div className="shrink-0">{getStatusBadge()}</div>
         </div>
       </CardHeader>
-      <CardContent className="pb-3">
-        <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+
+      <CardContent className="pb-4">
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {assignment.description}
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-blue-600" />
-            <span>Due {formatDate(endDate)}</span>
+
+        <div className="mt-5 flex flex-wrap items-center gap-3 text-xs">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive">
+            <Calendar className="w-3.5 h-3.5" />
+            <span className="font-medium">Due {formatDate(endDate)}</span>
           </div>
+
           {assignment.questions.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-green-600" />
-              <span>{assignment.questions.length} questions</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success">
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="font-medium">
+                {assignment.questions.length} questions
+              </span>
             </div>
           )}
-          {(userRole === "teacher" || userRole === "admin") && assignment.submittedStudents && (
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-purple-600" />
-              <span>{assignment.submittedStudents.length} submitted</span>
-            </div>
-          )}
+
+          {(userRole === "teacher" || userRole === "admin") &&
+            assignment.submittedStudents && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-info/10 text-info">
+                <Users className="w-3.5 h-3.5" />
+                <span className="font-medium">
+                  {assignment.submittedStudents.length} submitted
+                </span>
+              </div>
+            )}
+
           {assignment.totalMarks && (
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-gray-900">{assignment.totalMarks} marks</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/10 text-warning-foreground">
+              <span className="font-bold">{assignment.totalMarks} pts</span>
             </div>
           )}
         </div>
       </CardContent>
-      <CardFooter className="pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between w-full gap-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Clock
-              className={`w-3.5 h-3.5 shrink-0 ${
+
+      <CardFooter className="pt-4 border-t border-border/50">
+        <div className="flex items-center justify-between w-full gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className={`p-1.5 rounded-full ${
                 isEnded
-                  ? "text-red-600"
-                  : isActive && getTimeProgress(startDate, endDate) > 75
-                    ? "text-amber-600"
-                    : "text-gray-500"
-              }`}
-            />
-            <span
-              className={`text-xs font-medium truncate ${
-                isEnded
-                  ? "text-red-600"
-                  : isActive && getTimeProgress(startDate, endDate) > 75
-                    ? "text-amber-600"
-                    : "text-gray-500"
+                  ? "bg-destructive/10"
+                  : isActive && getTimeProgress() > 75
+                    ? "bg-warning/10"
+                    : "bg-muted"
               }`}
             >
-              {getTimeRemaining(startDate, endDate, assignment.status)}
+              <Clock
+                className={`w-4 h-4 ${
+                  isEnded
+                    ? "text-destructive"
+                    : isActive && getTimeProgress() > 75
+                      ? "text-warning"
+                      : "text-muted-foreground"
+                }`}
+              />
+            </div>
+            <span
+              className={`text-sm font-semibold truncate ${
+                isEnded
+                  ? "text-destructive"
+                  : isActive && getTimeProgress() > 75
+                    ? "text-warning"
+                    : "text-muted-foreground"
+              }`}
+            >
+              {getTimeRemaining()}
             </span>
           </div>
-          <Button variant="default" size="sm" className="shrink-0 shadow-sm" asChild>
+
+          <Button
+            className={`shrink-0 bg-gradient-to-r ${contentTypeConfig.gradient} hover:opacity-90 text-white shadow-lg shadow-primary/20 border-0 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/30`}
+            size="sm"
+            asChild
+          >
             <Link href={`/dashboard/student/assignments/${assignment._id}`}>
-              <span className="hidden sm:inline">View Details</span>
-              <span className="sm:hidden">View</span>
-              <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-0.5" />
+              <Play className="w-4 h-4 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Start</span>
+              <span className="sm:hidden">Go</span>
+              <ChevronRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
         </div>

@@ -1,121 +1,185 @@
-"use client"
-import { Video, FileText, File, Play, Download, Eye, Sparkles } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import {
+  Video,
+  FileText,
+  File,
+  ExternalLink,
+  Download,
+  RefreshCw,
+  AlertTriangle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { IAssignment } from "@/types/assignment.types";
+
 interface ContentViewerProps {
   assignment: IAssignment;
 }
+
 export function ContentViewer({ assignment }: ContentViewerProps) {
-  const contentConfig = {
-    video: { 
-      icon: Video, 
-      gradient: 'from-blue-500 via-blue-600 to-indigo-600',
-      bgGradient: 'from-blue-50 via-blue-100/50 to-indigo-50',
-      border: 'border-blue-300',
-      title: 'Video Content',
-      buttonGradient: 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700',
-      iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600'
-    },
-    text: { 
-      icon: FileText, 
-      gradient: 'from-green-500 via-emerald-600 to-teal-600',
-      bgGradient: 'from-green-50 via-emerald-100/50 to-teal-50',
-      border: 'border-green-300',
-      title: 'Text Content',
-      buttonGradient: 'from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700',
-      iconBg: 'bg-gradient-to-br from-green-500 to-teal-600'
-    },
-    pdf: { 
-      icon: File, 
-      gradient: 'from-purple-500 via-violet-600 to-fuchsia-600',
-      bgGradient: 'from-purple-50 via-violet-100/50 to-fuchsia-50',
-      border: 'border-purple-300',
-      title: 'PDF Document',
-      buttonGradient: 'from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700',
-      iconBg: 'bg-gradient-to-br from-purple-500 to-fuchsia-600'
-    }
-  }[assignment.contentType];
-  const ContentIcon = contentConfig.icon;
-  return (
-    <div className={`relative rounded-2xl border-2 ${contentConfig.border} bg-gradient-to-br ${contentConfig.bgGradient} p-8 transition-all hover:shadow-2xl overflow-hidden`}>
-      {}
-      <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${contentConfig.gradient} opacity-10 rounded-full blur-3xl`} />
-      <div className={`absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr ${contentConfig.gradient} opacity-10 rounded-full blur-3xl`} />
-      <div className="relative z-10">
-        <div className="flex items-center gap-4 mb-8">
-          <div className={`p-4 rounded-2xl ${contentConfig.iconBg} shadow-2xl shadow-blue-500/30 transform hover:scale-110 transition-transform duration-300`}>
-            <ContentIcon className="w-8 h-8 text-white" />
+  const [pdfError, setPdfError] = useState(false);
+  const [viewerType, setViewerType] = useState<"google" | "office" | "direct">(
+    "google"
+  );
+
+  if (assignment.contentType === "video" && assignment.videoUrl) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Video className="w-4 h-4 text-primary" />
+          Video Content
+        </div>
+        <div className="relative aspect-video rounded-xl overflow-hidden bg-secondary border border-border">
+          <video
+            src={assignment.videoUrl}
+            controls
+            className="w-full h-full object-contain"
+            crossOrigin="anonymous"
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+    );
+  }
+
+  if (assignment.contentType === "pdf" && assignment.pdfUrl) {
+    const pdfUrl = assignment.pdfUrl;
+
+    const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+    const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(pdfUrl)}`;
+
+    const getViewerUrl = () => {
+      switch (viewerType) {
+        case "google":
+          return googleDocsUrl;
+        case "office":
+          return officeViewerUrl;
+        case "direct":
+          return pdfUrl;
+        default:
+          return googleDocsUrl;
+      }
+    };
+
+    const handleError = () => {
+      // Try next viewer type
+      if (viewerType === "google") {
+        setViewerType("office");
+        setPdfError(false);
+      } else if (viewerType === "office") {
+        setViewerType("direct");
+        setPdfError(false);
+      } else {
+        setPdfError(true);
+      }
+    };
+
+    const handleRetry = () => {
+      setPdfError(false);
+      setViewerType("google");
+    };
+
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <File className="w-4 h-4 text-rose-500" />
+            PDF Document
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <h3 className="text-2xl font-bold text-gray-900">
-                {contentConfig.title}
-              </h3>
-            </div>
-            <p className="text-sm text-gray-600 mt-1">Interactive learning material</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" asChild>
+              <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href={pdfUrl} download>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </a>
+            </Button>
           </div>
         </div>
-        {assignment.contentType === 'video' && assignment.videoUrl && (
-          <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 shadow-xl">
-            <div className="aspect-video bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl flex items-center justify-center mb-6 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-24 h-24 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Play className="w-12 h-12 text-white ml-1" />
-                </div>
+
+        <div className="relative aspect-[4/3] sm:aspect-[16/10] rounded-xl overflow-hidden bg-secondary border border-border">
+          {pdfError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+              <div className="p-4 rounded-full bg-muted">
+                <AlertTriangle className="w-8 h-8 text-muted-foreground" />
               </div>
-              <div className="absolute bottom-4 left-4 right-4 bg-gradient-to-r from-black/50 to-transparent p-3 rounded-lg backdrop-blur-sm">
-                <p className="text-white text-sm font-medium">Click to watch video</p>
-              </div>
-            </div>
-            <a 
-              href={assignment.videoUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className={`inline-flex items-center px-6 py-3 bg-gradient-to-r ${contentConfig.buttonGradient} text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105`}
-            >
-              <Eye className="w-5 h-5 mr-2" />
-              Open Video in New Tab
-            </a>
-          </div>
-        )}
-        {assignment.contentType === 'pdf' && assignment.pdfUrl && (
-          <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 shadow-xl">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <div className={`p-5 ${contentConfig.iconBg} rounded-2xl shadow-lg`}>
-                  <File className="w-10 h-10 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-xl mb-1">PDF Document</p>
-                  <p className="text-sm text-gray-500">Click to view or download the document</p>
-                </div>
-              </div>
-              <a 
-                href={assignment.pdfUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className={`inline-flex items-center px-6 py-3 bg-gradient-to-r ${contentConfig.buttonGradient} text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transition-all transform hover:scale-105`}
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Download PDF
-              </a>
-            </div>
-          </div>
-        )}
-        {assignment.contentType === 'text' && assignment.textContent && (
-          <div className="bg-white rounded-2xl p-8 border-2 border-gray-200 shadow-xl">
-            <div className="prose prose-lg max-w-none">
-              <div className="relative">
-                <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-green-500 to-teal-500 rounded-full" />
-                <p className="text-gray-800 leading-relaxed text-lg whitespace-pre-wrap pl-6">
-                  {assignment.textContent}
+              <div>
+                <p className="font-medium text-foreground mb-1">
+                  Unable to preview PDF
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The PDF couldn&apos;t be loaded in the viewer. Please use the
+                  buttons above to open or download it.
                 </p>
               </div>
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
             </div>
-          </div>
-        )}
+          ) : (
+            <iframe
+              src={getViewerUrl()}
+              className="w-full h-full"
+              title="PDF Viewer"
+              onError={handleError}
+              sandbox="allow-scripts allow-same-origin allow-popups"
+            />
+          )}
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          {!pdfError && (
+            <>
+              Viewing with{" "}
+              {viewerType === "google"
+                ? "Google Docs"
+                : viewerType === "office"
+                  ? "Microsoft Office"
+                  : "Direct embed"}
+              {viewerType !== "direct" && (
+                <button
+                  className="ml-2 text-primary hover:underline"
+                  onClick={() =>
+                    setViewerType(viewerType === "google" ? "office" : "google")
+                  }
+                >
+                  Switch viewer
+                </button>
+              )}
+            </>
+          )}
+        </p>
       </div>
+    );
+  }
+
+  if (assignment.contentType === "text" && assignment.textContent) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <FileText className="w-4 h-4 text-emerald-500" />
+          Reading Material
+        </div>
+        <div className="p-4 sm:p-6 rounded-xl bg-secondary/50 border border-border">
+          <div className="whitespace-pre-wrap text-foreground leading-relaxed text-sm sm:text-base">
+            {assignment.textContent}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-center p-8 rounded-xl bg-muted/30 border border-dashed border-border">
+      <p className="text-muted-foreground">No content available</p>
     </div>
   );
 }
