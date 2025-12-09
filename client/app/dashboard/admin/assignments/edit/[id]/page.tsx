@@ -22,6 +22,11 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { IQuestion } from "@/lib/assignmentValidation";
 import { QuestionForm } from "@/components/admin/assignments/QuestionForm";
+
+export interface IGrade {
+  _id: string;
+  grade: string;
+}
 interface Assignment {
   _id: string;
   title: string;
@@ -35,7 +40,7 @@ interface Assignment {
   videoUrl?: string;
   pdfUrl?: string;
   questions: IQuestion[];
-  gradeId: string;
+  gradeId: IGrade;
   gradeName: string;
 }
 const MAX_FILE_SIZE_MB = 25;
@@ -66,6 +71,7 @@ export default function AdminEditAssignment() {
       try {
         setInitialLoading(true);
         const response = await api.get(`/assignments/${assignmentId}`);
+        
         if (!response.data.success && !response.data._id) {
           throw new Error("Failed to fetch assignment");
         }
@@ -240,7 +246,7 @@ export default function AdminEditAssignment() {
                 <h1 className="text-3xl font-bold">Update Assignment</h1>
               </div>
               <p className="text-indigo-100 text-lg">
-                Grade {assignment.gradeName} - {assignment.title}
+                Grade {assignment.gradeId.grade} - {assignment.title}
               </p>
             </div>
           </div>

@@ -18,6 +18,7 @@ import { authorizeRoles } from "../../../middleware/authorizeRoles";
 const router = Router();
 const oid = (field: string) =>
   param(field).isMongoId().withMessage(`Invalid ${field}`);
+
 const createAssignmentValidators = [
   body("title")
     .trim()

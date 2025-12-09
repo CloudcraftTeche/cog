@@ -145,7 +145,7 @@ export const AssignmentCard: React.FC<AssignmentCardProps> = ({
                 {config.label}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                Grade {assignment.gradeName}
+                Grade {assignment.gradeId.grade}
               </Badge>
             </div>
           </div>

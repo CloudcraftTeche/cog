@@ -38,6 +38,7 @@ import { IAssignment, ISubmission } from "@/types/assignment.types";
 import { SubmissionContent, SubmissionForm } from "./SubmissionForm";
 import { ContentViewer } from "./Contentviewer";
 import { QuestionForm } from "./QuestionForm";
+import { useRouter } from "next/navigation";
 interface AssignmentDetailProps {
   assignment: IAssignment;
   userRole?: "student" | "teacher" | "admin";
@@ -50,6 +51,9 @@ export function AssignmentDetail({
   existingSubmission = null,
   gradeId,
 }: AssignmentDetailProps) {
+
+  const router = useRouter();
+  
   const [answers, setAnswers] = useState<Record<number, string>>(() => {
     if (existingSubmission?.answers) {
       const initialAnswers: Record<number, string> = {};
@@ -148,6 +152,7 @@ export function AssignmentDetail({
       });
       if (response.data.success) {
         setSubmitted(true);
+        router.push(`/dashboard/student/assignments`);
       }
     } catch (error: any) {
       setSubmitError(
@@ -161,8 +166,6 @@ export function AssignmentDetail({
     assignment.questions.length === 0 ||
     Object.keys(answers).length === assignment.questions.length;
   const canSubmitNow = allQuestionsAnswered && isSubmissionContentValid();
-  const gradeName =
-    typeof assignment.gradeId === "object" ? assignment.gradeId.grade : "";
   const contentTypeConfig = {
     video: {
       icon: Video,

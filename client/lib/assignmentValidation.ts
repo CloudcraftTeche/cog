@@ -19,11 +19,16 @@ export interface IAssignment {
   status: "active" | "locked" | "ended";
   totalMarks?: number;
   passingMarks?: number;
-  gradeId: string;
+  gradeId: IGradeSection;
   gradeName: string;
   createdAt: string;
   updatedAt: string;
   submittedStudents?: string[];
+}
+
+interface IGradeSection{
+  _id: string;
+  grade: string;
 }
 export interface IGrade {
   _id: string;

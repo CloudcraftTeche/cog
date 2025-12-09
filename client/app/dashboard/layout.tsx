@@ -327,7 +327,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
               <div className="hidden sm:block min-w-0">
                 <h2 className="text-sm sm:text-base font-black bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent truncate">
-                  {user?.role ? getRoleLabel(user.role) : ""} Dashboard
+                  {user?.role ? getRoleLabel(user.role) : "U"} Dashboard
                 </h2>
                 <p className="text-xs text-gray-500 font-medium truncate">
                   Welcome back, {user?.name}
@@ -342,7 +342,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     {user?.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.role ? getRoleLabel(user.role) : ""}
+                    {user?.role ? getRoleLabel(user.role) : "U"}
                   </p>
                 </div>
                 <DropdownMenu>
@@ -356,7 +356,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         <AvatarImage
                           src={
                             user?.avatar ||
-                            ""
+                            "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0="
                           }
                           alt={user?.name}
                         />
@@ -398,7 +398,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         <AvatarImage
                           src={
                             user?.avatar ||
-                            ""
+                            "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0="
                           }
                           alt={user?.name}
                         />

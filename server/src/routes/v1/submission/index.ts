@@ -59,7 +59,7 @@ router.post(
   upload.single("file"),
   parseFormDataFields,
   [
-    body("assignmentId").isMongoId().withMessage("Invalid assignment ID"),
+    body("assignmentId").optional(),
     body("gradeId").isMongoId().withMessage("Invalid grade ID"),
     body("submissionType")
       .isIn(["video", "text", "pdf"])
@@ -83,10 +83,7 @@ router.get(
     query("gradeId")
       .isMongoId()
       .withMessage("Grade ID is required and must be valid"),
-    query("assignmentId")
-      .optional()
-      .isMongoId()
-      .withMessage("Invalid assignment ID"),
+    query("assignmentId").optional(),
     query("studentId").optional().isMongoId().withMessage("Invalid student ID"),
     query("gradeStatus")
       .optional()
@@ -105,10 +102,7 @@ router.get(
   "/teacher/dashboard",
   authenticate,
   [
-    query("assignmentId")
-      .optional()
-      .isMongoId()
-      .withMessage("Invalid assignment ID"),
+    query("assignmentId").optional(),
     query("studentId").optional().isMongoId().withMessage("Invalid student ID"),
     query("status")
       .optional()
