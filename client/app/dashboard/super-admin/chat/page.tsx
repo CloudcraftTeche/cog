@@ -382,7 +382,7 @@ const SuperAdminChatPanel: React.FC = () => {
                               {user.name}
                             </div>
                             <div className="text-xs opacity-80 truncate">
-                              {user.role == "admin"?"Pastor":"admin"}
+                              {user.role == "admin" ? "Pastor" : user.role}
                             </div>
                           </div>
                         </div>
@@ -430,7 +430,7 @@ const SuperAdminChatPanel: React.FC = () => {
                       {activeTab === "grade" && "Message grade students"}
                       {activeTab === "direct" &&
                         selectedUser &&
-                        `${selectedUser.role =="admin"?"Pastor":"admin"} • ${selectedUser.email}`}
+                        `${selectedUser.role == "admin" ? "Pastor" : "admin"} • ${selectedUser.email}`}
                     </p>
                     {getTypingIndicator() && (
                       <p className="text-xs text-blue-500 italic mt-1">
