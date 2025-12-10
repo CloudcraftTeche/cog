@@ -382,7 +382,7 @@ const SuperAdminChatPanel: React.FC = () => {
                               {user.name}
                             </div>
                             <div className="text-xs opacity-80 truncate">
-                              {user.role == "admin" ? "Pastor" : user.role}
+                              { user.name==="Pastor" && user.role == "admin" ? "Pastor" : user.role}
                             </div>
                           </div>
                         </div>
