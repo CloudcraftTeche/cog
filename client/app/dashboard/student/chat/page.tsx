@@ -86,7 +86,9 @@ const StudentChatPanel: React.FC = () => {
   };
   const fetchTeachers = async () => {
     try {
-      const response = await api.get("/teachers");
+      const gradeRes = await api.get("/auth/me");
+      const gradeId = gradeRes.data.data.gradeId?._id;
+      const response = await api.get(`/teachers/grade/${gradeId}`);
       if (response.data.success) {
         setTeachers(response.data.data);
       }
@@ -194,10 +196,10 @@ const StudentChatPanel: React.FC = () => {
       </div>
     </div>
   );
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
       <ConnectionStatus isConnected={isConnected} error={connectionError} />
-      {}
       {isMobile && !isSidebarOpen && (
         <button
           onClick={() => setIsSidebarOpen(true)}
@@ -206,14 +208,12 @@ const StudentChatPanel: React.FC = () => {
           <Menu className="w-5 h-5" />
         </button>
       )}
-      {}
       {isMobile && isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-      {}
       <div
         className={`
         ${isMobile ? "fixed inset-y-0 left-0 z-40" : "relative"}
@@ -224,7 +224,6 @@ const StudentChatPanel: React.FC = () => {
       `}
       >
         <div className="h-full flex flex-col">
-          {}
           <div className="p-4 sm:p-6 bg-gradient-to-r from-orange-500 to-amber-500 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -252,7 +251,6 @@ const StudentChatPanel: React.FC = () => {
               <span>{unreadCount} unread</span>
             </div>
           </div>
-          {}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4">
             {renderContactList(
               teachers,
@@ -267,11 +265,9 @@ const StudentChatPanel: React.FC = () => {
           </div>
         </div>
       </div>
-      {}
       <div className="flex-1 flex flex-col min-w-0">
         {activeChat ? (
           <>
-            {}
             <div className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6 flex-shrink-0">
               <div className="flex items-center gap-3 sm:gap-4">
                 {isMobile && (
@@ -298,7 +294,6 @@ const StudentChatPanel: React.FC = () => {
                 </div>
               </div>
             </div>
-            {}
             <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
@@ -324,7 +319,6 @@ const StudentChatPanel: React.FC = () => {
               )}
               <div ref={messagesEndRef} />
             </div>
-            {}
             <MessageInput
               onSend={handleSendMessage}
               disabled={!isConnected}

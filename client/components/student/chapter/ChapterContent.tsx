@@ -1,8 +1,33 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Chapter } from "@/utils/studentChapter.service";
 interface ChapterContentProps {
   chapter: Chapter;
 }
+
+const getYouTubeEmbedUrl = (url?: string): string | null => {
+  if (!url) return null;
+
+  let videoId: string | undefined;
+
+  if (url.includes("watch?v=")) {
+    videoId = url.split("watch?v=")[1]?.split("&")[0];
+  } else if (url.includes("youtu.be")) {
+    videoId = url.split("/").pop();
+  }
+
+  if (!videoId) return null;
+
+  return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=1&iv_load_policy=3`;
+};
+
+
+
 export default function ChapterContent({ chapter }: ChapterContentProps) {
   return (
     <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/70 backdrop-blur-sm">
@@ -17,24 +42,32 @@ export default function ChapterContent({ chapter }: ChapterContentProps) {
       <CardContent className="p-0">
         {chapter.contentType === "video" && chapter.videoUrl && (
           <div className="aspect-video bg-gray-900">
-            {chapter.videoUrl.includes("youtube.com") ||
-            chapter.videoUrl.includes("youtu.be") ? (
-              <iframe
-                className="w-full h-full"
-                src={`https:
-                  chapter.videoUrl.includes("watch?v=")
-                    ? chapter.videoUrl.split("watch?v=")[1].split("&")[0]
-                    : chapter.videoUrl.split("/").pop()
-                }`}
-                title="YouTube Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <video src={chapter.videoUrl} controls className="w-full h-full" />
-            )}
+            {(() => {
+              const embedUrl = getYouTubeEmbedUrl(chapter.videoUrl);
+
+              if (embedUrl) {
+                return (
+                  <iframe
+                    className="w-full h-full"
+                    src={embedUrl}
+                    title="YouTube Video"
+                    allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
+                );
+              }
+
+              return (
+                <video
+                  src={chapter.videoUrl}
+                  controls
+                  className="w-full h-full"
+                />
+              );
+            })()}
           </div>
         )}
+
         {chapter.contentType === "text" && chapter.textContent && (
           <div className="p-4 sm:p-6 md:p-8">
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 sm:p-6">

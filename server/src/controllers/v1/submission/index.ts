@@ -243,46 +243,102 @@ export const modifySubmission = async (
   try {
     const { id: submissionId } = req.params;
     const { submissionType, textContent, answers } = req.body;
+    const studentId = req.userId;
     const submission = await Submission.findById(submissionId);
     if (!submission) throw new ApiError(404, "Submission not found");
-    if (submission.score !== null && submission.score !== undefined) {
-      throw new ApiError(400, "Cannot modify graded submission");
+    console.log("Submission modification request received",submission.studentId, studentId);
+    if (submission.studentId.toString() !== studentId.toString()) {
+      throw new ApiError(403, "You can only edit your own submissions");
+    }
+    // if (submission.score !== null && submission.score !== undefined) {
+    //   throw new ApiError(400, "Cannot modify graded submission");
+    // }
+    const assignment = await Assignment.findById(submission.assignmentId);
+    if (!assignment) throw new ApiError(404, "Assignment not found");
+    const now = new Date();
+    if (now > new Date(assignment.endDate)) {
+      throw new ApiError(400, "Assignment deadline has passed. Cannot edit submission.");
+    }
+    if (assignment.status !== "active") {
+      throw new ApiError(400, "Assignment is no longer active. Cannot edit submission.");
     }
     if (req.file) {
       const filename = req.file.originalname;
-      if (submissionType === "video") {
-        if (submission.videoPublicId) {
-          await deleteFromCloudinary(submission.videoPublicId);
+      const maxRetries = 2;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (submissionType === "video") {
+            if (submission.videoPublicId) {
+              await deleteFromCloudinary(submission.videoPublicId);
+            }
+            console.log(
+              `Uploading video (attempt ${attempt + 1}/${maxRetries + 1}): ${filename}`
+            );
+            const uploadResult: any = await uploadToCloudinary(
+              req.file.buffer,
+              "submissions/videos",
+              "video",
+              filename
+            );
+            submission.videoUrl = uploadResult.secure_url;
+            submission.videoPublicId = uploadResult.public_id;
+            submission.pdfUrl = undefined;
+            submission.pdfPublicId = undefined;
+            submission.textContent = undefined;
+            console.log("Video upload successful:", submission.videoUrl);
+            break;
+          } else if (submissionType === "pdf") {
+            if (submission.pdfPublicId) {
+              await deleteFromCloudinary(submission.pdfPublicId);
+            }
+            console.log(
+              `Uploading PDF (attempt ${attempt + 1}/${maxRetries + 1}): ${filename}`
+            );
+            const uploadResult: any = await uploadToCloudinary(
+              req.file.buffer,
+              "submissions/pdfs",
+              "raw",
+              filename
+            );
+            submission.pdfUrl = uploadResult.secure_url;
+            submission.pdfPublicId = uploadResult.public_id;
+            submission.videoUrl = undefined;
+            submission.videoPublicId = undefined;
+            submission.textContent = undefined;
+            console.log("PDF upload successful:", submission.pdfUrl);
+            break;
+          }
+        } catch (uploadError: any) {
+          console.error(
+            `Upload attempt ${attempt + 1} failed:`,
+            uploadError.message
+          );
+          if (uploadError.name === "TimeoutError" && attempt < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            continue;
+          }
+          if (attempt === maxRetries) {
+            throw new ApiError(
+              500,
+              `File upload failed: ${
+                uploadError.message || "Cloudinary timeout"
+              }. Please try with a smaller file or try again later.`
+            );
+          }
         }
-        const uploadResult: any = await uploadToCloudinary(
-          req.file.buffer,
-          "submissions/videos",
-          "video",
-          filename
-        );
-        submission.videoUrl = uploadResult.secure_url;
-        submission.videoPublicId = uploadResult.public_id;
-        submission.pdfUrl = undefined;
-        submission.pdfPublicId = undefined;
-      } else if (submissionType === "pdf") {
-        if (submission.pdfPublicId) {
-          await deleteFromCloudinary(submission.pdfPublicId);
-        }
-        const uploadResult: any = await uploadToCloudinary(
-          req.file.buffer,
-          "submissions/pdfs",
-          "raw",
-          filename
-        );
-        submission.pdfUrl = uploadResult.secure_url;
-        submission.pdfPublicId = uploadResult.public_id;
-        submission.videoUrl = undefined;
-        submission.videoPublicId = undefined;
       }
     }
-    if (submissionType) submission.submissionType = submissionType;
-    if (submissionType === "text" && textContent) {
+    if (submissionType) {
+      submission.submissionType = submissionType;
+    }
+    if (submissionType === "text" && textContent !== undefined) {
       submission.textContent = textContent;
+      if (submission.videoPublicId) {
+        await deleteFromCloudinary(submission.videoPublicId);
+      }
+      if (submission.pdfPublicId) {
+        await deleteFromCloudinary(submission.pdfPublicId);
+      }
       submission.videoUrl = undefined;
       submission.videoPublicId = undefined;
       submission.pdfUrl = undefined;
@@ -297,6 +353,7 @@ export const modifySubmission = async (
           : [];
       submission.answers = parsedAnswers;
     }
+    submission.submittedAt = new Date();
     await submission.save();
     res.json({
       success: true,
@@ -340,53 +397,36 @@ export const gradeSubmission = async (
     const { id: submissionId } = req.params;
     const { score, feedback } = req.body;
     const userId = req.userId;
-
     if (score !== undefined && (score < 0 || score > 100)) {
       throw new ApiError(400, "Score must be between 0 and 100");
     }
-
-    // Get user role
     const user = await User.findById(userId).select("role");
     if (!user) throw new ApiError(404, "User not found");
-
     const submission = await Submission.findById(submissionId);
     if (!submission) throw new ApiError(404, "Submission not found");
-
     const assignment = await Assignment.findById(submission.assignmentId);
     if (!assignment) throw new ApiError(404, "Assignment not found");
-
-    // Authorization logic
     if (user.role === "admin") {
-      // Admins can grade any submission
     } else if (user.role === "teacher") {
-      // Teachers can grade submissions for their grade
       const teacher = await Teacher.findById(userId).select("gradeId");
       if (!teacher) throw new ApiError(404, "Teacher not found");
-
-      // Check if the assignment belongs to the teacher's grade
       const assignmentGradeId = typeof assignment.gradeId === 'object' 
         ? assignment.gradeId._id 
         : assignment.gradeId;
-      
       const teacherGradeId = typeof teacher.gradeId === 'object'
         ? teacher.gradeId._id
         : teacher.gradeId;
-
       if (assignmentGradeId.toString() !== teacherGradeId.toString()) {
         throw new ApiError(403, "You can only grade submissions for your assigned grade");
       }
     } else {
       throw new ApiError(403, "Only teachers and admins can grade submissions");
     }
-
-    // Update submission with grade
     submission.score = score;
     submission.feedback = feedback;
     submission.gradedAt = new Date();
     submission.gradedBy = new mongoose.Types.ObjectId(userId!);
-
     await submission.save();
-
     res.json({
       success: true,
       message: "Submission graded successfully",

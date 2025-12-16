@@ -201,7 +201,7 @@ export function AssignmentCard({
                 </span>
                 {gradeName && (
                   <span className="text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                    {gradeName}
+                    Grade {gradeName}
                   </span>
                 )}
               </div>

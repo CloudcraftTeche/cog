@@ -51,10 +51,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigationItems = useMemo(() => {
     const baseItems = [{ name: "Dashboard", href: "/dashboard", icon: Home }];
 
-    if (
-      (user?.role === "admin" && user.name !== "Pastor") ||
-      user?.role === "superAdmin"
-    ) {
+    if (user?.role === "admin") {
       return [
         ...baseItems,
         { name: "Teachers", href: "/dashboard/admin/teachers", icon: Users },
@@ -82,7 +79,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         },
         {
           name: "Queries",
-          href: "/dashboard/admin/query",
+          href: "/dashboard/admin/queries",
           icon: BadgeHelpIcon,
         },
         {
@@ -97,7 +94,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         },
       ];
     }
-    if (user?.role === "admin" && user.name == "Pastor") {
+    if (user?.role === "superAdmin") {
       return [
         ...baseItems,
         {
@@ -137,7 +134,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         },
         {
           name: "Queries",
-          href: "/dashboard/super-admin/query",
+          href: "/dashboard/super-admin/queries",
           icon: BadgeHelpIcon,
         },
         {
@@ -190,7 +187,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         },
         {
           name: "Queries",
-          href: "/dashboard/teacher/query",
+          href: "/dashboard/teacher/queries",
           icon: BadgeHelpIcon,
         },
         {
@@ -205,6 +202,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (user?.role === "student") {
       return [
         ...baseItems,
+        {
+          name: "Todo List",
+          href: "/dashboard/student/todo-list",
+          icon: CalendarDaysIcon,
+        },
         {
           name: "Chapters",
           href: "/dashboard/student/chapters",
@@ -222,7 +224,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         },
         {
           name: "Queries",
-          href: "/dashboard/student/query",
+          href: "/dashboard/student/queries",
           icon: BadgeHelpIcon,
         },
         {
@@ -272,7 +274,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50">
-      {}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transform transition-all duration-300 ease-in-out flex flex-col",
@@ -280,7 +281,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           "lg:translate-x-0 lg:static lg:w-80"
         )}
       >
-        {}
         <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 p-4 sm:p-6 flex-shrink-0">
           <div className="absolute inset-0 bg-black/10" />
           <div className="absolute top-2 right-2 w-20 h-20 border border-white/20 rounded-full" />
@@ -311,7 +311,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </div>
 
-        {}
         <nav className="flex-1 px-2 sm:px-4 py-4 sm:py-6 space-y-2 overflow-y-auto">
           {navigationItems.map((item) => {
             const isActive = pathname === item.href;
@@ -359,7 +358,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
       </div>
 
-      {}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm cursor-pointer"
@@ -368,9 +366,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
       )}
 
-      {}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {}
         <header className="flex-shrink-0 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-3 sm:px-4 lg:px-6 h-14 sm:h-16">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -405,11 +401,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     {user?.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.name !== "Pastor"
-                      ? user?.role
-                        ? getRoleLabel(user.role)
-                        : "U"
-                      : "Pastor"}
+                    {user?.role ? getRoleLabel(user.role) : "U"}
                   </p>
                 </div>
                 <DropdownMenu>
@@ -494,7 +486,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-full break-words">{children}</div>
         </main>

@@ -105,7 +105,7 @@ const router = Router();
 router.post(
   "/bulk",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin","teacher","superAdmin"),
   [
     body("gradeIds")
       .isArray({ min: 1 })
@@ -121,7 +121,7 @@ router.post(
 router.post(
   "/:gradeId/chapters",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("gradeId")
       .isMongoId()
@@ -157,7 +157,7 @@ router.get(
 router.get(
   "/chapters",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     query("search").optional().trim(),
     query("unitId").optional().isMongoId().withMessage("Invalid unit ID"),
@@ -206,7 +206,7 @@ router.get(
 router.put(
   "/:gradeId/chapters/:chapterId",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("gradeId").isMongoId().withMessage("Invalid grade ID"),
     param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
@@ -262,7 +262,7 @@ router.put(
 router.delete(
   "/:gradeId/chapters/:chapterId",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("gradeId").isMongoId().withMessage("Invalid grade ID"),
     param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
@@ -304,7 +304,7 @@ router.post(
 router.post(
   "/:gradeId/chapters/:chapterId/complete",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("gradeId").isMongoId().withMessage("Invalid grade ID"),
     param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
@@ -344,7 +344,7 @@ router.get(
 router.get(
   "/:chapterId/completed-students",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("chapterId").isMongoId().withMessage("Invalid chapter ID format"),
     query("page")
@@ -381,7 +381,7 @@ router.get(
 router.get(
   "/:chapterId/top-performers",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("chapterId").isMongoId().withMessage("Invalid chapter ID format"),
     query("limit")
@@ -413,7 +413,7 @@ router.get(
 router.post(
   "/:chapterId/remind/:studentId",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
     param("studentId").isMongoId().withMessage("Invalid student ID"),
@@ -434,7 +434,7 @@ router.post(
 router.post(
   "/:chapterId/remind-in-progress",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+  authorizeRoles("admin", "teacher","superAdmin"),
   [
     param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
   ],

@@ -21,15 +21,17 @@ export default function StudentDashboard() {
     return <ErrorAlert message={error} onRetry={retry} />;
   }
   const { overview, charts, recentActivity } = dashboardData;
+  console.log(recentActivity);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <DashboardHeader />
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {}
+        
         <OverviewSection overview={overview} />
-        {}
+        
         <ProgressSection overview={overview} />
-        {}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
             <QueriesSection queries={charts.myQueries} />
@@ -38,14 +40,13 @@ export default function StudentDashboard() {
             <AssignmentsSection stats={charts.assignmentStats} />
           </div>
         </div>
-        {}
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <PerformanceSection data={charts.performanceData} />
           <AttendanceSection records={charts.attendanceRecords} />
         </div>
-        {}
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <DeadlinesSection deadlines={recentActivity.upcomingDeadlines} />
           <AnnouncementsSection announcements={recentActivity.recentAnnouncements} />
         </div>
       </div>

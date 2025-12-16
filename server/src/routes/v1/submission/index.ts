@@ -137,8 +137,9 @@ router.put(
   [
     param("id").isMongoId().withMessage("Invalid submission ID"),
     body("gradeId")
+      .optional()
       .isMongoId()
-      .withMessage("Grade ID is required and must be valid"),
+      .withMessage("Grade ID must be valid"),
     body("submissionType")
       .optional()
       .isIn(["video", "text", "pdf"])
@@ -151,10 +152,15 @@ router.put(
       .optional()
       .isArray()
       .withMessage("Answers must be an array"),
+    body("assignmentId")
+      .optional()
+      .isMongoId()
+      .withMessage("Invalid assignment ID"),
   ],
   validate,
   modifySubmission
 );
+
 router.put(
   "/:id/grade",
   authenticate,

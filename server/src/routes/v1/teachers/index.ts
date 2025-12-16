@@ -8,6 +8,7 @@ import {
   getTeachersList,
   getTeachersTotalCount,
   markChapterCompleted,
+  getTeachersByGrade,
 } from "../../../controllers/v1/teachers";
 import { authenticate } from "../../../middleware/authenticate";
 import { authorizeRoles } from "../../../middleware/authorizeRoles";
@@ -245,5 +246,13 @@ router.post(
   "/:id/complete-chapter",
   authenticate,
   markChapterCompleted
+);
+
+router.get(
+  "/grade/:gradeId",
+  authenticate,
+  authorizeRoles("teacher", "admin", "superAdmin", "student"),
+  teacherIdValidation,
+  getTeachersByGrade
 );
 export default router;

@@ -304,3 +304,34 @@ export const markChapterCompleted = async (
     next(err);
   }
 };
+
+export const getTeachersByGrade = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { gradeId } = req.params;
+
+    const grade = await Grade.findById(gradeId);
+    if (!grade) {
+      throw new ApiError(404, "Grade not found");
+    }
+
+    const teachers = await Teacher.find({ 
+      gradeId,
+      role: "teacher" 
+    })
+      .populate("gradeId", "grade section academicYear")
+      .select("-password")
+      .sort({ name: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: teachers.length,
+      data: teachers,
+    });
+  } catch (err) {
+    next(err);
+  }
+};

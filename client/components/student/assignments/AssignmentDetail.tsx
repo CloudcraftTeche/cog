@@ -20,6 +20,7 @@ import {
   Sparkles,
   Star,
   Zap,
+  Edit,
 } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -39,21 +40,23 @@ import { SubmissionContent, SubmissionForm } from "./SubmissionForm";
 import { ContentViewer } from "./Contentviewer";
 import { QuestionForm } from "./QuestionForm";
 import { useRouter } from "next/navigation";
+
 interface AssignmentDetailProps {
   assignment: IAssignment;
   userRole?: "student" | "teacher" | "admin";
   existingSubmission?: ISubmission | null;
   gradeId?: string;
 }
+
 export function AssignmentDetail({
   assignment,
   userRole = "student",
   existingSubmission = null,
   gradeId,
 }: AssignmentDetailProps) {
-
   const router = useRouter();
   
+  const [isEditing, setIsEditing] = useState(false);
   const [answers, setAnswers] = useState<Record<number, string>>(() => {
     if (existingSubmission?.answers) {
       const initialAnswers: Record<number, string> = {};
@@ -64,6 +67,7 @@ export function AssignmentDetail({
     }
     return {};
   });
+
   const [submissionContent, setSubmissionContent] = useState<SubmissionContent>(
     () => {
       if (existingSubmission) {
@@ -75,16 +79,21 @@ export function AssignmentDetail({
       return { type: "text", textContent: "" };
     }
   );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(!!existingSubmission);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
   const now = new Date();
   const startDate = new Date(assignment.startDate);
   const endDate = new Date(assignment.endDate);
+  
   const isActive =
     now >= startDate && now <= endDate && assignment.status === "active";
   const isEnded = now > endDate || assignment.status === "ended";
   const canSubmit = isActive && !submitted && userRole === "student";
+  const canEdit = isActive && submitted && userRole === "student" && !isEnded;
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
       weekday: "short",
@@ -94,9 +103,11 @@ export function AssignmentDetail({
       minute: "2-digit",
     });
   };
+
   const handleAnswerChange = (questionIndex: number, answer: string) => {
     setAnswers((prev) => ({ ...prev, [questionIndex]: answer }));
   };
+
   const isSubmissionContentValid = () => {
     switch (submissionContent.type) {
       case "text":
@@ -109,31 +120,38 @@ export function AssignmentDetail({
         return false;
     }
   };
+
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit && !isEditing) return;
+
     if (!isSubmissionContentValid()) {
       setSubmitError(
         "Please provide your submission content (text, video, or PDF)"
       );
       return;
     }
+
     setIsSubmitting(true);
     setSubmitError(null);
+
     try {
       const answersPayload = assignment.questions.map((q, i) => ({
         question: q,
         answer: answers[i] || "",
       }));
+
       const submissionGradeId =
         gradeId ||
         (typeof assignment.gradeId === "object"
           ? assignment.gradeId._id
           : assignment.gradeId);
+
       const formData = new FormData();
       formData.append("assignmentId", assignment._id);
       formData.append("gradeId", submissionGradeId || "");
       formData.append("submissionType", submissionContent.type);
       formData.append("answers", JSON.stringify(answersPayload));
+
       if (submissionContent.type === "text") {
         formData.append("textContent", submissionContent.textContent || "");
       } else if (
@@ -147,12 +165,27 @@ export function AssignmentDetail({
       ) {
         formData.append("file", submissionContent.pdfFile);
       }
-      const response = await api.post("/submissions", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (response.data.success) {
-        setSubmitted(true);
-        router.push(`/dashboard/student/assignments`);
+
+      if (isEditing && existingSubmission) {
+        // Update existing submission
+        const response = await api.put(`/submissions/${existingSubmission._id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (response.data.success) {
+          setIsEditing(false);
+          router.push(`/dashboard/student/assignments`);
+        }
+      } else {
+        // Create new submission
+        const response = await api.post("/submissions", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (response.data.success) {
+          setSubmitted(true);
+          router.push(`/dashboard/student/assignments`);
+        }
       }
     } catch (error: any) {
       setSubmitError(
@@ -162,10 +195,34 @@ export function AssignmentDetail({
       setIsSubmitting(false);
     }
   };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setSubmitError(null);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset to original submission values
+    if (existingSubmission) {
+      setSubmissionContent({
+        type: existingSubmission.submissionType,
+        textContent: existingSubmission.textContent,
+      });
+      const initialAnswers: Record<number, string> = {};
+      existingSubmission.answers.forEach((a, i) => {
+        initialAnswers[i] = a.answer;
+      });
+      setAnswers(initialAnswers);
+    }
+    setSubmitError(null);
+  };
+
   const allQuestionsAnswered =
     assignment.questions.length === 0 ||
     Object.keys(answers).length === assignment.questions.length;
   const canSubmitNow = allQuestionsAnswered && isSubmissionContentValid();
+
   const contentTypeConfig = {
     video: {
       icon: Video,
@@ -186,10 +243,12 @@ export function AssignmentDetail({
       text: "text-destructive",
     },
   }[assignment.contentType];
+
   const ContentIcon = contentTypeConfig.icon;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-28 sm:pb-8">
-      {}
+      {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-info p-6 sm:p-8 text-primary-foreground">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
@@ -216,10 +275,16 @@ export function AssignmentDetail({
                 <h1 className="text-2xl sm:text-3xl font-bold">
                   {assignment.title}
                 </h1>
-                {submitted && (
+                {submitted && !isEditing && (
                   <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                     Submitted
+                  </Badge>
+                )}
+                {isEditing && (
+                  <Badge className="bg-warning/80 text-white border-0">
+                    <Edit className="w-3.5 h-3.5 mr-1.5" />
+                    Editing
                   </Badge>
                 )}
                 {isEnded && !submitted && (
@@ -242,7 +307,8 @@ export function AssignmentDetail({
           </div>
         </div>
       </div>
-      {}
+
+      {/* Stats Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:shadow-lg hover:shadow-primary/10 transition-all">
           <CardContent className="p-4">
@@ -316,8 +382,9 @@ export function AssignmentDetail({
           </CardContent>
         </Card>
       </div>
-      {}
-      {submitted && existingSubmission?.score !== undefined && (
+
+      {/* Score Card */}
+      {submitted && existingSubmission?.score !== undefined && !isEditing && (
         <Card className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-success/5 to-warning/10 border-primary/30 shadow-xl">
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-success/20 blur-3xl" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-primary/20 blur-2xl" />
@@ -365,7 +432,8 @@ export function AssignmentDetail({
           </CardContent>
         </Card>
       )}
-      {}
+
+      {/* Assignment Content */}
       <Card className="shadow-lg border-border/50 overflow-hidden">
         <CardHeader className="pb-4 bg-gradient-to-r from-muted/50 to-transparent">
           <CardTitle className="text-lg flex items-center gap-3">
@@ -381,7 +449,8 @@ export function AssignmentDetail({
           <ContentViewer assignment={assignment} />
         </CardContent>
       </Card>
-      {}
+
+      {/* Questions */}
       {assignment.questions.length > 0 && (
         <Card className="shadow-lg border-border/50 overflow-hidden">
           <CardHeader className="pb-4 bg-gradient-to-r from-success/10 to-transparent">
@@ -397,20 +466,21 @@ export function AssignmentDetail({
               questions={assignment.questions}
               answers={answers}
               onAnswerChange={handleAnswerChange}
-              disabled={!canSubmit}
-              showResults={submitted && existingSubmission !== null}
+              disabled={!canSubmit && !isEditing}
+              showResults={submitted && existingSubmission !== null && !isEditing}
             />
           </CardContent>
         </Card>
       )}
-      {}
+
+      {/* Submission Form */}
       {userRole === "student" && (
         <SubmissionForm
           value={submissionContent}
           onChange={setSubmissionContent}
-          disabled={!canSubmit}
+          disabled={!canSubmit && !isEditing}
           existingSubmission={
-            existingSubmission
+            existingSubmission && !isEditing
               ? {
                   submissionType: existingSubmission.submissionType,
                   textContent: existingSubmission.textContent,
@@ -421,18 +491,25 @@ export function AssignmentDetail({
           }
         />
       )}
-      {}
+
+      {/* Error Message */}
       {submitError && (
         <div className="p-5 rounded-2xl bg-destructive/10 border-2 border-destructive/30 text-destructive font-medium">
           {submitError}
         </div>
       )}
-      {}
+
+      {/* Action Buttons */}
       {userRole === "student" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border shadow-2xl sm:static sm:bg-transparent sm:backdrop-blur-none sm:border-0 sm:shadow-none sm:p-0">
           <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
             <div className="text-sm text-muted-foreground hidden sm:block">
-              {!submitted ? (
+              {isEditing ? (
+                <span className="flex items-center gap-2 font-medium text-warning">
+                  <Edit className="w-5 h-5" />
+                  Editing submission
+                </span>
+              ) : !submitted ? (
                 canSubmitNow ? (
                   <span className="text-success flex items-center gap-2 font-medium">
                     <CheckCircle2 className="w-5 h-5" />
@@ -456,54 +533,77 @@ export function AssignmentDetail({
                 </span>
               )}
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {isEditing && (
                 <Button
-                  disabled={!canSubmit || !canSubmitNow || isSubmitting}
+                  variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-info hover:opacity-90 text-white shadow-xl shadow-primary/30 border-0 h-12 px-8 text-base font-semibold"
+                  onClick={handleCancelEdit}
+                  className="flex-1 sm:flex-none h-12 px-6"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : submitted ? (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 mr-2" />
-                      Submitted
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5 mr-2" />
-                      Submit Assignment
-                    </>
-                  )}
+                  Cancel
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="mx-4 sm:mx-0 rounded-2xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-xl">
-                    Submit Assignment?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to submit this assignment? You
-                    won&apos;t be able to change your answers after submission.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-xl">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleSubmit}
-                    className="rounded-xl bg-gradient-to-r from-primary to-info"
-                  >
-                    Submit
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              )}
+
+              {canEdit && !isEditing && (
+                <Button
+                  size="lg"
+                  onClick={handleEditClick}
+                  className="flex-1 sm:flex-none bg-gradient-to-r from-warning to-warning/80 hover:opacity-90 text-white shadow-xl shadow-warning/30 border-0 h-12 px-8 text-base font-semibold"
+                >
+                  <Edit className="w-5 h-5 mr-2" />
+                  Edit Submission
+                </Button>
+              )}
+
+              {(canSubmit || isEditing) && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={!canSubmitNow || isSubmitting}
+                      size="lg"
+                      className="flex-1 sm:flex-none bg-gradient-to-r from-primary to-info hover:opacity-90 text-white shadow-xl shadow-primary/30 border-0 h-12 px-8 text-base font-semibold"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          {isEditing ? "Updating..." : "Uploading..."}
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5 mr-2" />
+                          {isEditing ? "Update Submission" : "Submit Assignment"}
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="mx-4 sm:mx-0 rounded-2xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-xl">
+                        {isEditing ? "Update Submission?" : "Submit Assignment?"}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {isEditing
+                          ? "Are you sure you want to update your submission? This will replace your previous submission."
+                          : "Are you sure you want to submit this assignment? You can edit it later before the deadline."}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="rounded-xl">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleSubmit}
+                        className="rounded-xl bg-gradient-to-r from-primary to-info"
+                      >
+                        {isEditing ? "Update" : "Submit"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
         </div>
       )}

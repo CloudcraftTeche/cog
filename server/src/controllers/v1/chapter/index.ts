@@ -7,8 +7,9 @@ import { Chapter } from "../../../models/academic/Chapter.model";
 import { Student } from "../../../models/user/Student.model";
 import { createEmailTransporter } from "../../../utils/email/transporter";
 import { Teacher } from "../../../models/user/Teacher.model";
-import { Admin } from "../../../models/user/Admin.model";
+import { User } from "../../../models/user/User.model";
  const transporter = createEmailTransporter();
+
 export const createChapterHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -26,9 +27,11 @@ export const createChapterHandler = async (
       videoUrl,
       gradeIds,
     } = req.body;
+
     if (!gradeIds || !Array.isArray(gradeIds) || gradeIds.length === 0) {
       throw new ApiError(400, "At least one grade ID is required");
     }
+
     const invalidGradeIds = gradeIds.filter(
       (id) => !mongoose.isValidObjectId(id)
     );
@@ -38,12 +41,15 @@ export const createChapterHandler = async (
         `Invalid grade IDs: ${invalidGradeIds.join(", ")}`
       );
     }
+
     if (!unitId || !mongoose.isValidObjectId(unitId)) {
       throw new ApiError(400, "Valid unit ID is required");
     }
+
     const parsedQuestions = Array.isArray(questions)
       ? questions
       : JSON.parse(questions || "[]");
+
     parsedQuestions.forEach((q: any, index: number) => {
       if (!q.questionText || typeof q.questionText !== "string") {
         throw new ApiError(
@@ -70,29 +76,61 @@ export const createChapterHandler = async (
         );
       }
     });
+
     const grades = await Grade.find({ _id: { $in: gradeIds } });
+
     if (grades.length !== gradeIds.length) {
       const foundIds = grades.map((g) => g._id.toString());
       const missingIds = gradeIds.filter((id) => !foundIds.includes(id));
       throw new ApiError(404, `Grades not found: ${missingIds.join(", ")}`);
     }
+
     const gradesWithoutUnit: string[] = [];
     let unitName = "";
+
     for (const grade of grades) {
-      const unit = grade.units.find((u) => u._id?.toString() === unitId);
+      const unit = grade.units.find(
+        (u) => u._id?.toString() === unitId
+      );
       if (!unit) {
         gradesWithoutUnit.push(`Grade ${grade.grade}`);
       } else if (!unitName) {
         unitName = unit.name;
       }
     }
+
     if (gradesWithoutUnit.length > 0) {
       throw new ApiError(
         404,
         `Unit not found in: ${gradesWithoutUnit.join(", ")}`
       );
     }
+
+    const existingChapters = await Chapter.find({
+      gradeId: { $in: gradeIds },
+      unitId,
+      chapterNumber,
+    }).populate("gradeId", "grade");
+
+    if (existingChapters.length > 0) {
+      const conflicts = existingChapters.map((ch) => {
+        const gradeName =
+          typeof ch.gradeId === "object" && "grade" in ch.gradeId
+            ? ch.gradeId.grade
+            : ch.gradeId.toString();
+        return `Grade ${gradeName}`;
+      });
+
+      throw new ApiError(
+        409,
+        `Chapter number ${chapterNumber} already exists in ${conflicts.join(
+          ", "
+        )} for this unit`
+      );
+    }
+
     const createdChapters = [];
+
     for (const gradeId of gradeIds) {
       const chapterData = {
         title: title.trim(),
@@ -100,10 +138,10 @@ export const createChapterHandler = async (
         contentType,
         videoUrl,
         textContent,
+        chapterNumber,
         gradeId: new mongoose.Types.ObjectId(gradeId),
         unitId: new mongoose.Types.ObjectId(unitId),
         createdBy: new mongoose.Types.ObjectId(req.userId),
-        chapterNumber,
         questions: parsedQuestions.map((q: any) => ({
           questionText: q.questionText,
           options: q.options,
@@ -111,13 +149,16 @@ export const createChapterHandler = async (
           selectedAnswer: null,
         })),
       };
+
       const createdChapter = await Chapter.create(chapterData);
+
       createdChapters.push({
         id: createdChapter._id,
         gradeId: createdChapter.gradeId,
         title: createdChapter.title,
       });
     }
+
     res.status(201).json({
       success: true,
       message: `Chapter created successfully for ${createdChapters.length} grade(s)`,
@@ -136,6 +177,7 @@ export const createChapterHandler = async (
     next(err);
   }
 };
+
 export const createChapterForSingleGradeHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -149,6 +191,7 @@ export const createChapterForSingleGradeHandler = async (
     next(err);
   }
 };
+
 export const getGradeChaptersHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -162,7 +205,7 @@ export const getGradeChaptersHandler = async (
     const userId = req.userId;
     const student = await Student.findById(userId).select("gradeId");
     const teacher = await Teacher.findById(userId).select("gradeId role");
-    const admin = await Admin.findById(userId).select("role");
+    const admin = await User.findById(userId).select("role");
     let gradeId: string | null|undefined = null;
     if (student) {
       gradeId = student.gradeId?.toString();

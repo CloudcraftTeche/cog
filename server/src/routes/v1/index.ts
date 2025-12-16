@@ -1,5 +1,7 @@
 import { Router } from "express";
 import adminRoutes from "./admin";
+import superAdminRoutes from "./superAdmin";
+
 import authRoutes from "./auth";
 import teachersRoutes from "./teachers";
 import studentsRoutes from "./students";
@@ -10,8 +12,8 @@ import announcementRoutes from "./announcement";
 import assignmentRoutes from "./assignment";
 import attendanceRoutes from "./attendance";
 import chatRoutes from "./chat";
-import chatroomRoutes from "./chat/chatRoom"
-import { queryRoutes } from "./query/index";
+import chatroomRoutes from "./chat/chatRoom";
+import queryRoutes from "./queries";
 import teacherChaptersRoutes from "./teacherChapter";
 import todoListRoutes from "./todo";
 import dashboard from "./dashboard";
@@ -48,6 +50,7 @@ router.get("/", (_, res) => {
 });
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
+router.use("/superAdmins", superAdminRoutes);
 router.use("/teachers", teachersRoutes);
 router.use("/students", studentsRoutes);
 router.use("/dashboard", dashboard);

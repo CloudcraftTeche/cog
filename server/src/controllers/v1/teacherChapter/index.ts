@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { Grade } from "../../../models/academic/Grade.model";
 import { TeacherChapter } from "../../../models/academic/TeacherChapter.model";
 import { Teacher } from "../../../models/user/Teacher.model";
-import { Admin } from "../../../models/user/Admin.model";
+import { User } from "../../../models/user/User.model";
 export const createTeacherChapterHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -148,7 +148,7 @@ export const getTeacherChaptersHandler = async (
     const skip = (page - 1) * limit;
     const userId = req.userId;
     const teacher = await Teacher.findById(userId).select("gradeId role");
-    const admin = await Admin.findById(userId).select("role");
+    const admin = await User.findById(userId).select("role");
     let gradeId: string | null | undefined = null;
     if (teacher) {
       if (!teacher.gradeId) throw new ApiError(400, "Teacher has no assigned grade");
