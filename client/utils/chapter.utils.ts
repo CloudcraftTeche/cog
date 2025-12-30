@@ -1,4 +1,5 @@
-import { Chapter, GroupedChapterData } from "./studentChapter.service";
+import { Chapter } from "./studentChapter.service";
+import { GroupedChapterData } from "./teacherChapter.service";
 export function groupChaptersByGradeAndUnit(chapters: Chapter[]): GroupedChapterData[] {
   const gradeMap = new Map<string, GroupedChapterData>();
   chapters.forEach((chapter) => {
@@ -32,7 +33,7 @@ export function groupChaptersByGradeAndUnit(chapters: Chapter[]): GroupedChapter
       };
       gradeData.unitGroups.push(unitGroup);
     }
-    unitGroup.chapters.push(chapter);
+    unitGroup.chapters.push(chapter as any);
   });
   gradeMap.forEach((gradeData) => {
     gradeData.unitGroups.forEach((unitGroup) => {
