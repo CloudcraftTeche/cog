@@ -1,6 +1,6 @@
 import { GraduationCap, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { GroupedChapterData } from "@/utils/studentChapter.service";
+import { GroupedChapterData } from "@/utils/teacherChapter.service";
 interface GradeHeaderProps {
   gradeData: GroupedChapterData;
   isExpanded: boolean;
