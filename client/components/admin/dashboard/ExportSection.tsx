@@ -11,7 +11,7 @@ export const ExportSection = () => {
       return "No data available\n";
     }
 
-    const header = '"Student Name","Email","Class","Teacher","Date","Status"\n';
+    const header = '"Student Name","Email","Grade","Teacher","Date","Status"\n';
 
     const rows = data
       .map((item: any) => {
@@ -30,7 +30,7 @@ export const ExportSection = () => {
 
         const studentName = item.studentId?.name || "N/A";
         const email = item.studentId?.email || "N/A";
-        const studentClass = item.studentId?.class || "N/A";
+        const studentClass = item.studentId?.grade || "N/A";
         const teacherName = item.teacherId?.name || "N/A";
         const status = item.status || "N/A";
 
@@ -63,7 +63,7 @@ export const ExportSection = () => {
   const exportData = async (status = "all") => {
     try {
       setExporting(true);
-      const response = await api.get(`/export/attendance?status=${status}`);
+      const response = await api.get(`/attendance/export?status=${status}`);
 
       const csvData = convertToCSV(response.data);
       downloadCSV(

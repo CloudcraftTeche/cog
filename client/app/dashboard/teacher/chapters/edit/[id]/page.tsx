@@ -4,20 +4,35 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, BookOpen, Video } from "lucide-react";
+import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import EditQuestionsSection, {
   EditQuestion,
 } from "@/components/admin/chapters/EditQuestionsSection";
 import {
-  ChapterFormData,
   TeacherChapterService,
   TeacherGrade,
-  ValidationErrors,
 } from "@/components/teacher/chapter/chapterApiAndTypes";
 import TeacherEditContentSection from "@/components/teacher/chapter/TeacherEditContentSection";
+
+interface Unit {
+  _id: string;
+  name: string;
+  description?: string;
+  orderIndex: number;
+}
+
+interface ContentItem {
+  type: "video" | "text" | "pdf" | "mixed";
+  order: number;
+  title?: string;
+  textContent?: string;
+  videoUrl?: string;
+  url?: string;
+  publicId?: string | null;
+  file?: File;
+}
 
 export default function TeacherEditChapterPage() {
   const router = useRouter();
@@ -26,22 +41,23 @@ export default function TeacherEditChapterPage() {
 
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("content");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [contentType, setContentType] = useState<"video" | "text">("text");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [textContent, setTextContent] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const [chapterNumber, setChapterNumber] = useState(1);
 
   const [grade, setGrade] = useState<TeacherGrade | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
+  
+  const [contentItems, setContentItems] = useState<ContentItem[]>([
+    { type: "video", order: 0, title: "" }
+  ]);
+  
   const [questions, setQuestions] = useState<EditQuestion[]>([
     { id: "1", questionText: "", options: ["", "", "", ""], correctAnswer: "" },
   ]);
-
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!id || !user?.id) return;
@@ -52,6 +68,13 @@ export default function TeacherEditChapterPage() {
 
         const gradeData = await TeacherChapterService.getTeacherGrade(user.id);
         setGrade(gradeData);
+        
+        if (gradeData?.units) {
+          const sortedUnits = [...gradeData.units].sort(
+            (a, b) => a.orderIndex - b.orderIndex
+          );
+          setUnits(sortedUnits);
+        }
 
         const chapter = await TeacherChapterService.getChapterById(id);
 
@@ -65,11 +88,30 @@ export default function TeacherEditChapterPage() {
 
         setTitle(chapter.title || "");
         setDescription(chapter.description || "");
-        setContentType(chapter.contentType || "text");
-        setTextContent(chapter.textContent || "");
-        setVideoUrl(chapter.videoUrl || "");
         setSelectedUnitId(chapter.unitId || "");
         setChapterNumber(chapter.chapterNumber || 1);
+
+        if (chapter.contentItems && chapter.contentItems.length > 0) {
+          const formattedContent = chapter.contentItems.map((item: any, index: number) => ({
+            type: item.type,
+            order: item.order !== undefined ? item.order : index,
+            title: item.title || "",
+            textContent: item.textContent || "",
+            videoUrl: item.type === "video" ? (item.url || "") : "",
+            url: item.url || "",
+            publicId: item.publicId || null,
+          }));
+          setContentItems(formattedContent);
+        } else {
+          // Fallback to old format
+          setContentItems([{
+            type: chapter.contentType || "text",
+            order: 0,
+            title: "",
+            textContent: chapter.textContent || "",
+            videoUrl: chapter.videoUrl || "",
+          }]);
+        }
 
         if (chapter.questions && chapter.questions.length > 0) {
           setQuestions(
@@ -94,7 +136,7 @@ export default function TeacherEditChapterPage() {
   }, [id, user?.id, router]);
 
   const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {};
+    const newErrors: Record<string, string> = {};
 
     if (!title.trim()) {
       newErrors.title = "Title is required";
@@ -114,20 +156,21 @@ export default function TeacherEditChapterPage() {
       newErrors.chapterNumber = "Chapter number must be at least 1";
     }
 
-    if (contentType === "video") {
-      if (!videoUrl.trim()) {
-        newErrors.videoUrl = "Video URL is required for video content";
-      } else {
-        try {
-          new URL(videoUrl);
-        } catch {
-          newErrors.videoUrl = "Please enter a valid URL";
+    if (contentItems.length === 0) {
+      newErrors.contentItems = "At least one content item is required";
+    } else {
+      for (let i = 0; i < contentItems.length; i++) {
+        const item = contentItems[i];
+        
+        if (item.type === "mixed") {
+          const hasVideo = (item.videoUrl?.trim() || item.url?.trim() || item.file);
+          const hasText = item.textContent?.trim();
+          if (!hasVideo && !hasText) {
+            newErrors[`content_${i}`] = "Provide at least video or text content";
+            break;
+          }
         }
       }
-    }
-
-    if (contentType === "text" && !textContent.trim()) {
-      newErrors.textContent = "Text content is required for text content type";
     }
 
     if (questions.length === 0) {
@@ -176,40 +219,44 @@ export default function TeacherEditChapterPage() {
       toast.error("Validation Error", {
         description: "Please fix the errors in the form before submitting",
       });
-      if (
-        errors.title ||
-        errors.description ||
-        errors.unitId ||
-        errors.chapterNumber ||
-        errors.videoUrl ||
-        errors.textContent
-      ) {
-        setActiveTab("content");
-      } else if (errors.questions) {
-        setActiveTab("questions");
-      }
       return;
     }
 
     setLoading(true);
 
     try {
-      const payload: Partial<ChapterFormData> = {
-        title: title.trim(),
-        description: description.trim(),
-        contentType,
-        unitId: selectedUnitId,
-        chapterNumber,
-        videoUrl: contentType === "video" ? videoUrl.trim() : undefined,
-        textContent: contentType === "text" ? textContent.trim() : undefined,
-        questions: questions.map((q) => ({
-          questionText: q.questionText.trim(),
-          options: q.options.filter((opt) => opt && opt.trim()),
-          correctAnswer: q.correctAnswer.trim(),
-        })),
-      };
+      const formData = new FormData();
+      
+      formData.append("title", title.trim());
+      formData.append("description", description.trim());
+      formData.append("unitId", selectedUnitId);
+      formData.append("chapterNumber", chapterNumber.toString());
 
-      await TeacherChapterService.updateChapter(id, payload);
+      const contentItemsData = contentItems.map((item, index) => ({
+        type: item.type,
+        order: index,
+        title: item.title || "",
+        ...(item.type === "text" && { textContent: item.textContent }),
+        ...(item.type === "video" && item.videoUrl && { videoUrl: item.videoUrl }),
+      }));
+      
+      formData.append("contentItems", JSON.stringify(contentItemsData));
+      
+      contentItems.forEach((item, index) => {
+        if (item.file) {
+          formData.append(`content_${index}`, item.file);
+        }
+      });
+
+      const formattedQuestions = questions.map((q) => ({
+        questionText: q.questionText.trim(),
+        options: q.options.filter((opt) => opt && opt.trim()),
+        correctAnswer: q.correctAnswer.trim(),
+      }));
+      
+      formData.append("questions", JSON.stringify(formattedQuestions));
+
+      await TeacherChapterService.updateChapter(id, formData);
 
       toast.success("Chapter updated successfully", {
         description: "The chapter has been updated with your changes",
@@ -259,93 +306,62 @@ export default function TeacherEditChapterPage() {
         <div className="mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-2xl">
           <h1 className="text-4xl font-bold mb-2">Edit Chapter</h1>
           <p className="text-indigo-100 text-lg">
-            Update chapter content and assessment questions for Grade{" "}
-            {grade.grade}
+            Update chapter content and assessment questions for Grade {grade.grade}
           </p>
         </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-8"
-        >
-          <div className="flex justify-center">
-            <TabsList className="grid w-full max-w-md grid-cols-2 h-16 bg-white rounded-2xl shadow-xl border-0 p-2">
-              <TabsTrigger
-                value="content"
-                className="flex items-center space-x-3 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white font-semibold transition-all duration-300 text-lg"
-              >
-                <BookOpen className="w-5 h-5" /> <span>Content</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="questions"
-                className="flex items-center space-x-3 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white font-semibold transition-all duration-300 text-lg"
-              >
-                <Video className="w-5 h-5" /> <span>Questions</span>
-              </TabsTrigger>
-            </TabsList>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <TeacherEditContentSection
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            selectedUnitId={selectedUnitId}
+            setSelectedUnitId={setSelectedUnitId}
+            chapterNumber={chapterNumber}
+            setChapterNumber={setChapterNumber}
+            grade={grade}
+            units={units}
+            contentItems={contentItems}
+            setContentItems={setContentItems}
+            errors={errors}
+          />
+
+          <EditQuestionsSection
+            questions={questions}
+            setQuestions={setQuestions}
+            errors={errors}
+          />
+
+          <div className="flex justify-end gap-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={loading}
+              className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:bg-gray-50 rounded-xl px-8 py-3 font-semibold transition-all duration-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-xl px-8 py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5 mr-2" />
+                  Update Chapter
+                </>
+              )}
+            </Button>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <TabsContent value="content" className="space-y-8">
-              <TeacherEditContentSection
-                title={title}
-                setTitle={setTitle}
-                description={description}
-                setDescription={setDescription}
-                contentType={contentType}
-                setContentType={setContentType}
-                videoUrl={videoUrl}
-                setVideoUrl={setVideoUrl}
-                textContent={textContent}
-                setTextContent={setTextContent}
-                selectedUnitId={selectedUnitId}
-                setSelectedUnitId={setSelectedUnitId}
-                chapterNumber={chapterNumber}
-                setChapterNumber={setChapterNumber}
-                grade={grade}
-                errors={errors}
-              />
-            </TabsContent>
-
-            <TabsContent value="questions" className="space-y-8">
-              <EditQuestionsSection
-                questions={questions}
-                setQuestions={setQuestions}
-                errors={errors}
-              />
-            </TabsContent>
-
-            <div className="flex justify-end gap-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={loading}
-                className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:bg-gray-50 rounded-xl px-8 py-3 font-semibold transition-all duration-300"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-xl px-8 py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5 mr-2" />
-                    Update Chapter
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Tabs>
+        </form>
       </div>
     </div>
   );

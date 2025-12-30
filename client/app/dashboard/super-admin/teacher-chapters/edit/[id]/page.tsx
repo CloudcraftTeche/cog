@@ -11,6 +11,7 @@ import EditQuestionsSection, {
   EditQuestion,
 } from "@/components/admin/chapters/EditQuestionsSection";
 import EditContentSection from "@/components/admin/chapters/EditContentSection";
+import EditTeacherContentSection from "@/components/admin/chapters/EditTeacherContentSection";
 interface Grade {
   _id: string;
   grade: string;
@@ -290,7 +291,7 @@ export default function EditTeacherChapterPage() {
           </div>
           <form onSubmit={handleSubmit} className="space-y-8">
             <TabsContent value="content" className="space-y-8">
-              <EditContentSection
+              <EditTeacherContentSection
                 title={title}
                 setTitle={setTitle}
                 description={description}

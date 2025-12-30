@@ -22,6 +22,7 @@ import BasicInfoSection from "@/components/admin/chapters/BasicInfoSection";
 import ContentUploadSection from "@/components/admin/chapters/ContentUploadSection";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import TeacherContentUploadSection from "@/components/admin/chapters/TeacherContentUploadSection";
 interface Grade {
   _id: string;
   grade: string;
@@ -318,7 +319,7 @@ export default function AdminUploadTeacherChapter() {
               </div>
             </div>
             <TabsContent value="video" className="space-y-8 mt-0">
-              <ContentUploadSection
+              <TeacherContentUploadSection
                 contentType="video"
                 videoUrl={videoUrl}
                 setVideoUrl={setVideoUrl}
@@ -328,7 +329,7 @@ export default function AdminUploadTeacherChapter() {
               />
             </TabsContent>
             <TabsContent value="text" className="space-y-8 mt-0">
-              <ContentUploadSection
+              <TeacherContentUploadSection
                 contentType="text"
                 videoUrl=""
                 setVideoUrl={() => {}}

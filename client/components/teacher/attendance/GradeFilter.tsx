@@ -67,8 +67,7 @@ export default function GradeFilter({ onGradeChange, selectedGradeId, teacherId 
         <option value="all">All My Grades ({grades.length})</option>
         {grades.map((grade) => (
           <option key={grade._id} value={grade._id}>
-            {grade.grade}
-            {grade.description && ` - ${grade.description}`}
+           Grade {grade.grade}
           </option>
         ))}
       </select>

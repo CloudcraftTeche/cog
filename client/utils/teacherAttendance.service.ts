@@ -7,10 +7,12 @@ export interface IAttendance {
     name: string;
     email: string;
     rollNumber?: string;
-    gradeId?: string | {
-      _id: string;
-      grade: string;
-    };
+    gradeId?:
+      | {
+          _id: string;
+          grade: string;
+        }
+      | string;
   };
   teacherId: {
     _id: string;
@@ -27,85 +29,215 @@ export interface IAttendance {
   createdAt: Date;
   updatedAt: Date;
 }
-export interface IAttendanceStats {
-  totalStudents: number;
-  totalTeachers: number;
-  todayAttendance: {
-    present: number;
-    absent: number;
-    late: number;
-    excused: number;
-    total: number;
-  };
-}
-export interface IHeatmapData {
-  _id: string;
-  present: number;
-  absent: number;
-  late: number;
-  excused: number;
-}
 export const attendanceService = {
   createOrUpdateAttendance: async (data: {
     studentId: string;
-    status: "present" | "absent" | "late" | "excused";
+    status: AttendanceStatus;
     gradeId?: string;
     remarks?: string;
-  }) => {
-    const response = await api.post("/attendance", data);
-    return response.data;
-  },
-  getTodayAttendance: async () => {
-    const response = await api.get("/attendance/today");
-    return response.data;
-  },
-  getAttendanceStats: async () => {
-    const response = await api.get("/attendance/stats");
-    return response.data;
-  },
-  getTeacherStats: async (teacherId: string): Promise<IAttendanceStats> => {
-    const response = await api.get(`/attendance/stats/teacher/${teacherId}`);
-    return response.data;
-  },
-  getAttendanceHeatmap: async () => {
-    const response = await api.get("/attendance/heatmap");
-    return response.data;
-  },
-  getTeacherHeatmap: async (teacherId: string) => {
-    const response = await api.get(`/attendance/heatmap/teacher/${teacherId}`);
-    return response.data;
-  },
-  exportAttendance: async (params?: {
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-    teacherId?: string;
-  }) => {
-    const response = await api.get("/attendance/export", { params });
-    return response.data;
-  },
-  getStudentAttendance: async (
-    studentId: string,
-    params?: {
-      startDate?: string;
-      endDate?: string;
+    date?: Date;
+  }): Promise<IAttendance> => {
+    try {
+      const response = await api.post("/attendance", {
+        ...data,
+        date: data.date ? data.date.toISOString() : undefined,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to mark attendance"
+      );
     }
-  ) => {
-    const response = await api.get(`/attendance/student/${studentId}`, { params });
-    return response.data;
   },
+  getTodayAttendance: async (): Promise<IAttendance[]> => {
+    try {
+      const response = await api.get("/attendance/today");
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch today's attendance"
+      );
+    }
+  },
+
   getAttendanceByGrade: async (
     gradeId: string,
-    params?: {
-      startDate?: string;
-      endDate?: string;
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<IAttendance[]> => {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate.toISOString();
+      if (endDate) params.endDate = endDate.toISOString();
+      const response = await api.get(`/attendance/grade/${gradeId}`, {
+        params,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch grade attendance"
+      );
     }
-  ) => {
-    const response = await api.get(`/attendance/grade/${gradeId}`, { params });
-    return response.data;
   },
-  deleteAttendance: async (attendanceId: string) => {
-    const response = await api.delete(`/attendance/${attendanceId}`);
+  getAttendanceStats: async (): Promise<{
+    totalStudents: number;
+    totalTeachers: number;
+    todayAttendance: {
+      present: number;
+      absent: number;
+      late: number;
+      excused: number;
+      total: number;
+    };
+  }> => {
+    try {
+      const response = await api.get("/attendance/stats");
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch attendance stats"
+      );
+    }
+  },
+  getTeacherStats: async (
+    teacherId: string
+  ): Promise<{
+    totalStudents: number;
+    totalTeachers: number;
+    todayAttendance: {
+      present: number;
+      absent: number;
+      late: number;
+      excused: number;
+      total: number;
+    };
+  }> => {
+    try {
+      const response = await api.get(`/attendance/stats/teacher/${teacherId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch teacher stats"
+      );
+    }
+  },
+  getAttendanceHeatmap: async (): Promise<
+    Array<{
+      _id: string;
+      present: number;
+      absent: number;
+      late: number;
+      excused: number;
+    }>
+  > => {
+    try {
+      const response = await api.get("/attendance/heatmap");
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch attendance heatmap"
+      );
+    }
+  },
+  getTeacherHeatmap: async (
+    teacherId: string
+  ): Promise<
+    Array<{
+      _id: string;
+      present: number;
+      absent: number;
+      late: number;
+      excused: number;
+    }>
+  > => {
+    try {
+      const response = await api.get(
+        `/attendance/heatmap/teacher/${teacherId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch teacher heatmap"
+      );
+    }
+  },
+  getAttendanceByDate: async (date: Date): Promise<IAttendance[]> => {
+    try {
+      const response = await api.get("/attendance/by-date", {
+        params: { date: date.toISOString() },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch attendance"
+      );
+    }
+  },
+exportAttendance: async (
+  status?: string,
+  startDate?: Date,
+  endDate?: Date
+): Promise<IAttendance[]> => {
+  try {
+    const params: any = {};
+
+    if (status && status !== "all") {
+      params.status = status;
+    }
+
+    if (startDate) {
+      params.startDate = startDate.toISOString();
+    }
+
+    if (endDate) {
+      params.endDate = endDate.toISOString();
+    }
+
+    const response = await api.get("/attendance/export", { params });
+
     return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error || "Failed to export attendance"
+    );
+  }
+},
+  getStudentAttendance: async (
+    studentId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    records: IAttendance[];
+    stats: {
+      total: number;
+      present: number;
+      absent: number;
+      late: number;
+      excused: number;
+      attendanceRate: number;
+    };
+  }> => {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate.toISOString();
+      if (endDate) params.endDate = endDate.toISOString();
+      const response = await api.get(`/attendance/student/${studentId}`, {
+        params,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch student attendance"
+      );
+    }
+  },
+  deleteAttendance: async (attendanceId: string): Promise<void> => {
+    try {
+      await api.delete(`/attendance/${attendanceId}`);
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || "Failed to delete attendance"
+      );
+    }
   },
 };

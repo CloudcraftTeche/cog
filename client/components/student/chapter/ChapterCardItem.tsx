@@ -3,12 +3,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Chapter } from "@/utils/studentChapter.service";
+
 interface ChapterCardItemProps {
   chapter: Chapter;
   index: number;
 }
-export default function ChapterCardItem({ chapter, index }: ChapterCardItemProps) {
+
+export default function ChapterCardItem({
+  chapter,
+  index,
+}: ChapterCardItemProps) {
   const router = useRouter();
+
   const getStatusBadge = () => {
     if (chapter.isCompleted || chapter.status === "completed") {
       return (
@@ -40,12 +46,32 @@ export default function ChapterCardItem({ chapter, index }: ChapterCardItemProps
       </Badge>
     );
   };
+
   const handleClick = () => {
-    if (chapter.isAccessible || chapter.isInProgress || chapter.isCompleted) {
+    if (
+      chapter.isAccessible ||
+      chapter.isInProgress ||
+      chapter.isCompleted ||
+      chapter.status === "accessible" ||
+      chapter.status === "in_progress" ||
+      chapter.status === "completed"
+    ) {
       router.push(`/dashboard/student/chapters/${chapter._id}`);
     }
   };
-  const isClickable = chapter.isAccessible || chapter.isInProgress || chapter.isCompleted;
+
+  const isClickable =
+    chapter.isAccessible ||
+    chapter.isInProgress ||
+    chapter.isCompleted ||
+    chapter.status === "accessible" ||
+    chapter.status === "in_progress" ||
+    chapter.status === "completed";
+
+  // Get primary content type from contentItems
+  const primaryContentType = chapter.contentItems?.[0]?.type || "text";
+  const hasVideo = chapter.contentItems?.some((item) => item.type === "video");
+
   return (
     <Card
       onClick={handleClick}
@@ -64,12 +90,12 @@ export default function ChapterCardItem({ chapter, index }: ChapterCardItemProps
                   ? "bg-gradient-to-br from-green-400 to-emerald-500"
                   : chapter.isInProgress
                   ? "bg-gradient-to-br from-blue-400 to-cyan-500"
-                  : chapter.isLocked
+                  : chapter.isLocked || chapter.status === "locked"
                   ? "bg-gradient-to-br from-gray-300 to-gray-400"
                   : "bg-gradient-to-br from-purple-400 to-pink-500"
               }`}
             >
-              {chapter.contentType === "video" ? (
+              {hasVideo ? (
                 <Play className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               ) : (
                 <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -83,28 +109,43 @@ export default function ChapterCardItem({ chapter, index }: ChapterCardItemProps
           </div>
           {getStatusBadge()}
         </div>
+
         <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2">
           {chapter.title}
         </h3>
+
         <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-2">
           {chapter.description}
         </p>
+
         <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
           <span className="flex items-center gap-1">
-            {chapter.contentType === "video" ? (
+            {hasVideo ? (
               <Play className="h-3 w-3" />
             ) : (
               <FileText className="h-3 w-3" />
             )}
-            {chapter.contentType}
+            {chapter.contentItems?.length || 0} Content{" "}
+            {chapter.contentItems?.length !== 1 ? "Items" : "Item"}
           </span>
           <span>{chapter.questions?.length || 0} Questions</span>
         </div>
+
         {chapter.score !== undefined && chapter.score > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-600">Score:</span>
-              <span className="font-bold text-green-600">{chapter.score}%</span>
+              <span
+                className={`font-bold ${
+                  chapter.score >= 70
+                    ? "text-green-600"
+                    : chapter.score >= 50
+                    ? "text-yellow-600"
+                    : "text-red-600"
+                }`}
+              >
+                {chapter.score}%
+              </span>
             </div>
           </div>
         )}

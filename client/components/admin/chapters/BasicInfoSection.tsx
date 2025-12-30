@@ -1,14 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Sparkles, Check, AlertCircle } from "lucide-react";
+import { Sparkles, AlertCircle, GraduationCap, X } from "lucide-react";
 
 interface Grade {
   _id: string;
@@ -70,8 +69,26 @@ export default function BasicInfoSection({
   units,
   errors = {},
 }: BasicInfoSectionProps) {
+  const [gradeSearchTerm, setGradeSearchTerm] = useState("");
   const hasUnitsAvailable = units && units.length > 0;
   const hasGradesSelected = selectedGrades.length > 0;
+
+  const toggleGrade = (gradeId: string) => {
+    setSelectedGrades(
+      selectedGrades.includes(gradeId)
+        ? selectedGrades.filter((id) => id !== gradeId)
+        : [...selectedGrades, gradeId]
+    );
+  };
+
+  const removeGrade = (gradeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedGrades(selectedGrades.filter((id) => id !== gradeId));
+  };
+
+  const filteredGrades = grades?.filter((g) =>
+    g.grade.toLowerCase().includes(gradeSearchTerm.toLowerCase())
+  );
 
   return (
     <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
@@ -141,62 +158,99 @@ export default function BasicInfoSection({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Modern Grade Selection */}
           <div className="space-y-3">
-            <Label htmlFor="grade" className="text-sm font-semibold text-slate-700 flex items-center">
+            <Label className="text-sm font-semibold text-slate-700 flex items-center">
               <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full mr-2"></div>
               Grade Level <span className="text-red-500 ml-1">*</span>
             </Label>
-            <Command className={`rounded-xl border-2 transition-all duration-300 ${
-              errors.gradeIds 
-                ? "border-red-300 focus-within:border-red-500 focus-within:ring-red-100"
-                : "border-slate-200 focus-within:border-emerald-500 focus-within:ring-emerald-100"
-            }`}>
-              <CommandInput placeholder="Search grade..." />
-              <CommandList>
-                <CommandEmpty>No grade found.</CommandEmpty>
-                <CommandGroup>
-                  {grades?.map(({ _id, grade: g }) => {
-                    const value = _id;
-                    const isSelected = selectedGrades.includes(value);
-                    return (
-                      <CommandItem
-                        key={_id}
-                        onSelect={() => {
-                          setSelectedGrades(
-                            isSelected 
-                              ? selectedGrades.filter((v) => v !== value)
-                              : [...selectedGrades, value]
-                          );
-                        }}
-                        className="flex items-center justify-between rounded-lg cursor-pointer"
-                      >
-                        <span>Grade {g}</span>
-                        {isSelected && <Check className="h-4 w-4 text-emerald-600" />}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-            {errors.gradeIds && <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              {errors.gradeIds}
-            </p>}
+            
+            {/* Search Input */}
+            <div className="relative">
+              <Input
+                placeholder="Search grades..."
+                value={gradeSearchTerm}
+                onChange={(e) => setGradeSearchTerm(e.target.value)}
+                className={`h-12 border-2 rounded-xl pl-10 transition-all duration-300 ${
+                  errors.gradeIds 
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-slate-200 focus:border-emerald-500"
+                }`}
+              />
+              <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
+            </div>
+
+            {/* Selected Grades Pills */}
             {selectedGrades.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 p-3 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-100">
                 {selectedGrades.map((gradeId) => {
                   const grade = grades.find((g) => g._id === gradeId);
                   return (
-                    <Badge
+                    <div
                       key={gradeId}
-                      variant="secondary"
-                      className="bg-emerald-100 text-emerald-700 border-0 rounded-full px-3 py-1"
+                      className="group flex items-center gap-2 bg-white border-2 border-emerald-200 hover:border-emerald-400 rounded-full px-3 py-1.5 shadow-sm hover:shadow-md transition-all duration-200"
                     >
-                      Grade {grade?.grade}
-                    </Badge>
+                      <span className="text-sm font-medium text-emerald-700">
+                        Grade {grade?.grade}
+                      </span>
+                      <button
+                        onClick={(e) => removeGrade(gradeId, e)}
+                        className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 group-hover:bg-emerald-200 text-emerald-600 hover:text-emerald-800 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+            )}
+
+            {/* Grade Grid Selection */}
+            <div className={`max-h-64 overflow-y-auto rounded-xl border-2 transition-all duration-300 ${
+              errors.gradeIds 
+                ? "border-red-300"
+                : "border-slate-200"
+            }`}>
+              <div className="grid grid-cols-2 gap-2 p-3">
+                {filteredGrades?.map(({ _id, grade: g }) => {
+                  const isSelected = selectedGrades.includes(_id);
+                  return (
+                    <button
+                      key={_id}
+                      type="button"
+                      onClick={() => toggleGrade(_id)}
+                      className={`group relative overflow-hidden rounded-xl p-4 text-center font-semibold transition-all duration-300 transform hover:scale-105 ${
+                        isSelected
+                          ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                          : "bg-gradient-to-br from-slate-50 to-slate-100 text-slate-700 hover:from-emerald-50 hover:to-teal-50 border-2 border-slate-200 hover:border-emerald-300"
+                      }`}
+                    >
+                      <div className="relative z-10 flex flex-col items-center gap-1">
+                        <GraduationCap className={`w-5 h-5 transition-all ${
+                          isSelected ? "text-white" : "text-emerald-500"
+                        }`} />
+                        <span className="text-sm">Grade {g}</span>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {filteredGrades?.length === 0 && (
+                <div className="p-8 text-center text-slate-500">
+                  <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No grades found</p>
+                </div>
+              )}
+            </div>
+
+            {errors.gradeIds && (
+              <p className="text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.gradeIds}
+              </p>
             )}
           </div>
 
@@ -282,8 +336,6 @@ export default function BasicInfoSection({
             </p>}
           </div>
         </div>
-
-      
       </CardContent>
     </Card>
   );

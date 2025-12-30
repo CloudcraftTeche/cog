@@ -8,13 +8,16 @@ import {
   getStudentAttendance, 
   getTodayAttendance,
   getTeacherStats,
-  getTeacherHeatmap
+  getTeacherHeatmap,
+  getAttendanceByDate
 } from "../../../controllers/v1/attendance";
 import { authenticate } from "../../../middleware/authenticate";
 import { Router } from "express";
 import { body, param, query, validationResult } from "express-validator";
 import { Request, Response, NextFunction } from "express";
+
 const router = Router();
+
 const handleValidationErrors = (
   req: Request,
   res: Response,
@@ -32,9 +35,12 @@ const handleValidationErrors = (
   }
   next();
 };
+
 const oid = (field: string) =>
   param(field).isMongoId().withMessage(`Invalid ${field}`);
+
 router.use(authenticate);
+
 router.post(
   "/",
   [
@@ -43,26 +49,40 @@ router.post(
     body("status")
       .isIn(["present", "absent", "late", "excused"])
       .withMessage("Invalid status"),
-    body("remarks").optional().isString().trim()
+    body("remarks").optional().isString().trim(),
+    body("date").optional().isISO8601().withMessage("Invalid date")
   ],
   handleValidationErrors,
   createOrUpdateAttendance
 );
+
 router.get("/today", getTodayAttendance);
+
+router.get(
+  "/by-date",
+  [query("date").optional().isISO8601().withMessage("Invalid date")],
+  handleValidationErrors,
+  getAttendanceByDate
+);
+
 router.get("/stats", getAttendanceStats);
+
 router.get(
   "/stats/teacher/:teacherId",
   [oid("teacherId")],
   handleValidationErrors,
   getTeacherStats
 );
+
 router.get("/heatmap", getAttendanceHeatmap);
+
 router.get(
   "/heatmap/teacher/:teacherId",
   [oid("teacherId")],
   handleValidationErrors,
   getTeacherHeatmap
 );
+
 router.get(
   "/export",
   [
@@ -73,6 +93,7 @@ router.get(
   handleValidationErrors,
   exportAttendance
 );
+
 router.get(
   "/student/:studentId",
   [
@@ -83,6 +104,7 @@ router.get(
   handleValidationErrors,
   getStudentAttendance
 );
+
 router.get(
   "/grade/:gradeId",
   [
@@ -93,10 +115,12 @@ router.get(
   handleValidationErrors,
   getAttendanceByGrade
 );
+
 router.delete(
   "/:attendanceId",
   [oid("attendanceId")],
   handleValidationErrors,
   deleteAttendance
 );
+
 export default router;

@@ -19,7 +19,7 @@ interface TokenPayload {
   exp: number;
 }
 const TOKEN_CONFIG = {
-  access: { maxAge: 15 * 60 * 1000 },
+  access: { maxAge: 1 * 24 * 60 * 1000 },
   refresh: { maxAge: 30 * 24 * 60 * 60 * 1000 },
 } as const;
 const getCookieOptions = (isRefresh = false) => ({

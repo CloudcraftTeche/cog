@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, Router } from "express";
+import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { ApiError } from "../../../utils/ApiError";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
@@ -8,30 +8,98 @@ import { Student } from "../../../models/user/Student.model";
 import { createEmailTransporter } from "../../../utils/email/transporter";
 import { Teacher } from "../../../models/user/Teacher.model";
 import { User } from "../../../models/user/User.model";
- const transporter = createEmailTransporter();
-
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "../../../config/cloudinary";
+const transporter = createEmailTransporter();
+const processContentItems = async (files: any, body: any) => {
+  const contentItems = [];
+  const contentItemsData = JSON.parse(body.contentItems || "[]");
+  for (let i = 0; i < contentItemsData.length; i++) {
+    const item = contentItemsData[i];
+    const contentItem: any = {
+      type: item.type,
+      order: item.order || i,
+      title: item.title,
+    };
+    if (item.type === "text") {
+      contentItem.textContent = item.textContent;
+    } else if (item.type === "video") {
+      if (
+        item.videoUrl &&
+        (item.videoUrl.includes("youtube.com") ||
+          item.videoUrl.includes("youtu.be"))
+      ) {
+        contentItem.url = item.videoUrl;
+        contentItem.publicId = null;
+      } else if (files && files[`content_${i}`]) {
+        const file = files[`content_${i}`][0];
+        const result = await uploadToCloudinary(
+          file.buffer,
+          "chapters/videos",
+          "video",
+          file.originalname
+        );
+        contentItem.url = result.secure_url;
+        contentItem.publicId = result.public_id;
+      }
+    } else if (item.type === "pdf") {
+      if (files && files[`content_${i}`]) {
+        const file = files[`content_${i}`][0];
+        const result = await uploadToCloudinary(
+          file.buffer,
+          "chapters/pdfs",
+          "raw",
+          file.originalname
+        );
+        contentItem.url = result.secure_url;
+        contentItem.publicId = result.public_id;
+      }
+    } else if (item.type === "mixed") {
+      if (
+        item.videoUrl &&
+        (item.videoUrl.includes("youtube.com") ||
+          item.videoUrl.includes("youtu.be"))
+      ) {
+        contentItem.url = item.videoUrl;
+        contentItem.publicId = null;
+      } else if (files && files[`content_${i}`]) {
+        const file = files[`content_${i}`][0];
+        const result = await uploadToCloudinary(
+          file.buffer,
+          "chapters/videos",
+          "video",
+          file.originalname
+        );
+        contentItem.url = result.secure_url;
+        contentItem.publicId = result.public_id;
+      }
+      if (item.textContent) {
+        contentItem.textContent = item.textContent;
+      }
+      if (!contentItem.url && !contentItem.textContent) {
+        throw new ApiError(
+          400,
+          `Mixed content item ${i + 1} requires either video or text content`
+        );
+      }
+    }
+    contentItems.push(contentItem);
+  }
+  return contentItems;
+};
 export const createChapterHandler = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const {
-      title,
-      description,
-      contentType,
-      textContent,
-      chapterNumber,
-      questions,
-      unitId,
-      videoUrl,
-      gradeIds,
-    } = req.body;
-
+    const { title, description, chapterNumber, questions, unitId, gradeIds } =
+      req.body;
     if (!gradeIds || !Array.isArray(gradeIds) || gradeIds.length === 0) {
       throw new ApiError(400, "At least one grade ID is required");
     }
-
     const invalidGradeIds = gradeIds.filter(
       (id) => !mongoose.isValidObjectId(id)
     );
@@ -41,15 +109,16 @@ export const createChapterHandler = async (
         `Invalid grade IDs: ${invalidGradeIds.join(", ")}`
       );
     }
-
     if (!unitId || !mongoose.isValidObjectId(unitId)) {
       throw new ApiError(400, "Valid unit ID is required");
     }
-
+    const contentItems = await processContentItems(req.files, req.body);
+    if (contentItems.length === 0) {
+      throw new ApiError(400, "At least one content item is required");
+    }
     const parsedQuestions = Array.isArray(questions)
       ? questions
       : JSON.parse(questions || "[]");
-
     parsedQuestions.forEach((q: any, index: number) => {
       if (!q.questionText || typeof q.questionText !== "string") {
         throw new ApiError(
@@ -76,42 +145,33 @@ export const createChapterHandler = async (
         );
       }
     });
-
     const grades = await Grade.find({ _id: { $in: gradeIds } });
-
     if (grades.length !== gradeIds.length) {
       const foundIds = grades.map((g) => g._id.toString());
       const missingIds = gradeIds.filter((id) => !foundIds.includes(id));
       throw new ApiError(404, `Grades not found: ${missingIds.join(", ")}`);
     }
-
     const gradesWithoutUnit: string[] = [];
     let unitName = "";
-
     for (const grade of grades) {
-      const unit = grade.units.find(
-        (u) => u._id?.toString() === unitId
-      );
+      const unit = grade.units.find((u) => u._id?.toString() === unitId);
       if (!unit) {
         gradesWithoutUnit.push(`Grade ${grade.grade}`);
       } else if (!unitName) {
         unitName = unit.name;
       }
     }
-
     if (gradesWithoutUnit.length > 0) {
       throw new ApiError(
         404,
         `Unit not found in: ${gradesWithoutUnit.join(", ")}`
       );
     }
-
     const existingChapters = await Chapter.find({
       gradeId: { $in: gradeIds },
       unitId,
       chapterNumber,
     }).populate("gradeId", "grade");
-
     if (existingChapters.length > 0) {
       const conflicts = existingChapters.map((ch) => {
         const gradeName =
@@ -120,7 +180,6 @@ export const createChapterHandler = async (
             : ch.gradeId.toString();
         return `Grade ${gradeName}`;
       });
-
       throw new ApiError(
         409,
         `Chapter number ${chapterNumber} already exists in ${conflicts.join(
@@ -128,16 +187,12 @@ export const createChapterHandler = async (
         )} for this unit`
       );
     }
-
     const createdChapters = [];
-
     for (const gradeId of gradeIds) {
       const chapterData = {
         title: title.trim(),
         description: description.trim(),
-        contentType,
-        videoUrl,
-        textContent,
+        contentItems,
         chapterNumber,
         gradeId: new mongoose.Types.ObjectId(gradeId),
         unitId: new mongoose.Types.ObjectId(unitId),
@@ -149,16 +204,13 @@ export const createChapterHandler = async (
           selectedAnswer: null,
         })),
       };
-
       const createdChapter = await Chapter.create(chapterData);
-
       createdChapters.push({
         id: createdChapter._id,
         gradeId: createdChapter.gradeId,
         title: createdChapter.title,
       });
     }
-
     res.status(201).json({
       success: true,
       message: `Chapter created successfully for ${createdChapters.length} grade(s)`,
@@ -167,7 +219,7 @@ export const createChapterHandler = async (
         chapterNumber,
         unitId,
         unitName,
-        contentType,
+        contentItemsCount: contentItems.length,
         questionsCount: parsedQuestions.length,
         createdForGrades: createdChapters.length,
         chapters: createdChapters,
@@ -177,7 +229,6 @@ export const createChapterHandler = async (
     next(err);
   }
 };
-
 export const createChapterForSingleGradeHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -191,7 +242,97 @@ export const createChapterForSingleGradeHandler = async (
     next(err);
   }
 };
-
+export const updateChapterHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { gradeId, chapterId } = req.params;
+    const { title, description, questions, chapterNumber, unitId } = req.body;
+    const chapter = await Chapter.findOne({ _id: chapterId, gradeId });
+    if (!chapter) {
+      throw new ApiError(404, "Chapter not found");
+    }
+    if (unitId) {
+      const grade = await Grade.findById(gradeId);
+      const unit = grade?.units.find((u) => u._id?.toString() === unitId);
+      if (!unit) {
+        throw new ApiError(404, "Unit not found in this grade");
+      }
+    }
+    let contentItems = chapter.contentItems;
+    if (req.body.contentItems) {
+      for (const item of chapter.contentItems) {
+        if (item.publicId && (item.type === "video" || item.type === "pdf")) {
+          await deleteFromCloudinary(
+            item.publicId,
+            item.type === "video" ? "video" : "raw"
+          );
+        }
+      }
+      contentItems = await processContentItems(req.files, req.body);
+    }
+    let parsedQuestions = chapter.questions;
+    if (questions) {
+      parsedQuestions = Array.isArray(questions)
+        ? questions
+        : JSON.parse(questions);
+      parsedQuestions.forEach((q: any, index: number) => {
+        if (!q.questionText || typeof q.questionText !== "string") {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: questionText is required`
+          );
+        }
+        if (!Array.isArray(q.options) || q.options.length !== 4) {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: must have exactly 4 options`
+          );
+        }
+        if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: correctAnswer is required`
+          );
+        }
+        if (!q.options.includes(q.correctAnswer)) {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: correctAnswer must be one of the options`
+          );
+        }
+      });
+    }
+    const updated = await Chapter.findByIdAndUpdate(
+      chapterId,
+      {
+        title: title?.trim(),
+        description: description?.trim(),
+        contentItems,
+        chapterNumber,
+        unitId: unitId ? new mongoose.Types.ObjectId(unitId) : chapter.unitId,
+        questions: parsedQuestions,
+      },
+      { new: true, runValidators: true }
+    ).populate("gradeId", "grade");
+    const grade = await Grade.findById(gradeId).select("units");
+    const unit = grade?.units.find(
+      (u) => u._id?.toString() === updated?.unitId.toString()
+    );
+    res.status(200).json({
+      success: true,
+      message: "Chapter updated successfully",
+      data: {
+        ...updated?.toObject(),
+        unitName: unit?.name || null,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 export const getGradeChaptersHandler = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -206,11 +347,12 @@ export const getGradeChaptersHandler = async (
     const student = await Student.findById(userId).select("gradeId");
     const teacher = await Teacher.findById(userId).select("gradeId role");
     const admin = await User.findById(userId).select("role");
-    let gradeId: string | null|undefined = null;
+    let gradeId: string | null | undefined = null;
     if (student) {
       gradeId = student.gradeId?.toString();
     } else if (teacher) {
-      if (!teacher.gradeId) throw new ApiError(400, "Teacher has no assigned grade");
+      if (!teacher.gradeId)
+        throw new ApiError(400, "Teacher has no assigned grade");
       gradeId = teacher.gradeId.toString();
     }
     const filter: any = {};
@@ -269,7 +411,9 @@ export const getGradeChaptersHandler = async (
         let isAccessible = globalIndex === 0;
         if (globalIndex > 0) {
           const previousChapter = allChapters[globalIndex - 1];
-          const prevProgress = completionMap.get(previousChapter._id.toString());
+          const prevProgress = completionMap.get(
+            previousChapter._id.toString()
+          );
           isAccessible = prevProgress?.status === "completed";
         }
         const isCompleted = progress?.status === "completed";
@@ -361,7 +505,12 @@ export const getChapterHandler = async (
     })
       .lean()
       .populate("createdBy", "name email")
-      .populate("gradeId", "grade");
+      .populate("gradeId", "grade")
+      .populate({
+        path: "studentProgress.studentId",
+        select: "name email rollNumber gradeId parentContact",
+        model: "student",
+      });
     if (!chapter) {
       throw new ApiError(404, "Chapter not found");
     }
@@ -381,96 +530,6 @@ export const getChapterHandler = async (
     next(err);
   }
 };
-export const updateChapterHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { gradeId, chapterId } = req.params;
-    const {
-      title,
-      description,
-      contentType,
-      textContent,
-      questions,
-      chapterNumber,
-      unitId,
-      videoUrl,
-    } = req.body;
-    const chapter = await Chapter.findOne({ _id: chapterId, gradeId });
-    if (!chapter) {
-      throw new ApiError(404, "Chapter not found");
-    }
-    if (unitId) {
-      const grade = await Grade.findById(gradeId);
-      const unit = grade?.units.find((u) => u._id?.toString() === unitId);
-      if (!unit) {
-        throw new ApiError(404, "Unit not found in this grade");
-      }
-    }
-    let parsedQuestions = chapter.questions;
-    if (questions) {
-      parsedQuestions = Array.isArray(questions)
-        ? questions
-        : JSON.parse(questions);
-      parsedQuestions.forEach((q: any, index: number) => {
-        if (!q.questionText || typeof q.questionText !== "string") {
-          throw new ApiError(
-            400,
-            `Question ${index + 1}: questionText is required`
-          );
-        }
-        if (!Array.isArray(q.options) || q.options.length !== 4) {
-          throw new ApiError(
-            400,
-            `Question ${index + 1}: must have exactly 4 options`
-          );
-        }
-        if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
-          throw new ApiError(
-            400,
-            `Question ${index + 1}: correctAnswer is required`
-          );
-        }
-        if (!q.options.includes(q.correctAnswer)) {
-          throw new ApiError(
-            400,
-            `Question ${index + 1}: correctAnswer must be one of the options`
-          );
-        }
-      });
-    }
-    const updated = await Chapter.findByIdAndUpdate(
-      chapterId,
-      {
-        title: title?.trim(),
-        description: description?.trim(),
-        contentType,
-        videoUrl,
-        textContent,
-        chapterNumber,
-        unitId: unitId ? new mongoose.Types.ObjectId(unitId) : chapter.unitId,
-        questions: parsedQuestions,
-      },
-      { new: true, runValidators: true }
-    ).populate("gradeId", "grade");
-    const grade = await Grade.findById(gradeId).select("units");
-    const unit = grade?.units.find(
-      (u) => u._id?.toString() === updated?.unitId.toString()
-    );
-    res.status(200).json({
-      success: true,
-      message: "Chapter updated successfully",
-      data: {
-        ...updated?.toObject(),
-        unitName: unit?.name || null,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
 export const deleteChapterHandler = async (
   req: Request,
   res: Response,
@@ -481,6 +540,31 @@ export const deleteChapterHandler = async (
     const chapter = await Chapter.findOne({ _id: chapterId });
     if (!chapter) {
       throw new ApiError(404, "Chapter not found");
+    }
+    for (const item of chapter.contentItems) {
+      if (item.publicId && (item.type === "video" || item.type === "pdf")) {
+        await deleteFromCloudinary(
+          item.publicId,
+          item.type === "video" ? "video" : "raw"
+        );
+      }
+    }
+    if (chapter.studentProgress) {
+      for (const progress of chapter.studentProgress) {
+        if (progress.submissions) {
+          for (const submission of progress.submissions) {
+            if (
+              submission.filePublicId &&
+              (submission.type === "video" || submission.type === "pdf")
+            ) {
+              await deleteFromCloudinary(
+                submission.filePublicId,
+                submission.type === "video" ? "video" : "raw"
+              );
+            }
+          }
+        }
+      }
     }
     await chapter.deleteOne();
     res.status(200).json({
@@ -563,7 +647,46 @@ export const submitChapterHandler = async (
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
-    const { answers } = req.body;
+    const {
+      submissionType,
+      score: providedScore,
+      studentId: targetStudentId,
+    } = req.body;
+    console.log("Request body:", req.body);
+    console.log("Request body answers:", req.body.answers);
+    console.log("Type of answers:", typeof req.body.answers);
+    console.log("User role:", req.userRole);
+    const studentId = new mongoose.Types.ObjectId(
+      targetStudentId || req.userId
+    );
+    let answers: any[] = [];
+    if (req.body.answers) {
+      if (typeof req.body.answers === "string") {
+        try {
+          answers = JSON.parse(req.body.answers);
+          console.log("Parsed answers from JSON string:", answers);
+        } catch (parseError) {
+          console.error("Failed to parse answers JSON:", parseError);
+          throw new ApiError(
+            400,
+            "Invalid answers format - could not parse JSON"
+          );
+        }
+      } else if (
+        typeof req.body.answers === "object" &&
+        !Array.isArray(req.body.answers)
+      ) {
+        const answersObj = req.body.answers;
+        answers = Object.keys(answersObj)
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .map((key) => answersObj[key]);
+        console.log("Converted answers from object:", answers);
+      } else if (Array.isArray(req.body.answers)) {
+        answers = req.body.answers;
+        console.log("Answers already array:", answers);
+      }
+    }
+    console.log("Final answers array:", answers);
     const grade = await Grade.findById(gradeId);
     if (!grade) {
       throw new ApiError(404, "Grade not found");
@@ -572,56 +695,123 @@ export const submitChapterHandler = async (
     if (!chapter) {
       throw new ApiError(404, "Chapter not found");
     }
-    if (!Array.isArray(answers) || answers.length === 0) {
-      throw new ApiError(400, "Answers array is required");
-    }
+    let finalScore: number;
     let correctCount = 0;
-    const totalQuestions = chapter.questions.length;
-    chapter.questions.forEach((question) => {
-      const studentAnswer = answers.find(
-        (ans: any) => ans.questionText === question.questionText
-      );
-      if (
-        studentAnswer &&
-        studentAnswer.selectedAnswer === question.correctAnswer
-      ) {
-        correctCount++;
+    let totalQuestions = chapter.questions.length;
+    if (answers && answers.length > 0) {
+      answers.forEach((answer, index) => {
+        if (!answer || typeof answer !== "object") {
+          throw new ApiError(400, `Answer ${index + 1}: Invalid answer format`);
+        }
+        if (!answer.questionText || typeof answer.questionText !== "string") {
+          throw new ApiError(
+            400,
+            `Answer ${index + 1}: questionText is required`
+          );
+        }
+        if (
+          !answer.selectedAnswer ||
+          typeof answer.selectedAnswer !== "string"
+        ) {
+          throw new ApiError(
+            400,
+            `Answer ${index + 1}: selectedAnswer is required`
+          );
+        }
+      });
+      chapter.questions.forEach((question) => {
+        const studentAnswer = answers.find(
+          (ans: any) => ans.questionText === question.questionText
+        );
+        if (
+          studentAnswer &&
+          studentAnswer.selectedAnswer === question.correctAnswer
+        ) {
+          correctCount++;
+        }
+      });
+      finalScore = Math.round((correctCount / totalQuestions) * 100);
+    } else if (providedScore !== undefined) {
+      finalScore = providedScore;
+    } else {
+      throw new ApiError(400, "Either answers or score must be provided");
+    }
+    let submission: any = null;
+    if (submissionType) {
+      submission = {
+        type: submissionType,
+        submittedAt: new Date(),
+      };
+      if (submissionType === "text") {
+        if (!req.body.submissionContent) {
+          throw new ApiError(
+            400,
+            "Submission content is required for text submissions"
+          );
+        }
+        submission.content = req.body.submissionContent;
+      } else if (submissionType === "video" || submissionType === "pdf") {
+        if (!req.file) {
+          throw new ApiError(400, `${submissionType} file is required`);
+        }
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          `chapter/submissions/${submissionType}s`,
+          submissionType === "video" ? "video" : "raw",
+          req.file.originalname
+        );
+        submission.fileUrl = result.secure_url;
+        submission.filePublicId = result.public_id;
       }
-    });
-    const score = Math.round((correctCount / totalQuestions) * 100);
-    const studentId = new mongoose.Types.ObjectId(req.userId);
+    }
     const existingProgress = chapter.studentProgress?.find(
       (p) => p.studentId.toString() === studentId.toString()
     );
     if (existingProgress) {
       existingProgress.status = "completed";
       existingProgress.completedAt = new Date();
-      existingProgress.score = score;
+      existingProgress.score = finalScore;
+      if (submission) {
+        if (!existingProgress.submissions) {
+          existingProgress.submissions = [];
+        }
+        existingProgress.submissions.push(submission);
+      }
     } else {
       if (!chapter.studentProgress) {
         chapter.studentProgress = [];
       }
-      chapter.studentProgress.push({
+      const newProgress: any = {
         studentId,
         status: "completed",
         startedAt: new Date(),
         completedAt: new Date(),
-        score,
-      } as any);
+        score: finalScore,
+      };
+      if (submission) {
+        newProgress.submissions = [submission];
+      }
+      chapter.studentProgress.push(newProgress);
     }
-    await chapter.save();
+    await chapter.save({ validateModifiedOnly: true });
+    const responseData: any = {
+      chapterId: chapter._id,
+      studentId,
+      status: "completed",
+      score: finalScore,
+      completedAt: existingProgress?.completedAt || new Date(),
+    };
+    if (answers && answers.length > 0) {
+      responseData.correctAnswers = correctCount;
+      responseData.totalQuestions = totalQuestions;
+    }
+    if (submission) {
+      responseData.submission = submission;
+    }
     res.status(200).json({
       success: true,
       message: "Chapter completed successfully",
-      data: {
-        chapterId: chapter._id,
-        studentId,
-        status: "completed",
-        score,
-        correctAnswers: correctCount,
-        totalQuestions,
-        completedAt: existingProgress?.completedAt || new Date(),
-      },
+      data: responseData,
     });
   } catch (err) {
     next(err);
@@ -1016,10 +1206,6 @@ export const getChapterTopPerformersHandler = async (
     next(err);
   }
 };
-/**
-Get students who haven't completed a chapter
-GET /api/v1/grades/:gradeId/chapters/:chapterId/pending-students
-*/
 export const getChapterPendingStudentsHandler = async (
   req: Request,
   res: Response,
@@ -1110,7 +1296,10 @@ export const sendChapterReminderHandler = async (
       throw new ApiError(404, "Student not found");
     }
     if (student.gradeId?.toString() !== chapter.gradeId._id.toString()) {
-      throw new ApiError(400, "Student is not enrolled in this chapter's grade");
+      throw new ApiError(
+        400,
+        "Student is not enrolled in this chapter's grade"
+      );
     }
     const progress = chapter.studentProgress?.find(
       (p) => p.studentId.toString() === studentId
@@ -1118,6 +1307,14 @@ export const sendChapterReminderHandler = async (
     if (progress?.status === "completed") {
       throw new ApiError(400, "Student has already completed this chapter");
     }
+    const contentTypeSummary = chapter.contentItems
+      .map((item) => {
+        if (item.type === "video") return "📹 Video";
+        if (item.type === "text") return "📚 Text";
+        if (item.type === "pdf") return "📄 PDF";
+        return item.type;
+      })
+      .join(", ");
     const emailSubject = `Reminder: Complete Chapter ${chapter.chapterNumber} - ${chapter.title}`;
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1125,18 +1322,30 @@ export const sendChapterReminderHandler = async (
         <p>Dear ${student.name},</p>
         <p>This is a friendly reminder to complete the following chapter:</p>
         <div style="background: #F3F4F6; padding: 20px; border-radius: 10px; margin: 20px 0;">
-          <h3 style="color: #1F2937; margin-top: 0;">Chapter ${chapter.chapterNumber}: ${chapter.title}</h3>
+          <h3 style="color: #1F2937; margin-top: 0;">Chapter ${
+            chapter.chapterNumber
+          }: ${chapter.title}</h3>
           <p style="color: #6B7280;">${chapter.description || ""}</p>
-          <p><strong>Content Type:</strong> ${chapter.contentType === "video" ? "📹 Video" : "📚 Text"}</p>
-          <p><strong>Questions:</strong> ${chapter.questions.length} questions</p>
+          <p><strong>Content Includes:</strong> ${contentTypeSummary}</p>
+          <p><strong>Content Items:</strong> ${
+            chapter.contentItems.length
+          } item${chapter.contentItems.length !== 1 ? "s" : ""}</p>
+          <p><strong>Questions:</strong> ${
+            chapter.questions.length
+          } questions</p>
         </div>
-        ${progress?.status === "in_progress" 
-          ? `<p>We noticed you started this chapter on ${new Date(progress.startedAt!).toLocaleDateString()}. Don't give up - you're almost there!</p>`
-          : `<p>You haven't started this chapter yet. It's a great time to begin!</p>`
+        ${
+          progress?.status === "in_progress"
+            ? `<p>We noticed you started this chapter on ${new Date(
+                progress.startedAt!
+              ).toLocaleDateString()}. Don't give up - you're almost there!</p>`
+            : `<p>You haven't started this chapter yet. It's a great time to begin!</p>`
         }
         <p>Complete this chapter to unlock the next one and continue your learning journey.</p>
         <div style="margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL}/dashboard/student/chapters/${chapterId}" 
+          <a href="${
+            process.env.FRONTEND_URL
+          }/dashboard/student/chapters/${chapterId}" 
              style="background: linear-gradient(to right, #4F46E5, #7C3AED); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">
             Go to Chapter
           </a>
@@ -1144,12 +1353,12 @@ export const sendChapterReminderHandler = async (
         <p style="color: #6B7280; font-size: 14px;">Best regards,<br/>Your Learning Platform Team</p>
       </div>
     `;
-   await transporter?.sendMail({
-    from: `${process.env.EMAIL_USER }`,
-    to: student.email,
-    subject: emailSubject,
-    html: emailBody,
-  });
+    await transporter?.sendMail({
+      from: `${process.env.EMAIL_USER}`,
+      to: student.email,
+      subject: emailSubject,
+      html: emailBody,
+    });
     res.status(200).json({
       success: true,
       message: "Reminder sent successfully",
@@ -1203,6 +1412,14 @@ export const sendBulkChapterRemindersHandler = async (
         },
       });
     }
+    const contentTypeSummary = chapter.contentItems
+      .map((item) => {
+        if (item.type === "video") return "📹 Video";
+        if (item.type === "text") return "📚 Text";
+        if (item.type === "pdf") return "📄 PDF";
+        return item.type;
+      })
+      .join(", ");
     const emailPromises = pendingStudents.map(async (student) => {
       const progress = chapter.studentProgress?.find(
         (p) => p.studentId.toString() === student._id.toString()
@@ -1214,18 +1431,30 @@ export const sendBulkChapterRemindersHandler = async (
           <p>Dear ${student.name},</p>
           <p>This is a friendly reminder to complete the following chapter:</p>
           <div style="background: #F3F4F6; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="color: #1F2937; margin-top: 0;">Chapter ${chapter.chapterNumber}: ${chapter.title}</h3>
+            <h3 style="color: #1F2937; margin-top: 0;">Chapter ${
+              chapter.chapterNumber
+            }: ${chapter.title}</h3>
             <p style="color: #6B7280;">${chapter.description || ""}</p>
-            <p><strong>Content Type:</strong> ${chapter.contentType === "video" ? "📹 Video" : "📚 Text"}</p>
-            <p><strong>Questions:</strong> ${chapter.questions.length} questions</p>
+            <p><strong>Content Includes:</strong> ${contentTypeSummary}</p>
+            <p><strong>Content Items:</strong> ${
+              chapter.contentItems.length
+            } item${chapter.contentItems.length !== 1 ? "s" : ""}</p>
+            <p><strong>Questions:</strong> ${
+              chapter.questions.length
+            } questions</p>
           </div>
-          ${progress?.status === "in_progress"
-            ? `<p>We noticed you started this chapter on ${new Date(progress.startedAt!).toLocaleDateString()}. Don't give up - you're almost there!</p>`
-            : `<p>You haven't started this chapter yet. It's a great time to begin!</p>`
+          ${
+            progress?.status === "in_progress"
+              ? `<p>We noticed you started this chapter on ${new Date(
+                  progress.startedAt!
+                ).toLocaleDateString()}. Don't give up - you're almost there!</p>`
+              : `<p>You haven't started this chapter yet. It's a great time to begin!</p>`
           }
           <p>Complete this chapter to unlock the next one and continue your learning journey.</p>
           <div style="margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL}/dashboard/student/chapters/${chapterId}" 
+            <a href="${
+              process.env.FRONTEND_URL
+            }/dashboard/student/chapters/${chapterId}" 
                style="background: linear-gradient(to right, #4F46E5, #7C3AED); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">
               Go to Chapter
             </a>
@@ -1309,6 +1538,14 @@ export const sendInProgressRemindersHandler = async (
     })
       .select("name email _id")
       .lean();
+    const contentTypeSummary = chapter.contentItems
+      .map((item) => {
+        if (item.type === "video") return "📹 Video";
+        if (item.type === "text") return "📚 Text";
+        if (item.type === "pdf") return "📄 PDF";
+        return item.type;
+      })
+      .join(", ");
     const emailPromises = students.map(async (student) => {
       const progress = chapter.studentProgress?.find(
         (p) => p.studentId.toString() === student._id.toString()
@@ -1320,9 +1557,14 @@ export const sendInProgressRemindersHandler = async (
           <p>Hi ${student.name},</p>
           <p>We noticed you started this chapter but haven't finished it yet:</p>
           <div style="background: #F3F4F6; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="color: #1F2937; margin-top: 0;">Chapter ${chapter.chapterNumber}: ${chapter.title}</h3>
+            <h3 style="color: #1F2937; margin-top: 0;">Chapter ${
+              chapter.chapterNumber
+            }: ${chapter.title}</h3>
             <p style="color: #6B7280;">${chapter.description || ""}</p>
-            <p><strong>Started on:</strong> ${new Date(progress?.startedAt!).toLocaleDateString()}</p>
+            <p><strong>Content Includes:</strong> ${contentTypeSummary}</p>
+            <p><strong>Started on:</strong> ${new Date(
+              progress?.startedAt!
+            ).toLocaleDateString()}</p>
           </div>
           <p style="font-size: 18px; color: #1F2937;">Don't let your progress go to waste! 💪</p>
           <p>Completing this chapter will help you:</p>
@@ -1332,7 +1574,9 @@ export const sendInProgressRemindersHandler = async (
             <li>Track your learning progress</li>
           </ul>
           <div style="margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL}/dashboard/student/chapters/${chapterId}" 
+            <a href="${
+              process.env.FRONTEND_URL
+            }/dashboard/student/chapters/${chapterId}" 
                style="background: linear-gradient(to right, #4F46E5, #7C3AED); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">
               Continue Learning
             </a>

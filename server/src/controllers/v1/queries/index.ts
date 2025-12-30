@@ -1,10 +1,10 @@
-import { uploadToCloudinary } from "@/config/cloudinary";
-import { AuthenticatedRequest } from "@/middleware/authenticate";
-import { Query } from "@/models/query/Query.model";
-import { Admin, SuperAdmin } from "@/models/user/Admin.model";
-import { Student } from "@/models/user/Student.model";
-import { Teacher } from "@/models/user/Teacher.model";
-import { ApiError } from "@/utils/ApiError";
+import { uploadToCloudinary } from "../../../config/cloudinary";
+import { AuthenticatedRequest } from "../../../middleware/authenticate";
+import { Query } from "../../../models/query/Query.model";
+import { Admin, SuperAdmin } from "../../../models/user/Admin.model";
+import { Student } from "../../../models/user/Student.model";
+import { Teacher } from "../../../models/user/Teacher.model";
+import { ApiError } from "../../../utils/ApiError";
 import { Response, NextFunction } from "express";
 export const createQuery = async (
   req: AuthenticatedRequest,

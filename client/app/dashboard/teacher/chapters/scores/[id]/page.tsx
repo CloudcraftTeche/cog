@@ -119,12 +119,12 @@ export default function TeacherChapterScoresPage() {
         lowestScore: completedData.stats?.lowestScore || 0,
       };
 
-      const combinedData: ScoreData = {
+      const combinedData: any = {
         chapter: {
           _id: chapterData._id,
           title: chapterData.title,
           description: chapterData.description,
-          contentType: chapterData.contentType,
+          contentType: chapterData?.contentType,
           chapterNumber: chapterData.chapterNumber,
           gradeId: chapterData.gradeId,
           questionsCount: chapterData.questions?.length || 0,

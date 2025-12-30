@@ -49,7 +49,7 @@ export const HeatmapView = ({ heatmapData, attendanceTrend }: HeatmapViewProps) 
           </div>
           <div>
             <h3 className="text-4xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              Attendance Heatmap - Last 30 Days
+              Attendance Heatmap - Last 7 Days
             </h3>
             <p className="text-gray-500 font-medium text-lg">
               Visual attendance pattern analysis

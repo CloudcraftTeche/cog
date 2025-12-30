@@ -1,5 +1,20 @@
 import { model, Schema, Types } from "mongoose";
 import { IQuestion, QuestionSchema } from "../shared/Question.schema";
+export interface IContentItem {
+  type: "video" | "text" | "pdf" | "mixed";
+  url?: string;
+  publicId?: string;
+  textContent?: string;
+  title?: string;
+  order: number;
+}
+export interface IStudentSubmission {
+  type: "text" | "video" | "pdf";
+  content?: string;
+  fileUrl?: string;
+  filePublicId?: string;
+  submittedAt: Date;
+}
 export interface IChapter {
   _id: Types.ObjectId;
   title: string;
@@ -7,10 +22,7 @@ export interface IChapter {
   unitId: Types.ObjectId;
   chapterNumber: number;
   description: string;
-  contentType: "video" | "text";
-  videoUrl?: string;
-  videoPublicId?: string;
-  textContent?: string;
+  contentItems: IContentItem[];
   questions: IQuestion[];
   createdBy: Types.ObjectId;
   isPublished: boolean;
@@ -21,6 +33,7 @@ export interface IChapter {
     startedAt?: Date;
     completedAt?: Date;
     score?: number;
+    submissions?: IStudentSubmission[];
   }[];
   createdAt: Date;
   updatedAt: Date;
@@ -34,7 +47,82 @@ export interface IChapterWithStatus extends IChapter {
   startedAt?: Date;
   completedAt?: Date;
   score?: number;
+  submissions?: IStudentSubmission[];
 }
+const ContentItemSchema = new Schema<IContentItem>(
+  {
+    type: {
+      type: String,
+      enum: ["video", "text", "pdf", "mixed"],
+      required: true,
+    },
+    url: {
+      type: String,
+      required: function (this: IContentItem) {
+        return this.type === "video" || this.type === "pdf";
+      },
+    },
+    publicId: {
+      type: String,
+      required: function (this: IContentItem) {
+        return (
+          (this.type === "video" || this.type === "pdf") &&
+          this.url &&
+          !this.url.includes("youtube")
+        );
+      },
+    },
+    textContent: {
+      type: String,
+      required: function (this: IContentItem) {
+        return this.type === "text";
+      },
+    },
+    title: {
+      type: String,
+      trim: true,
+    },
+    order: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: true }
+);
+const StudentSubmissionSchema = new Schema<IStudentSubmission>(
+  {
+    type: {
+      type: String,
+      enum: ["text", "video", "pdf"],
+      required: true,
+    },
+    content: {
+      type: String,
+      required: function (this: IStudentSubmission) {
+        return this.type === "text";
+      },
+    },
+    fileUrl: {
+      type: String,
+      required: function (this: IStudentSubmission) {
+        return this.type === "video" || this.type === "pdf";
+      },
+    },
+    filePublicId: {
+      type: String,
+      required: function (this: IStudentSubmission) {
+        return this.type === "video" || this.type === "pdf";
+      },
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+      required: true,
+    },
+  },
+  { _id: true }
+);
 const StudentProgressSchema = new Schema(
   {
     studentId: {
@@ -55,6 +143,10 @@ const StudentProgressSchema = new Schema(
       type: Number,
       min: 0,
       max: 100,
+    },
+    submissions: {
+      type: [StudentSubmissionSchema],
+      default: [],
     },
   },
   { _id: false, timestamps: true }
@@ -88,25 +180,12 @@ const ChapterSchema = new Schema<IChapter>(
       required: [true, "Description is required"],
       trim: true,
     },
-    contentType: {
-      type: String,
-      enum: {
-        values: ["video", "text"],
-        message: "{VALUE} is not a valid content type",
-      },
-      required: [true, "Content type is required"],
-    },
-    videoUrl: {
-      type: String,
-      required: function (this: IChapter) {
-        return this.contentType === "video";
-      },
-    },
-    videoPublicId: String,
-    textContent: {
-      type: String,
-      required: function (this: IChapter) {
-        return this.contentType === "text";
+    contentItems: {
+      type: [ContentItemSchema],
+      required: true,
+      validate: {
+        validator: (val: IContentItem[]) => val.length > 0,
+        message: "At least one content item is required",
       },
     },
     questions: {
@@ -149,9 +228,23 @@ const ChapterSchema = new Schema<IChapter>(
     toObject: { virtuals: true },
   }
 );
-ChapterSchema.index({ gradeId: 1, unitId: 1, chapterNumber: 1 }, { unique: true });
-ChapterSchema.index({ gradeId: 1, unitId: 1, isPublished: 1, chapterNumber: 1 });
+ChapterSchema.index(
+  { gradeId: 1, unitId: 1, chapterNumber: 1 },
+  { unique: true }
+);
+ChapterSchema.index({
+  gradeId: 1,
+  unitId: 1,
+  isPublished: 1,
+  chapterNumber: 1,
+});
 ChapterSchema.index({ createdBy: 1, createdAt: -1 });
-ChapterSchema.index({ "studentProgress.studentId": 1, "studentProgress.status": 1 });
-ChapterSchema.index({ "studentProgress.studentId": 1, "studentProgress.completedAt": -1 });
+ChapterSchema.index({
+  "studentProgress.studentId": 1,
+  "studentProgress.status": 1,
+});
+ChapterSchema.index({
+  "studentProgress.studentId": 1,
+  "studentProgress.completedAt": -1,
+});
 export const Chapter = model<IChapter>("Chapter", ChapterSchema);

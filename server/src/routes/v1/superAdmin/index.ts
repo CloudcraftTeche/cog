@@ -2,7 +2,7 @@ import {Router} from "express";
 
 import { authenticate } from "../../../middleware/authenticate";
 import { exportAttendance, getAttendanceHeatmap, getAttendanceStats } from "../../../controllers/v1/attendance";
-import { createSuperAdminController, deleteSuperAdminController, getAllSuperAdminsController, updateSuperAdminController } from "@/controllers/v1/superAdmin";
+import { createSuperAdminController, deleteSuperAdminController, getAllSuperAdminsController, updateSuperAdminController } from "../../../controllers/v1/superAdmin";
 const router = Router();
 router.post("/", createSuperAdminController);
 router.get("/",authenticate, getAllSuperAdminsController);

@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import StatsCard from "./StatsCard";
-import { attendanceService, IAttendanceStats, IHeatmapData } from "@/utils/teacherAttendance.service";
+import { attendanceService } from "@/utils/teacherAttendance.service";
 export default function StatsView() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<IAttendanceStats | null>(null);
-  const [heatmapData, setHeatmapData] = useState<IHeatmapData[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [heatmapData, setHeatmapData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {

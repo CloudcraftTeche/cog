@@ -8,111 +8,141 @@ import LoadingState from "@/components/student/chapter/LoadingState";
 import ErrorState from "@/components/student/chapter/ErrorState";
 import ChapterHeader from "@/components/student/chapter/ChapterHeader";
 import ChapterContent from "@/components/student/chapter/ChapterContent";
-import QuizSection from "@/components/student/chapter/QuizSection";
+import QuizAndSubmission from "@/components/student/chapter/ChapterSubmission";
+
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { id } = useParams() as { id: string };
-  const [chapter, setChapter] = useState<
-    | (Chapter & {
-        chapterIndex?: number;
-        totalChapters?: number;
-        quizScore?: number;
-      })
-    | null
-  >(null);
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<number, string>
-  >({});
+  
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [quizScore, setQuizScore] = useState<number>(0);
+
   useEffect(() => {
     if (!user?.id || !id) return;
+
     const fetchChapter = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await chapterService.getChapterById(id, user.id);
+        
+        const response = await chapterService.getChapterById(id);
         const chapterData = response.data;
+
         if (chapterData) {
           setChapter(chapterData);
-          setQuizScore(chapterData.quizScore || 0);
-          if (chapterData.isCompleted) {
+          setQuizScore(chapterData.score || 0);
+
+          if (chapterData.isCompleted || chapterData.status === "completed") {
             setSubmitted(true);
+          }
+
+          if (
+            chapterData.isAccessible &&
+            !chapterData.isInProgress &&
+            !chapterData.isCompleted
+          ) {
+            try {
+              await chapterService.startChapter(id);
+            } catch (err) {
+              console.error("Failed to mark chapter as in progress:", err);
+            }
           }
         }
       } catch (err: any) {
         let errorMessage = "Unable to load chapter. Please try again later.";
+        
         if (err.response?.status === 403) {
-          errorMessage =
-            "You must complete previous chapters to access this chapter.";
+          errorMessage = "You must complete previous chapters to access this chapter.";
         } else if (err.response?.status === 404) {
           errorMessage = "Chapter not found.";
         } else if (err.response?.data?.message) {
           errorMessage = err.response.data.message;
         }
+        
         setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
     };
+
     fetchChapter();
   }, [user?.id, id]);
+
   const handleAnswer = (qIndex: number, value: string) => {
-    setSelectedAnswers((prev) => ({ ...prev, [qIndex]: value }));
+    if (!submitted) {
+      setSelectedAnswers((prev) => ({ ...prev, [qIndex]: value }));
+    }
   };
+
   const calculateQuizScore = () => {
     if (!chapter?.questions?.length) return 0;
+    
     const correctCount = chapter.questions.reduce((count, q, i) => {
       return selectedAnswers[i] === q.correctAnswer ? count + 1 : count;
     }, 0);
+    
     return Math.round((correctCount / chapter.questions.length) * 100);
   };
-  const submitQuiz = async () => {
-    if (!chapter || !user?.id) return;
-    setSubmitting(true);
-    try {
-      const score = calculateQuizScore();
-      setQuizScore(score);
-      await chapterService.completeChapter(user?.id, chapter._id, score);
-      setSubmitted(true);
-      setChapter((prev) => (prev ? { ...prev, isCompleted: true } : null));
-      toast.success("Quiz submitted successfully.");
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message ||
-          "Unable to complete chapter. Please try again."
-      );
-    } finally {
-      setSubmitting(false);
-    }
+
+  const handleSubmitSuccess = (result: any) => {
+    const finalScore = result.score || calculateQuizScore();
+    setQuizScore(finalScore);
+    setSubmitted(true);
+    setChapter((prev) =>
+      prev
+        ? {
+            ...prev,
+            isCompleted: true,
+            status: "completed",
+            score: finalScore,
+          }
+        : null
+    );
   };
-  const handleNextChapter = async () => {
+
+  const handleNextChapter = () => {
     router.push(`/dashboard/student/chapters`);
   };
+
   const handleRetake = () => {
     setSelectedAnswers({});
     setSubmitted(false);
     setQuizScore(0);
-    setChapter((prev) => (prev ? { ...prev, isCompleted: false } : null));
   };
+
+  const getAnswersArray = () => {
+    if (!chapter?.questions) return [];
+    
+    return chapter.questions.map((q, i) => ({
+      questionText: q.questionText,
+      selectedAnswer: selectedAnswers[i] || "",
+    }));
+  };
+
   const currentScore = submitted
     ? quizScore > 0
       ? quizScore
       : calculateQuizScore()
     : 0;
+
   if (loading) {
     return <LoadingState message="Loading chapter content..." />;
   }
+
   if (error) {
     return <ErrorState message={error} />;
   }
+
   if (!chapter) {
     return <ErrorState message="Chapter not found." />;
   }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -120,49 +150,69 @@ export default function ChapterDetailPage() {
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed" />
         <div className="absolute bottom-20 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-teal-400/20 rounded-full animate-float" />
       </div>
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10 max-w-4xl">
         <ChapterHeader chapter={chapter} />
+
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
+
           {chapter.questions && chapter.questions.length > 0 && (
-            <QuizSection
+            <QuizAndSubmission
               chapter={chapter}
               selectedAnswers={selectedAnswers}
               submitted={submitted}
-              submitting={submitting}
               currentScore={currentScore}
               onAnswerChange={handleAnswer}
-              onSubmit={submitQuiz}
+              onSubmitSuccess={handleSubmitSuccess}
               onRetake={handleRetake}
               onNextChapter={handleNextChapter}
+              calculateQuizScore={calculateQuizScore}
             />
           )}
         </div>
       </div>
+
       <style jsx global>{`
         @keyframes float {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0px);
           }
           50% {
             transform: translateY(-20px);
           }
         }
+        
         @keyframes float-delayed {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0px);
           }
           50% {
             transform: translateY(-15px);
           }
         }
+        
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
         .animate-float {
           animation: float 6s ease-in-out infinite;
         }
+        
         .animate-float-delayed {
           animation: float-delayed 8s ease-in-out infinite;
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out forwards;
         }
       `}</style>
     </div>

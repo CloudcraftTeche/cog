@@ -17,14 +17,24 @@ import {
   MoreVertical,
   BarChart3,
   Trash2,
+  FileCheck,
+  BookOpen,
+  FilePlus2,
 } from "lucide-react";
+
+interface ContentItem {
+  type: "video" | "text" | "pdf" | "mixed";
+  title?: string;
+  url?: string;
+}
 
 interface Chapter {
   _id: string;
   title: string;
   description: string;
   chapterNumber: number;
-  contentType: "video" | "text";
+  contentItems?: ContentItem[];
+  contentType?: "video" | "text";
   videoUrl?: string;
   textContent?: string;
   gradeId: {
@@ -37,6 +47,10 @@ interface Chapter {
   studentProgress?: Array<{
     studentId: string;
     status: string;
+    submissions?: Array<{
+      type: string;
+      submittedAt: Date;
+    }>;
   }>;
 }
 
@@ -45,6 +59,7 @@ interface ChapterCardProps {
   index: number;
   unitName?: string; 
   onViewScores: (chapterId: string) => void;
+  onViewSubmissions: (chapterId: string) => void;
   onEdit: (chapterId: string) => void;
   onDelete: (chapterId: string) => void;
 }
@@ -54,57 +69,131 @@ export default function ChapterCard({
   index,
   unitName,
   onViewScores,
+  onViewSubmissions,
   onEdit,
   onDelete,
 }: ChapterCardProps) {
   const completedCount =
-    chapter.studentProgress?.filter((p) => p.status === "completed").length ||
-    0;
+    chapter.studentProgress?.filter((p) => p.status === "completed").length || 0;
+  
+  const submissionCount = chapter.studentProgress?.filter(
+    (p) => p.submissions && p.submissions.length > 0
+  ).length || 0;
+
   const displayUnitName = unitName || chapter.unitName || "N/A";
+
+  // Get content type info from contentItems or fallback to old contentType
+  const getContentTypeInfo = () => {
+    if (chapter.contentItems && chapter.contentItems.length > 0) {
+      const types = chapter.contentItems.map(item => item.type);
+      const uniqueTypes = [...new Set(types)];
+      
+      if (uniqueTypes.includes("mixed")) {
+        return { label: "Mixed", color: "indigo" };
+      } else if (uniqueTypes.length > 1) {
+        return { label: "Multiple", color: "purple" };
+      } else {
+        switch (uniqueTypes[0]) {
+          case "video":
+            return { label: "Video", color: "red" };
+          case "text":
+            return { label: "Text", color: "blue" };
+          case "pdf":
+            return { label: "PDF", color: "orange" };
+          default:
+            return { label: "Content", color: "gray" };
+        }
+      }
+    }
+    // Fallback to old contentType
+    return chapter.contentType === "video" 
+      ? { label: "Video", color: "red" }
+      : { label: "Text", color: "blue" };
+  };
+
+  const contentInfo = getContentTypeInfo();
+
+  const getContentIcon = () => {
+    if (chapter.contentItems && chapter.contentItems.length > 1) {
+      return <FilePlus2 className="h-8 w-8 text-white" />;
+    }
+    
+    const type = chapter.contentItems?.[0]?.type || chapter.contentType;
+    switch (type) {
+      case "video":
+        return <Video className="h-8 w-8 text-white" />;
+      case "pdf":
+        return <FileText className="h-8 w-8 text-white" />;
+      case "mixed":
+        return <FilePlus2 className="h-8 w-8 text-white" />;
+      default:
+        return <BookOpen className="h-8 w-8 text-white" />;
+    }
+  };
+
+  const getGradientColors = () => {
+    switch (contentInfo.color) {
+      case "red":
+        return "from-red-400 via-pink-500 to-purple-500";
+      case "blue":
+        return "from-blue-400 via-indigo-500 to-purple-500";
+      case "orange":
+        return "from-orange-400 via-red-500 to-pink-500";
+      case "indigo":
+        return "from-indigo-400 via-purple-500 to-pink-500";
+      case "purple":
+        return "from-purple-400 via-fuchsia-500 to-pink-500";
+      default:
+        return "from-gray-400 via-slate-500 to-gray-500";
+    }
+  };
+
+  const getIconGradient = () => {
+    if (index % 4 === 0) return "from-red-500 via-pink-500 to-purple-600";
+    if (index % 4 === 1) return "from-blue-500 via-indigo-500 to-purple-600";
+    if (index % 4 === 2) return "from-green-500 via-teal-500 to-blue-600";
+    return "from-orange-500 via-red-500 to-pink-600";
+  };
 
   return (
     <Card className="border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105 bg-white overflow-hidden rounded-3xl group">
       <CardContent className="p-0">
-        <div
-          className={`h-3 ${
-            chapter.contentType === "video"
-              ? "bg-gradient-to-r from-red-400 via-pink-500 to-purple-500"
-              : "bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500"
-          }`}
-        />
+        <div className={`h-3 bg-gradient-to-r ${getGradientColors()}`} />
         <div className="p-8 space-y-6">
           <div className="flex items-start gap-5">
             <div
-              className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-xl transform group-hover:scale-110 transition-transform duration-300 ${
-                index % 4 === 0
-                  ? "bg-gradient-to-br from-red-500 via-pink-500 to-purple-600"
-                  : index % 4 === 1
-                  ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600"
-                  : index % 4 === 2
-                  ? "bg-gradient-to-br from-green-500 via-teal-500 to-blue-600"
-                  : "bg-gradient-to-br from-orange-500 via-red-500 to-pink-600"
-              }`}
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-xl transform group-hover:scale-110 transition-transform duration-300 bg-gradient-to-br ${getIconGradient()}`}
             >
-              {chapter.contentType === "video" ? (
-                <Video className="h-8 w-8 text-white" />
-              ) : (
-                <FileText className="h-8 w-8 text-white" />
-              )}
+              {getContentIcon()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
                 <h3 className="text-xl font-bold text-gray-900 truncate">
                   {chapter.title}
                 </h3>
                 <Badge
                   className={`capitalize text-sm font-semibold px-3 py-1 rounded-full ${
-                    chapter.contentType === "video"
+                    contentInfo.color === "red"
                       ? "bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border-red-200"
-                      : "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
+                      : contentInfo.color === "blue"
+                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
+                      : contentInfo.color === "orange"
+                      ? "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border-orange-200"
+                      : contentInfo.color === "indigo"
+                      ? "bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 border-indigo-200"
+                      : "bg-gradient-to-r from-purple-100 to-fuchsia-100 text-purple-700 border-purple-200"
                   }`}
                 >
-                  {chapter.contentType}
+                  {contentInfo.label}
                 </Badge>
+                {chapter.contentItems && chapter.contentItems.length > 1 && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-white border-gray-300"
+                  >
+                    {chapter.contentItems.length} items
+                  </Badge>
+                )}
               </div>
               <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
                 {chapter.description}
@@ -121,23 +210,33 @@ export default function ChapterCard({
               value={new Date(chapter.createdAt).toLocaleDateString()}
             />
             <InfoRow label="Completed" value={`${completedCount} students`} />
+            <InfoRow label="Submissions" value={`${submissionCount} students`} />
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => onViewScores(chapter._id)}
-              className="flex-1 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200 hover:border-green-300 text-green-700 hover:text-green-800 font-semibold rounded-xl transition-all duration-300"
+              className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200 hover:border-green-300 text-green-700 hover:text-green-800 font-semibold rounded-xl transition-all duration-300"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
-              View Scores
+              Scores
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewSubmissions(chapter._id)}
+              className="bg-gradient-to-r from-purple-50 to-fuchsia-50 hover:from-purple-100 hover:to-fuchsia-100 border-purple-200 hover:border-purple-300 text-purple-700 hover:text-purple-800 font-semibold rounded-xl transition-all duration-300"
+            >
+              <FileCheck className="h-4 w-4 mr-2" />
+              Submissions
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onEdit(chapter._id)}
-              className="flex-1 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-800 font-semibold rounded-xl transition-all duration-300"
+              className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-800 font-semibold rounded-xl transition-all duration-300"
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit
@@ -147,9 +246,10 @@ export default function ChapterCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="px-4 bg-gradient-to-r from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-300"
+                  className="bg-gradient-to-r from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-300"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="h-4 w-4 mr-2" />
+                  More
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent

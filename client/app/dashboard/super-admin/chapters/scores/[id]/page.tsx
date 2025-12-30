@@ -3,13 +3,16 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Clock } from "lucide-react";
+import { Trophy, Clock, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import ExportButtons from "@/components/admin/chapters/ExportButtons";
 import StatisticsCards from "@/components/admin/chapters/StatisticsCards";
 import CompletedStudentsTab from "@/components/admin/chapters/CompletedStudentsTab";
 import PendingStudentsTab from "@/components/admin/chapters/PendingStudentsTab";
+
 interface StudentScore {
   studentId: string;
   name: string;
@@ -23,6 +26,7 @@ interface StudentScore {
   completedAt: string | null;
   score: number;
 }
+
 interface NotCompletedStudent {
   studentId: string;
   name: string;
@@ -36,11 +40,18 @@ interface NotCompletedStudent {
   status?: string;
   startedAt?: string | null;
 }
+
+interface ContentItem {
+  type: "video" | "text" | "pdf" | "mixed";
+  title?: string;
+}
+
 interface ChapterData {
   _id: string;
   title: string;
   description: string;
-  contentType: string;
+  contentItems?: ContentItem[];
+  contentType?: string;
   chapterNumber: number;
   gradeId: {
     _id: string;
@@ -50,38 +61,47 @@ interface ChapterData {
   createdAt: string;
   updatedAt: string;
 }
+
 interface Statistics {
   totalCompleted: number;
   averageScore: number;
   highestScore: number;
   lowestScore: number;
 }
+
 interface ScoreData {
   chapter: ChapterData;
   completedStudents: StudentScore[];
   pendingStudents: NotCompletedStudent[];
   statistics: Statistics;
 }
+
 export default function ChapterScoresPage() {
   const router = useRouter();
   const params = useParams();
   const chapterId = params?.id as string;
+
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [loading, setLoading] = useState(true);
+
   const fetchScoreData = useCallback(async () => {
     if (!chapterId) return;
+
     try {
       setLoading(true);
       const chapterResponse = await api.get(`/chapters/${chapterId}`);
       const chapterData = chapterResponse.data.data;
+
       const completedResponse = await api.get(
         `/chapters/${chapterId}/completed-students`
       );
       const completedData = completedResponse.data;
+
       const pendingResponse = await api.get(
         `/chapters/${chapterId}/pending-students`
       );
       const pendingData = pendingResponse.data;
+
       const completedStudents = completedData.data || [];
       const statistics = {
         totalCompleted: completedData.total || 0,
@@ -89,11 +109,13 @@ export default function ChapterScoresPage() {
         highestScore: completedData.stats?.highestScore || 0,
         lowestScore: completedData.stats?.lowestScore || 0,
       };
+
       const combinedData: ScoreData = {
         chapter: {
           _id: chapterData._id,
           title: chapterData.title,
           description: chapterData.description,
+          contentItems: chapterData.contentItems,
           contentType: chapterData.contentType,
           chapterNumber: chapterData.chapterNumber,
           gradeId: chapterData.gradeId,
@@ -105,6 +127,7 @@ export default function ChapterScoresPage() {
         pendingStudents: pendingData.data || [],
         statistics,
       };
+
       setScoreData(combinedData);
     } catch (error: any) {
       console.error("Score fetch error:", error);
@@ -116,9 +139,11 @@ export default function ChapterScoresPage() {
       setLoading(false);
     }
   }, [chapterId]);
+
   useEffect(() => {
     fetchScoreData();
   }, [fetchScoreData]);
+
   const handleSendChapterReminder = async (studentId: string) => {
     try {
       await api.post(`/chapters/${chapterId}/remind/${studentId}`);
@@ -128,6 +153,52 @@ export default function ChapterScoresPage() {
       toast.error("Failed to send reminder");
     }
   };
+
+  const getContentTypeBadges = () => {
+    if (!scoreData?.chapter.contentItems || scoreData.chapter.contentItems.length === 0) {
+      // Fallback to old contentType
+      const type = scoreData?.chapter.contentType || "text";
+      return (
+        <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+          {type === "video" ? "📹 Video" : "📚 Text"} Content
+        </Badge>
+      );
+    }
+
+    const types = scoreData.chapter.contentItems.map(item => item.type);
+    const uniqueTypes = [...new Set(types)];
+
+    return (
+      <>
+        {uniqueTypes.includes("mixed") && (
+          <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            🎬 Mixed Content
+          </Badge>
+        )}
+        {uniqueTypes.includes("video") && !uniqueTypes.includes("mixed") && (
+          <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            📹 Video
+          </Badge>
+        )}
+        {uniqueTypes.includes("text") && !uniqueTypes.includes("mixed") && (
+          <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            📚 Text
+          </Badge>
+        )}
+        {uniqueTypes.includes("pdf") && (
+          <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            📄 PDF
+          </Badge>
+        )}
+        {scoreData.chapter.contentItems.length > 1 && (
+          <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            📦 {scoreData.chapter.contentItems.length} Items
+          </Badge>
+        )}
+      </>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
@@ -149,6 +220,7 @@ export default function ChapterScoresPage() {
       </div>
     );
   }
+
   if (!scoreData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
@@ -158,17 +230,18 @@ export default function ChapterScoresPage() {
             <p className="text-gray-600 mb-4">
               Unable to load chapter score data
             </p>
-            <button
+            <Button
               onClick={() => router.back()}
-              className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all"
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
             >
               Go Back
-            </button>
+            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
+
   const totalStudents =
     scoreData.completedStudents.length + scoreData.pendingStudents.length;
   const completionRate =
@@ -183,32 +256,38 @@ export default function ChapterScoresPage() {
     scoreData.completedStudents.length > 0
       ? Math.round((passedStudents / scoreData.completedStudents.length) * 100)
       : 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
       <div className="container mx-auto px-4 py-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-4 hover:bg-white/50"
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back to Chapters
+        </Button>
+
         <div className="mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-2xl">
           <h1 className="text-4xl font-bold mb-2">{scoreData.chapter.title}</h1>
           <p className="text-indigo-100 text-lg">
             {scoreData.chapter.description}
           </p>
           <div className="flex flex-wrap gap-3 mt-4">
-            <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
-              {scoreData.chapter.contentType === "video"
-                ? "📹 Video"
-                : "📚 Text"}{" "}
-              Content
-            </span>
-            <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            {getContentTypeBadges()}
+            <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
               📝 {scoreData.chapter.questionsCount} Questions
-            </span>
-            <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            </Badge>
+            <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
               🎓 Grade {scoreData.chapter.gradeId.grade}
-            </span>
-            <span className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+            </Badge>
+            <Badge className="bg-white/20 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
               📖 Chapter {scoreData.chapter.chapterNumber}
-            </span>
+            </Badge>
           </div>
         </div>
+
         <ExportButtons
           chapterTitle={scoreData.chapter.title}
           questionsCount={scoreData.chapter.questionsCount}
@@ -222,12 +301,14 @@ export default function ChapterScoresPage() {
             passRate,
           }}
         />
+
         <StatisticsCards
           totalStudents={totalStudents}
           completionRate={completionRate}
           averageScore={scoreData.statistics.averageScore}
           passRate={passRate}
         />
+
         <Tabs defaultValue="completed" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-14 bg-white rounded-2xl shadow-lg border-0 p-2">
             <TabsTrigger
@@ -245,6 +326,7 @@ export default function ChapterScoresPage() {
               Pending ({scoreData.pendingStudents.length})
             </TabsTrigger>
           </TabsList>
+
           <TabsContent value="completed" className="mt-6">
             <CompletedStudentsTab
               students={scoreData.completedStudents}
@@ -252,6 +334,7 @@ export default function ChapterScoresPage() {
               highestScore={scoreData.statistics.highestScore}
             />
           </TabsContent>
+
           <TabsContent value="pending" className="mt-6">
             <PendingStudentsTab
               students={scoreData.pendingStudents}

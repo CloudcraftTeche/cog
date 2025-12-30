@@ -88,6 +88,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           icon: CalendarDaysIcon,
         },
         {
+          name: "TeacherAttendance",
+          href: "/dashboard/admin/teacher-attendance",
+          icon: CalendarDaysIcon,
+        },
+        {
           name: "Announcements",
           href: "/dashboard/admin/announcements",
           icon: MegaphoneIcon,

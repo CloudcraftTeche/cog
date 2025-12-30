@@ -214,6 +214,11 @@ export default function SuperAdminChaptersPage() {
       </div>
     );
   }
+
+  const handleViewSubmissions = (chapterId: string) => {
+    router.push(`/dashboard/super-admin/chapters/submissions/${chapterId}`);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -227,7 +232,7 @@ export default function SuperAdminChaptersPage() {
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium mb-2">
                 <Sparkles className="h-4 w-4" />
-               Pastor Dashboard
+                Super Admin Dashboard
               </div>
               <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
                 Chapter Management
@@ -274,7 +279,7 @@ export default function SuperAdminChaptersPage() {
                     : "Get started by creating your first chapter"}
                 </p>
                 <Button
-                  onClick={() => router.push("/dashboard/super-admin/chapter/upload")}
+                  onClick={() => router.push("/dashboard/super-admin/upload")}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-2xl px-8 py-3"
                 >
                   <Plus className="h-5 w-5 mr-2" />
@@ -388,6 +393,7 @@ export default function SuperAdminChaptersPage() {
                                       onViewScores={handleViewScores}
                                       onEdit={handleEdit}
                                       onDelete={handleDeleteChapter}
+                                      onViewSubmissions={handleViewSubmissions}
                                     />
                                   )
                                 )}

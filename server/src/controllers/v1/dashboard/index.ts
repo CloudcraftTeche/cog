@@ -7,10 +7,214 @@ import { Grade } from "../../../models/academic/Grade.model";
 import { Chapter } from "../../../models/academic/Chapter.model";
 import { Announcement } from "../../../models/announcement";
 import { Query } from "../../../models/query/Query.model";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { Attendance } from "../../../models/attendance/Attendance.schema";
 import { Assignment } from "../../../models/assignment/Assignment.schema";
-import { Submission } from "../../../models/assignment/Submission.schema";
+import {
+  ISubmission,
+  Submission,
+} from "../../../models/assignment/Submission.schema";
+type PopulatedSubmission = ISubmission & {
+  studentId: {
+    _id: Types.ObjectId;
+    name: string;
+    email: string;
+    rollNumber?: string;
+  };
+};
+const getWeeklyActiveStudents = async (gradeId?: mongoose.Types.ObjectId) => {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
+  const matchStage: any = {
+    $or: [
+      { "studentProgress.startedAt": { $gte: sevenDaysAgo } },
+      { "studentProgress.completedAt": { $gte: sevenDaysAgo } },
+    ],
+  };
+  if (gradeId) {
+    matchStage.gradeId = gradeId;
+  }
+  const activeStudents = await Chapter.aggregate([
+    { $match: matchStage },
+    { $unwind: "$studentProgress" },
+    {
+      $match: {
+        $or: [
+          { "studentProgress.startedAt": { $gte: sevenDaysAgo } },
+          { "studentProgress.completedAt": { $gte: sevenDaysAgo } },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: "$studentProgress.studentId",
+        activeDays: { $sum: 1 },
+      },
+    },
+    { $count: "total" },
+  ]);
+  return activeStudents[0]?.total || 0;
+};
+const getSyllabusCoverage = async (gradeId?: mongoose.Types.ObjectId) => {
+  const matchStage: any = {};
+  if (gradeId) {
+    matchStage.gradeId = gradeId;
+  }
+  const grades = await Grade.find(gradeId ? { _id: gradeId } : {}).lean();
+  const coverageData = await Promise.all(
+    grades.map(async (grade) => {
+      const totalChapters = await Chapter.countDocuments({
+        gradeId: grade._id,
+      });
+      const teachers = await Teacher.find({ gradeId: grade._id }).select(
+        "name email"
+      );
+      const completedChapters = await Chapter.aggregate([
+        { $match: { gradeId: grade._id } },
+        { $unwind: "$studentProgress" },
+        { $match: { "studentProgress.status": "completed" } },
+        {
+          $group: {
+            _id: "$_id",
+            completionCount: { $sum: 1 },
+          },
+        },
+      ]);
+      const totalStudents = await Student.countDocuments({
+        gradeId: grade._id,
+      });
+      const totalPossibleCompletions = totalChapters * totalStudents;
+      const actualCompletions = completedChapters.reduce(
+        (sum, ch) => sum + ch.completionCount,
+        0
+      );
+      const coveragePercentage =
+        totalPossibleCompletions > 0
+          ? Math.round((actualCompletions / totalPossibleCompletions) * 100)
+          : 0;
+      return {
+        gradeId: grade._id,
+        grade: grade.grade,
+        totalChapters,
+        totalStudents,
+        coveragePercentage,
+        teachers: teachers.map((t) => ({ name: t.name, email: t.email })),
+        completedChapters: completedChapters.length,
+      };
+    })
+  );
+  return coverageData;
+};
+const getStrugglingStudents = async (gradeId: mongoose.Types.ObjectId) => {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+  const students = await Student.find({ gradeId })
+    .select("name email rollNumber profilePictureUrl")
+    .lean();
+  const strugglingData = await Promise.all(
+    students.map(async (student) => {
+      const attendanceRecords = await Attendance.find({
+        studentId: student._id,
+        gradeId,
+        date: { $gte: thirtyDaysAgo },
+      });
+      const attendanceRate =
+        attendanceRecords.length > 0
+          ? (attendanceRecords.filter((r) => r.status === "present").length /
+              attendanceRecords.length) *
+            100
+          : 100;
+      const chapters = await Chapter.find({
+        gradeId,
+        "studentProgress.studentId": student._id,
+        "studentProgress.status": "completed",
+      }).select("studentProgress");
+      const scores = chapters
+        .flatMap((ch) =>
+          ch.studentProgress?.filter(
+            (p) => p.studentId.toString() === student._id.toString()
+          )
+        )
+        .map((p) => p?.score)
+        .filter((s): s is number => s !== undefined);
+      const avgScore =
+        scores.length > 0
+          ? scores.reduce((a, b) => a + b, 0) / scores.length
+          : 0;
+      const assignments = await Assignment.find({
+        gradeId,
+        status: "active",
+      });
+      const submissions = await Submission.countDocuments({
+        studentId: student._id,
+        assignmentId: { $in: assignments.map((a) => a._id) },
+      });
+      const missingSubmissions = assignments.length - submissions;
+      const isStruggling =
+        attendanceRate < 75 || avgScore < 60 || missingSubmissions > 2;
+      if (isStruggling) {
+        return {
+          studentId: student._id,
+          name: student.name,
+          email: student.email,
+          rollNumber: student.rollNumber,
+          profilePictureUrl: student.profilePictureUrl,
+          attendanceRate: Math.round(attendanceRate),
+          avgScore: Math.round(avgScore),
+          missingSubmissions,
+          issues: [
+            attendanceRate < 75 && "Low Attendance",
+            avgScore < 60 && "Low Scores",
+            missingSubmissions > 2 && "Missing Submissions",
+          ].filter(Boolean),
+        };
+      }
+      return null;
+    })
+  );
+  return strugglingData.filter((s): s is NonNullable<typeof s> => s !== null);
+};
+export const getPendingGradings = async (
+  teacherId: string,
+  gradeId: mongoose.Types.ObjectId
+) => {
+  const assignments = await Assignment.find({
+    createdBy: teacherId,
+    gradeId,
+    status: "active",
+  }).select("_id title endDate totalMarks");
+  const assignmentIds = assignments.map((a) => a._id);
+  const submissions = await Submission.find({
+    assignmentId: { $in: assignmentIds },
+    $or: [{ score: { $exists: false } }, { score: null }],
+  })
+    .populate("studentId", "name email rollNumber")
+    .select("assignmentId studentId submittedAt")
+    .lean<PopulatedSubmission[]>();
+  const map = new Map();
+  for (const s of submissions) {
+    const key = s.assignmentId.toString();
+    if (!map.has(key)) {
+      const assignment = assignments.find((a) => a._id.equals(s.assignmentId));
+      map.set(key, {
+        assignmentId: assignment!._id,
+        assignmentTitle: assignment!.title,
+        endDate: assignment!.endDate,
+        totalMarks: assignment!.totalMarks,
+        pendingCount: 0,
+        submissions: [],
+      });
+    }
+    const entry = map.get(key);
+    entry.pendingCount++;
+    entry.submissions.push({
+      studentId: s.studentId._id,
+      studentName: s.studentId.name,
+      studentEmail: s.studentId.email,
+      rollNumber: s.studentId.rollNumber,
+      submittedAt: s.submittedAt,
+    });
+  }
+  return [...map.values()];
+};
 export const getSuperAdminDashboard = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -132,11 +336,11 @@ export const getSuperAdminDashboard = async (
         };
       })
     );
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
     const attendanceTrend = await Attendance.aggregate([
       {
         $match: {
-          date: { $gte: thirtyDaysAgo },
+          date: { $gte: sevenDaysAgo },
         },
       },
       {
@@ -278,7 +482,7 @@ export const getSuperAdminDashboard = async (
     const assignmentStats = await Assignment.aggregate([
       {
         $match: {
-          createdAt: { $gte: thirtyDaysAgo },
+          createdAt: { $gte: sevenDaysAgo },
         },
       },
       {
@@ -295,6 +499,8 @@ export const getSuperAdminDashboard = async (
         },
       },
     ]);
+    const weeklyActiveStudents = await getWeeklyActiveStudents();
+    const syllabusCoverage = await getSyllabusCoverage();
     res.status(200).json({
       success: true,
       data: {
@@ -306,6 +512,7 @@ export const getSuperAdminDashboard = async (
           totalAnnouncements,
           totalQueries,
           completionRate,
+          weeklyActiveStudents,
         },
         charts: {
           studentGrowth,
@@ -315,6 +522,7 @@ export const getSuperAdminDashboard = async (
           queryStats,
           queryPriorityStats,
           assignmentStats,
+          syllabusCoverage,
         },
         insights: {
           topPerformers,
@@ -333,312 +541,7 @@ export const getAdminDashboard = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const [
-      totalStudents,
-      totalTeachers,
-      totalGrades,
-      totalChapters,
-      totalAnnouncements,
-      totalQueries,
-    ] = await Promise.all([
-      Student.countDocuments({ role: "student" }),
-      Teacher.countDocuments({ role: "teacher" }),
-      Grade.countDocuments(),
-      Chapter.countDocuments(),
-      Announcement.countDocuments(),
-      Query.countDocuments(),
-    ]);
-    const studentGrowth = await Student.aggregate([
-      {
-        $match: {
-          role: "student",
-          createdAt: {
-            $gte: new Date(new Date().setMonth(new Date().getMonth() - 12)),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-          },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { "_id.year": 1, "_id.month": 1 },
-      },
-      {
-        $project: {
-          _id: 0,
-          month: {
-            $concat: [
-              { $toString: "$_id.year" },
-              "-",
-              {
-                $cond: [
-                  { $lt: ["$_id.month", 10] },
-                  { $concat: ["0", { $toString: "$_id.month" }] },
-                  { $toString: "$_id.month" },
-                ],
-              },
-            ],
-          },
-          students: "$count",
-        },
-      },
-    ]);
-    const teacherGrowth = await Teacher.aggregate([
-      {
-        $match: {
-          role: "teacher",
-          createdAt: {
-            $gte: new Date(new Date().setMonth(new Date().getMonth() - 12)),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-          },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { "_id.year": 1, "_id.month": 1 },
-      },
-      {
-        $project: {
-          _id: 0,
-          month: {
-            $concat: [
-              { $toString: "$_id.year" },
-              "-",
-              {
-                $cond: [
-                  { $lt: ["$_id.month", 10] },
-                  { $concat: ["0", { $toString: "$_id.month" }] },
-                  { $toString: "$_id.month" },
-                ],
-              },
-            ],
-          },
-          teachers: "$count",
-        },
-      },
-    ]);
-    const grades = await Grade.find().select("_id grade").lean();
-    const gradeDistribution = await Promise.all(
-      grades.map(async (grade) => {
-        const [studentCount, teacherCount, assignmentCount] = await Promise.all(
-          [
-            Student.countDocuments({ gradeId: grade._id }),
-            Teacher.countDocuments({ gradeId: grade._id }),
-            Assignment.countDocuments({ gradeId: grade._id }),
-          ]
-        );
-        return {
-          grade: grade.grade,
-          studentCount,
-          teacherCount,
-          assignmentCount,
-        };
-      })
-    );
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
-    const attendanceTrend = await Attendance.aggregate([
-      {
-        $match: {
-          date: { $gte: thirtyDaysAgo },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$date" },
-          },
-          present: {
-            $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] },
-          },
-          absent: {
-            $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] },
-          },
-          late: {
-            $sum: { $cond: [{ $eq: ["$status", "late"] }, 1, 0] },
-          },
-          excused: {
-            $sum: { $cond: [{ $eq: ["$status", "excused"] }, 1, 0] },
-          },
-        },
-      },
-      { $sort: { _id: 1 } },
-      {
-        $project: {
-          _id: 0,
-          date: "$_id",
-          present: 1,
-          absent: 1,
-          late: 1,
-          excused: 1,
-          total: { $add: ["$present", "$absent", "$late", "$excused"] },
-          attendanceRate: {
-            $round: [
-              {
-                $multiply: [
-                  {
-                    $divide: [
-                      "$present",
-                      { $add: ["$present", "$absent", "$late", "$excused"] },
-                    ],
-                  },
-                  100,
-                ],
-              },
-              0,
-            ],
-          },
-        },
-      },
-    ]);
-    const queryStats = await Query.aggregate([
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          status: "$_id",
-          count: 1,
-        },
-      },
-    ]);
-    const queryPriorityStats = await Query.aggregate([
-      {
-        $group: {
-          _id: "$priority",
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          priority: "$_id",
-          count: 1,
-        },
-      },
-    ]);
-    const allChapters = await Chapter.find().select("studentProgress");
-    let totalCompletions = 0;
-    let totalInProgress = 0;
-    for (const chapter of allChapters) {
-      if (chapter.studentProgress) {
-        totalCompletions += chapter.studentProgress.filter(
-          (p) => p.status === "completed"
-        ).length;
-        totalInProgress += chapter.studentProgress.filter(
-          (p) => p.status === "in_progress"
-        ).length;
-      }
-    }
-    const completionRate =
-      totalStudents > 0 && totalChapters > 0
-        ? Math.round((totalCompletions / (totalStudents * totalChapters)) * 100)
-        : 0;
-    const recentAnnouncements = await Announcement.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select("title createdAt");
-    const recentQueries = await Query.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("from", "name")
-      .select("subject status createdAt from");
-    const topStudents = await Chapter.aggregate([
-      { $unwind: "$studentProgress" },
-      {
-        $match: { "studentProgress.status": "completed" },
-      },
-      {
-        $group: {
-          _id: "$studentProgress.studentId",
-          completedChapters: { $sum: 1 },
-          averageScore: { $avg: "$studentProgress.score" },
-        },
-      },
-      { $sort: { completedChapters: -1, averageScore: -1 } },
-      { $limit: 10 },
-    ]);
-    const topStudentsWithDetails = await Student.find({
-      _id: { $in: topStudents.map((s) => s._id) },
-    }).select("name email rollNumber profilePictureUrl");
-    const topPerformers = topStudents.map((student) => {
-      const details = topStudentsWithDetails.find(
-        (s) => s._id.toString() === student._id.toString()
-      );
-      return {
-        studentId: student._id,
-        name: details?.name,
-        email: details?.email,
-        rollNumber: details?.rollNumber,
-        profilePictureUrl: details?.profilePictureUrl,
-        completedChapters: student.completedChapters,
-        averageScore: Math.round(student.averageScore || 0),
-      };
-    });
-    const assignmentStats = await Assignment.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: thirtyDaysAgo },
-        },
-      },
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          status: "$_id",
-          count: 1,
-        },
-      },
-    ]);
-    res.status(200).json({
-      success: true,
-      data: {
-        overview: {
-          totalStudents,
-          totalTeachers,
-          totalGrades,
-          totalChapters,
-          totalAnnouncements,
-          totalQueries,
-          completionRate,
-        },
-        charts: {
-          studentGrowth,
-          teacherGrowth,
-          gradeDistribution,
-          attendanceTrend,
-          queryStats,
-          queryPriorityStats,
-          assignmentStats,
-        },
-        insights: {
-          topPerformers,
-          recentAnnouncements,
-          recentQueries,
-        },
-      },
-    });
+    await getSuperAdminDashboard(req, res, next);
   } catch (err) {
     next(err);
   }
@@ -924,7 +827,7 @@ export const getTeacherDashboard = async (
 ): Promise<void> => {
   try {
     const teacherId = req.userId;
-    const teacher = await Teacher.findById(teacherId).select("gradeId");
+    const teacher = await Teacher.findById(teacherId).select("gradeId name");
     if (!teacher || !teacher.gradeId) {
       throw new ApiError(404, "Teacher not found or no grade assigned");
     }
@@ -982,7 +885,6 @@ export const getTeacherDashboard = async (
       {
         $match: {
           gradeId: new mongoose.Types.ObjectId(String(gradeId)),
-          teacherId: new mongoose.Types.ObjectId(String(teacherId)),
           date: { $gte: sevenDaysAgo },
         },
       },
@@ -1113,6 +1015,13 @@ export const getTeacherDashboard = async (
         ),
       })
     );
+    const weeklyActiveStudents = await getWeeklyActiveStudents(gradeId);
+    const syllabusCoverage = await getSyllabusCoverage(gradeId);
+    const strugglingStudents = await getStrugglingStudents(gradeId);
+    const pendingGradings = await getPendingGradings(
+      String(teacherId),
+      gradeId
+    );
     res.status(200).json({
       success: true,
       data: {
@@ -1121,6 +1030,7 @@ export const getTeacherDashboard = async (
           totalChapters,
           totalAssignments,
           pendingQueries,
+          weeklyActiveStudents,
         },
         charts: {
           studentPerformanceByGrade,
@@ -1128,10 +1038,13 @@ export const getTeacherDashboard = async (
           assignmentSubmissions,
           queryStatusDistribution,
           chapterProgress,
+          syllabusCoverage,
         },
         recentActivity: {
           recentQueries,
           upcomingAssignments: formattedUpcomingAssignments,
+          strugglingStudents,
+          pendingGradings,
         },
       },
     });

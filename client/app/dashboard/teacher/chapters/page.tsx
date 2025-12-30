@@ -192,6 +192,11 @@ export default function TeacherChaptersPage() {
     );
   }
 
+    
+  const handleViewSubmissions = (chapterId: string) => {
+    router.push(`/dashboard/teacher/chapters/submissions/${chapterId}`);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -320,6 +325,7 @@ export default function TeacherChaptersPage() {
                           unitName={unitGroup.unit.name}
                           onViewScores={handleViewScores}
                           onEdit={handleEdit}
+                          onViewSubmissions={handleViewSubmissions}
                           onDelete={handleDeleteChapter}
                         />
                       ))}

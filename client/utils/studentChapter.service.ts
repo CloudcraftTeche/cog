@@ -11,14 +11,20 @@ export interface StudentProgress {
   completedAt?: Date;
   score?: number;
 }
+export interface ContentItem {
+  type: "video" | "text" | "pdf" | "mixed";
+  url?: string;
+  publicId?: string;
+  textContent?: string;
+  title?: string;
+  order: number;
+}
 export interface Chapter {
   _id: string;
   title: string;
   description: string;
   chapterNumber: number;
-  contentType: "video" | "text";
-  videoUrl?: string;
-  textContent?: string;
+  contentItems: ContentItem[];
   gradeId: {
     _id: string;
     grade: string;
@@ -50,20 +56,12 @@ export interface Grade {
   grade: string;
   units?: Unit[];
 }
-export interface GroupedChapterData {
-  grade: Grade;
-  unitGroups: {
-    unit: Unit;
-    chapters: Chapter[];
-  }[];
-  totalChapters: number;
-}
 export interface ChapterDetailResponse {
   success: boolean;
   data: Chapter & {
-    chapterIndex: number;
-    totalChapters: number;
-    quizScore: number;
+    chapterIndex?: number;
+    totalChapters?: number;
+    quizScore?: number;
   };
 }
 export interface ChaptersListResponse {
@@ -73,45 +71,116 @@ export interface ChaptersListResponse {
   totalPages: number;
   data: Chapter[];
 }
+export interface CompleteChapterRequest {
+  score?: number;
+  studentId?: string;
+}
+export interface CompleteChapterResponse {
+  success: boolean;
+  message: string;
+  data: {
+    chapterId: string;
+    studentId: string;
+    status: string;
+    completedAt: Date;
+    score?: number;
+  };
+}
+interface Answer {
+  questionText: string;
+  selectedAnswer: string;
+}
+export interface ChapterContent {
+  chapter: Chapter;
+  answers: Answer[];
+}
 export const chapterService = {
+  async getCurrentUserGrade(): Promise<Grade> {
+    const { data } = await api.get("/auth/me");
+    return data.data.gradeId;
+  },
   async getChapters(params?: {
     page?: number;
     limit?: number;
     search?: string;
     unitId?: string;
+    chapterNumber?: number;
   }): Promise<ChaptersListResponse> {
-    const studentGrade=await api.get("/auth/me")
-    const grade=await studentGrade.data.data.gradeId
-    const { data } = await api.get(`/chapters/${grade._id}/chapters`, { params });
+    const grade = await this.getCurrentUserGrade();
+    const { data } = await api.get(`/chapters/${grade._id}/chapters`, {
+      params,
+    });
     return data;
   },
-  async getChapterById(chapterId: string, studentId: string): Promise<ChapterDetailResponse> {
+  async getChapterById(chapterId: string): Promise<ChapterDetailResponse> {
     const { data } = await api.get(`/chapters/${chapterId}`);
     return data;
   },
-  async startChapter(gradeId: string, chapterId: string): Promise<any> {
-    const { data } = await api.post(`/chapters/${gradeId}/chapters/${chapterId}/start`);
+  async startChapter(chapterId: string): Promise<any> {
+    const grade = await this.getCurrentUserGrade();
+    const { data } = await api.post(
+      `/chapters/${grade._id}/chapters/${chapterId}/start`
+    );
     return data;
   },
   async submitChapter(
-    gradeId: string,
     chapterId: string,
-    answers: { questionText: string; selectedAnswer: string }[]
+    answers: { questionText: string; selectedAnswer: string }[],
+    submissionType: "text" | "video" | "pdf" = "text",
+    submissionContent?: string
   ): Promise<any> {
-    const { data } = await api.post(`/chapters/${gradeId}/chapters/${chapterId}/submit`, {
-      answers,
-    });
+    const grade = await this.getCurrentUserGrade();
+    const { data } = await api.post(
+      `/chapters/${grade._id}/chapters/${chapterId}/submit`,
+      {
+        answers,
+        submissionType,
+        submissionContent,
+      }
+    );
     return data;
   },
-  async completeChapter(studentId: string, chapterId: string, quizScore: number): Promise<any> {
-    const { data } = await api.post(`/students/${studentId}/complete-chapter`, {
-      chapterId,
-      quizScore,
-    });
+  async completeChapter(
+    chapterId: string,
+    score: number,
+    studentId?: string
+  ): Promise<CompleteChapterResponse> {
+    const grade = await this.getCurrentUserGrade();
+    const { data } = await api.post(
+      `/chapters/${grade._id}/chapters/${chapterId}/complete`,
+      {
+        score,
+        studentId,
+      }
+    );
+    return data;
+  },
+  async getChapterStatus(chapterId: string): Promise<any> {
+    const grade = await this.getCurrentUserGrade();
+    const { data } = await api.get(
+      `/chapters/${grade._id}/chapters/${chapterId}/status`
+    );
+    return data;
+  },
+  async getCompletedChapters(studentId: string): Promise<any> {
+    const grade = await this.getCurrentUserGrade();
+    const { data } = await api.get(
+      `/chapters/${grade._id}/students/${studentId}/completed-chapters`
+    );
     return data;
   },
   async getGrade(gradeId: string): Promise<any> {
     const { data } = await api.get(`/grades/${gradeId}`);
+    return data;
+  },
+  async getChapterCount(gradeId: string): Promise<any> {
+    const { data } = await api.get(`/chapters/${gradeId}/chapters/count`);
+    return data;
+  },
+  async getChaptersByUnit(gradeId: string, unitId: string): Promise<any> {
+    const { data } = await api.get(
+      `/chapters/${gradeId}/units/${unitId}/chapters`
+    );
     return data;
   },
 };

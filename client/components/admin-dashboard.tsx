@@ -4,10 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
 import api from "@/lib/api";
 import { OverviewStats } from "./admin/dashboard/OverviewStats";
-import { ExportSection } from "./admin/dashboard/ExportSection";
 import { ChartsSection } from "./admin/dashboard/ChartsSection";
 import { HeatmapView } from "./admin/dashboard/HeatmapView";
 import { ReportsView } from "./admin/dashboard/ReportsView";
+import { SyllabusCoverage } from "./admin/dashboard/SyllabusCoverage";
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [selectedView, setSelectedView] = useState("dashboard");
@@ -90,8 +90,8 @@ export default function AdminDashboard() {
         {selectedView === "dashboard" && (
           <>
             <OverviewStats overview={dashboardData?.overview} />
-            <ExportSection />
             <ChartsSection charts={dashboardData?.charts} />
+            <SyllabusCoverage/>
             <InsightsSection insights={dashboardData?.insights} />
           </>
         )}

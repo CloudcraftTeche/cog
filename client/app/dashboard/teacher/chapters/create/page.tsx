@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Upload, Video, BookOpen, Sparkles } from "lucide-react";
+import { CheckCircle, Upload, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -14,12 +13,25 @@ import QuestionsSection, {
 } from "@/components/admin/chapters/QuestionsSection";
 import ContentUploadSection from "@/components/admin/chapters/ContentUploadSection";
 import {
-  ChapterFormData,
   TeacherChapterService,
   TeacherGrade,
-  ValidationErrors,
 } from "@/components/teacher/chapter/chapterApiAndTypes";
-import TeacherBasicInfoSection from "@/components/teacher/chapter/TeacherBasicInfoSection";
+
+interface Unit {
+  _id: string;
+  name: string;
+  description?: string;
+  orderIndex: number;
+}
+
+interface ContentItem {
+  type: "video" | "text" | "pdf" | "mixed";
+  order: number;
+  title?: string;
+  textContent?: string;
+  videoUrl?: string;
+  file?: File;
+}
 
 export default function TeacherCreateChapterPage() {
   const router = useRouter();
@@ -27,21 +39,23 @@ export default function TeacherCreateChapterPage() {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [contentType, setContentType] = useState<"video" | "text">("video");
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [chapter, setChapter] = useState<number>(1);
-  const [videoUrl, setVideoUrl] = useState<string>("");
-  const [textContent, setTextContent] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
 
   const [grade, setGrade] = useState<TeacherGrade | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
+  
+  const [contentItems, setContentItems] = useState<ContentItem[]>([
+    { type: "video", order: 0, title: "" }
+  ]);
+  
   const [questions, setQuestions] = useState<Question[]>([
     { id: "1", questionText: "", options: ["", "", "", ""], correctAnswer: "" },
   ]);
 
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user?.id) return;
@@ -50,6 +64,14 @@ export default function TeacherCreateChapterPage() {
       try {
         const gradeData = await TeacherChapterService.getTeacherGrade(user.id);
         setGrade(gradeData);
+        
+        // Set units from the grade data
+        if (gradeData?.units) {
+          const sortedUnits = [...gradeData.units].sort(
+            (a, b) => a.orderIndex - b.orderIndex
+          );
+          setUnits(sortedUnits);
+        }
       } catch (error: any) {
         toast.error(error.message || "Failed to fetch grade");
       }
@@ -59,7 +81,7 @@ export default function TeacherCreateChapterPage() {
   }, [user?.id]);
 
   const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {};
+    const newErrors: Record<string, string> = {};
 
     if (!title.trim()) {
       newErrors.title = "Title is required";
@@ -79,20 +101,22 @@ export default function TeacherCreateChapterPage() {
       newErrors.chapterNumber = "Chapter number must be at least 1";
     }
 
-    if (contentType === "video") {
-      if (!videoUrl.trim()) {
-        newErrors.videoUrl = "Video URL is required for video content";
-      } else {
-        try {
-          new URL(videoUrl);
-        } catch {
-          newErrors.videoUrl = "Please enter a valid URL";
+    if (contentItems.length === 0) {
+      newErrors.contentItems = "At least one content item is required";
+    } else {
+      for (let i = 0; i < contentItems.length; i++) {
+        const item = contentItems[i];
+        
+        // For mixed type, at least one of video or text should be provided
+        if (item.type === "mixed") {
+          const hasVideo = (item.videoUrl?.trim() || item.file);
+          const hasText = item.textContent?.trim();
+          if (!hasVideo && !hasText) {
+            newErrors[`content_${i}`] = "Provide at least video or text content";
+            break;
+          }
         }
       }
-    }
-
-    if (contentType === "text" && !textContent.trim()) {
-      newErrors.textContent = "Text content is required for text content type";
     }
 
     if (questions.length === 0) {
@@ -100,29 +124,23 @@ export default function TeacherCreateChapterPage() {
     } else {
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
-
         if (!q.questionText.trim()) {
           newErrors.questions = `Question ${i + 1}: Question text is required`;
           break;
         }
-
         const filledOptions = q.options.filter((opt) => opt && opt.trim());
-
         if (q.options.length !== 4) {
           newErrors.questions = `Question ${i + 1}: Must have exactly 4 options`;
           break;
         }
-
         if (filledOptions.length < 2) {
           newErrors.questions = `Question ${i + 1}: At least 2 options must be filled`;
           break;
         }
-
         if (!q.correctAnswer || !q.correctAnswer.trim()) {
           newErrors.questions = `Question ${i + 1}: Please select a correct answer`;
           break;
         }
-
         if (!q.options.includes(q.correctAnswer)) {
           newErrors.questions = `Question ${i + 1}: Correct answer must be one of the options`;
           break;
@@ -154,18 +172,32 @@ export default function TeacherCreateChapterPage() {
     }));
 
     try {
-      const payload: ChapterFormData = {
-        title: title.trim(),
-        description: description.trim(),
-        contentType,
-        unitId: selectedUnit,
-        chapterNumber: chapter,
-        videoUrl: contentType === "video" ? videoUrl.trim() : undefined,
-        textContent: contentType === "text" ? textContent.trim() : undefined,
-        questions: formattedQuestions,
-      };
+      const formData:any = new FormData();
+      
+      formData.append("title", title.trim());
+      formData.append("description", description.trim());
+      formData.append("unitId", selectedUnit);
+      formData.append("chapterNumber", chapter.toString());
+      
+      const contentItemsData = contentItems.map((item, index) => ({
+        type: item.type,
+        order: index,
+        title: item.title || "",
+        ...(item.type === "text" && { textContent: item.textContent }),
+        ...(item.type === "video" && item.videoUrl && { videoUrl: item.videoUrl }),
+      }));
+      
+      formData.append("contentItems", JSON.stringify(contentItemsData));
+      
+      contentItems.forEach((item, index) => {
+        if (item.file) {
+          formData.append(`content_${index}`, item.file);
+        }
+      });
+      
+      formData.append("questions", JSON.stringify(formattedQuestions));
 
-      await TeacherChapterService.createChapter(payload);
+      await TeacherChapterService.createChapter(formData);
 
       setSuccess(true);
       toast.success("Content Uploaded!", {
@@ -217,109 +249,152 @@ export default function TeacherCreateChapterPage() {
           <Alert className="mb-8 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg rounded-2xl">
             <CheckCircle className="h-5 w-5 text-emerald-600" />
             <AlertDescription className="text-emerald-800 font-medium">
-              Content uploaded successfully! Students can now access this
-              material.
+              Content uploaded successfully! Students can now access this material.
             </AlertDescription>
           </Alert>
         )}
 
-        <Tabs
-          value={contentType}
-          onValueChange={(val: string) =>
-            setContentType(val as "video" | "text")
-          }
-          className="space-y-8"
-        >
-          <div className="flex justify-center">
-            <TabsList className="grid w-full max-w-md grid-cols-2 h-14 bg-gradient-to-r from-slate-100 to-slate-200 rounded-2xl p-2">
-              <TabsTrigger
-                value="video"
-                className="flex items-center space-x-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <Video className="w-5 h-5" />{" "}
-                <span className="font-medium">Video Content</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="text"
-                className="flex items-center space-x-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
-              >
-                <BookOpen className="w-5 h-5" />{" "}
-                <span className="font-medium">Text Content</span>
-              </TabsTrigger>
-            </TabsList>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Info Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6 border border-slate-200">
+            <div className="flex items-center space-x-3 pb-3 border-b border-slate-200">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">1</span>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800">Basic Information</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Chapter Title *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Introduction to Algebra"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                    errors.title ? "border-red-300" : "border-slate-200"
+                  }`}
+                />
+                {errors.title && (
+                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Provide a brief description of this chapter..."
+                  rows={4}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                    errors.description ? "border-red-300" : "border-slate-200"
+                  }`}
+                />
+                {errors.description && (
+                  <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Grade
+                  </label>
+                  <div className="px-4 py-3 bg-slate-100 border-2 border-slate-200 rounded-xl text-slate-700 font-medium">
+                    Grade {grade.grade}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Chapter Number *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={chapter}
+                    onChange={(e) => setChapter(parseInt(e.target.value) || 1)}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                      errors.chapterNumber ? "border-red-300" : "border-slate-200"
+                    }`}
+                  />
+                  {errors.chapterNumber && (
+                    <p className="text-red-500 text-sm mt-1">{errors.chapterNumber}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Select Unit *
+                </label>
+                <select
+                  value={selectedUnit}
+                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                    errors.unitId ? "border-red-300" : "border-slate-200"
+                  }`}
+                >
+                  <option value="">Choose a unit...</option>
+                  {units.map((unit) => (
+                    <option key={unit._id} value={unit._id}>
+                      {unit.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.unitId && (
+                  <p className="text-red-500 text-sm mt-1">{errors.unitId}</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <TeacherBasicInfoSection
-              title={title}
-              setTitle={setTitle}
-              description={description}
-              setDescription={setDescription}
-              selectedUnit={selectedUnit}
-              setSelectedUnit={setSelectedUnit}
-              chapter={chapter}
-              setChapter={setChapter}
-              grade={grade}
-              errors={errors}
-            />
+          <ContentUploadSection
+            contentItems={contentItems}
+            setContentItems={setContentItems}
+            errors={errors}
+          />
 
-            <TabsContent value="video" className="space-y-8 mt-0">
-              <ContentUploadSection
-                contentType="video"
-                videoUrl={videoUrl}
-                setVideoUrl={setVideoUrl}
-                textContent=""
-                setTextContent={() => {}}
-                errors={errors}
-              />
-            </TabsContent>
+          <QuestionsSection
+            questions={questions}
+            setQuestions={setQuestions}
+            errors={errors}
+          />
 
-            <TabsContent value="text" className="space-y-8 mt-0">
-              <ContentUploadSection
-                contentType="text"
-                videoUrl=""
-                setVideoUrl={() => {}}
-                textContent={textContent}
-                setTextContent={setTextContent}
-                errors={errors}
-              />
-            </TabsContent>
-
-            <QuestionsSection
-              questions={questions}
-              setQuestions={setQuestions}
-              errors={errors}
-            />
-
-            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                asChild
-                className="px-6 sm:px-8 h-12 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-xl w-full sm:w-auto transition-all duration-300"
-              >
-                <Link href="/dashboard/teacher/chapters">Cancel</Link>
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="px-8 sm:px-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5 mr-3" />
-                    Upload Content & Quiz
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Tabs>
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              asChild
+              className="px-6 sm:px-8 h-12 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-xl w-full sm:w-auto transition-all duration-300"
+            >
+              <Link href="/dashboard/teacher/chapters">Cancel</Link>
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="px-8 sm:px-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5 mr-3" />
+                  Upload Content & Quiz
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

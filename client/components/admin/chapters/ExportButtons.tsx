@@ -61,7 +61,7 @@ export default function ExportButtons({
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
       2,
       "0"
-    )}-${String(date.getDate()).padStart(2, "0")}`;
+    )}-${String(date.getDate()).padStart(2, "0")} `;
   };
 
   const escapeCSV = (str: string): string =>
@@ -83,7 +83,7 @@ export default function ExportButtons({
         csvData += `"Lowest Score:","${statistics.lowestScore}"\n`;
         csvData += `"Pass Rate:","${statistics.passRate}%"\n\n`;
 
-        csvData += `"Rank","Name","Roll Number","Email","Score","Percentage","Completed Date","Status"\n`;
+        csvData += `"Rank","Grade", "Name","Roll Number","Email","Score","Completed Date","Status"\n`;
 
         completedStudents.forEach((student, index) => {
           const percentage =
@@ -93,11 +93,11 @@ export default function ExportButtons({
 
           const status = parseFloat(percentage) >= 60 ? "Pass" : "Fail";
 
-          csvData += `"${index + 1}","${escapeCSV(student.name)}","${escapeCSV(student.gradeId?.grade)}","${escapeCSV(
+          csvData += `"${index + 1}","${escapeCSV(student.gradeId?.grade)}","${escapeCSV(student.name)}","${escapeCSV(
             student.rollNumber
           )}","${escapeCSV(student.email)}","${
             student.score
-          }","${percentage}%","${formatDateForExcel(
+          }","${formatDateForExcel(
             student.completedAt
           )}","${status}"\n`;
         });

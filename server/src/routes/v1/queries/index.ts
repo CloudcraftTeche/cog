@@ -14,9 +14,9 @@ import {
   getAvailableRecipients,
 } from "../../../controllers/v1/queries";
 import multer from "multer";
-import { authenticate } from "@/middleware/authenticate";
-import { authorizeRoles } from "@/middleware/authorizeRoles";
-import { validate } from "@/middleware/validate";
+import { authenticate } from "../../../middleware/authenticate";
+import { authorizeRoles } from "../../../middleware/authorizeRoles";
+import { validate } from "../../../middleware/validate";
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 const createQueryValidation = [
