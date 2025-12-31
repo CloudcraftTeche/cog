@@ -13,6 +13,7 @@ import {
   uploadToCloudinary,
 } from "../../../config/cloudinary";
 const transporter = createEmailTransporter();
+
 const processContentItems = async (files: any, body: any) => {
   const contentItems = [];
   const contentItemsData = JSON.parse(body.contentItems || "[]");
@@ -1619,6 +1620,26 @@ export const sendInProgressRemindersHandler = async (
         failedStudents: failedReminders,
         sentAt: new Date(),
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+export const gradeWiseChapterCountHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { gradeId } = req.params;
+    if (!mongoose.isValidObjectId(gradeId)) {
+      throw new ApiError(400, "Invalid grade ID");
+    }
+    const chapterCounts = await Chapter.countDocuments({ gradeId }).exec();
+    res.status(200).json({
+      success: true,
+      message: "Chapter counts by grade fetched successfully",
+      data: chapterCounts,
     });
   } catch (err) {
     next(err);

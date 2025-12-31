@@ -22,6 +22,7 @@ import {
   BookImage,
   BookMarked,
   Book,
+  School2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -62,6 +63,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         },
         { name: "Chapters", href: "/dashboard/admin/chapters", icon: BookOpen },
         { name: "Grades", href: "/dashboard/admin/grades", icon: SchoolIcon },
+        {
+          name: "GradeReports",
+          href: "/dashboard/admin/gradeReport",
+          icon: School2Icon,
+        },
         {
           name: "Assignments",
           href: "/dashboard/admin/assignments",
@@ -123,6 +129,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           icon: SchoolIcon,
         },
         {
+          name: "GradeReports",
+          href: "/dashboard/admin/gradeReport",
+          icon: School2Icon,
+        },
+        {
           name: "Assignments",
           href: "/dashboard/super-admin/assignments",
           icon: Upload,
@@ -145,6 +156,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {
           name: "Attendance",
           href: "/dashboard/super-admin/attendance",
+          icon: CalendarDaysIcon,
+        },
+        {
+          name: "TeacherAttendance",
+          href: "/dashboard/admin/teacher-attendance",
           icon: CalendarDaysIcon,
         },
         {

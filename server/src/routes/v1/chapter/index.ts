@@ -466,4 +466,14 @@ router.post(
   handleValidationErrors,
   sendInProgressRemindersHandler
 );
+router.get(
+  "/:gradeId/chapters/count",
+  authenticate,
+  authorizeRoles("admin", "teacher", "superAdmin"),
+  [
+    param("gradeId").isMongoId().withMessage("Invalid grade ID"),
+  ],
+  handleValidationErrors,
+  getChapterCountHandler
+);
 export default router;
