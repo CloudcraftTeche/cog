@@ -279,7 +279,7 @@ export default function SuperAdminChaptersPage() {
                     : "Get started by creating your first chapter"}
                 </p>
                 <Button
-                  onClick={() => router.push("/dashboard/super-admin/upload")}
+                  onClick={() => router.push("/dashboard/super-admin/chapters/upload")}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-2xl px-8 py-3"
                 >
                   <Plus className="h-5 w-5 mr-2" />
