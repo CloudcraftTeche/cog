@@ -164,12 +164,102 @@ router.post(
   ]),
   [
     body("gradeIds")
-      .isArray({ min: 1 })
-      .withMessage("At least one grade ID is required"),
-    body("gradeIds.*")
+      .custom((value) => {
+        let ids = value;
+        if (typeof value === 'string') {
+          try {
+            ids = JSON.parse(value);
+          } catch (e) {
+            throw new Error('gradeIds must be a valid JSON array');
+          }
+        }
+        if (!Array.isArray(ids)) {
+          throw new Error('gradeIds must be an array');
+        }
+        if (ids.length === 0) {
+          throw new Error('At least one grade ID is required');
+        }
+        const mongoose = require('mongoose');
+        for (const id of ids) {
+          if (!mongoose.isValidObjectId(id)) {
+            throw new Error(`Invalid grade ID: ${id}`);
+          }
+        }
+        return true;
+      })
+      .withMessage("Invalid gradeIds format"),
+    body("title")
+      .trim()
+      .notEmpty()
+      .withMessage("Title is required")
+      .isLength({ min: 1, max: 200 })
+      .withMessage("Title must be between 1-200 characters"),
+    body("description")
+      .trim()
+      .notEmpty()
+      .withMessage("Description is required"),
+    body("contentItems")
+      .custom((value) => {
+        let items;
+        try {
+          items = JSON.parse(value || "[]");
+        } catch (e) {
+          throw new Error("contentItems must be valid JSON");
+        }
+        if (!Array.isArray(items)) {
+          throw new Error("contentItems must be an array");
+        }
+        if (items.length === 0) {
+          throw new Error("At least one content item is required");
+        }
+        return true;
+      })
+      .withMessage("Invalid content items format"),
+    body("unitId")
       .isMongoId()
-      .withMessage("Each grade ID must be a valid MongoDB ObjectId"),
-    ...chapterValidation,
+      .withMessage("Invalid unit ID"),
+    body("chapterNumber")
+      .isInt({ min: 1 })
+      .withMessage("Chapter number must be a positive integer"),
+    body("questions")
+      .custom((value) => {
+        let questions;
+        try {
+          questions = Array.isArray(value) ? value : JSON.parse(value || "[]");
+        } catch (e) {
+          throw new Error("questions must be valid JSON");
+        }
+        if (!Array.isArray(questions)) {
+          throw new Error("questions must be an array");
+        }
+        if (questions.length === 0) {
+          throw new Error("At least one question is required");
+        }
+        questions.forEach((q: any, index: number) => {
+          if (!q.questionText || typeof q.questionText !== "string") {
+            throw new Error(
+              `Question ${index + 1}: questionText is required and must be a string`
+            );
+          }
+          if (!Array.isArray(q.options) || q.options.length !== 4) {
+            throw new Error(
+              `Question ${index + 1}: must have exactly 4 options`
+            );
+          }
+          if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
+            throw new Error(
+              `Question ${index + 1}: correctAnswer is required and must be a string`
+            );
+          }
+          if (!q.options.includes(q.correctAnswer)) {
+            throw new Error(
+              `Question ${index + 1}: correctAnswer must be one of the options`
+            );
+          }
+        });
+        return true;
+      })
+      .withMessage("Invalid questions format"),
   ],
   handleValidationErrors,
   createChapterHandler

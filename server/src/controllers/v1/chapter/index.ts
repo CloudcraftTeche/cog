@@ -13,7 +13,6 @@ import {
   uploadToCloudinary,
 } from "../../../config/cloudinary";
 const transporter = createEmailTransporter();
-
 const processContentItems = async (files: any, body: any) => {
   const contentItems = [];
   const contentItemsData = JSON.parse(body.contentItems || "[]");
@@ -26,6 +25,8 @@ const processContentItems = async (files: any, body: any) => {
     };
     if (item.type === "text") {
       contentItem.textContent = item.textContent;
+      contentItem.url = null;
+      contentItem.publicId = null;
     } else if (item.type === "video") {
       if (
         item.videoUrl &&
@@ -44,6 +45,9 @@ const processContentItems = async (files: any, body: any) => {
         );
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
+      } else {
+        contentItem.url = null;
+        contentItem.publicId = null;
       }
     } else if (item.type === "pdf") {
       if (files && files[`content_${i}`]) {
@@ -56,8 +60,13 @@ const processContentItems = async (files: any, body: any) => {
         );
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
+      } else {
+        contentItem.url = null;
+        contentItem.publicId = null;
       }
     } else if (item.type === "mixed") {
+      contentItem.url = null;
+      contentItem.publicId = null;
       if (
         item.videoUrl &&
         (item.videoUrl.includes("youtube.com") ||
@@ -97,7 +106,6 @@ export const createChapterHandler = async (
 ): Promise<void> => {
   try {
     const { title, description, chapterNumber, questions, unitId } = req.body;
-
     let gradeIds = req.body.gradeIds;
     if (typeof gradeIds === "string") {
       try {
@@ -106,7 +114,6 @@ export const createChapterHandler = async (
         throw new ApiError(400, "Invalid gradeIds format");
       }
     }
-
     if (!gradeIds || !Array.isArray(gradeIds) || gradeIds.length === 0) {
       throw new ApiError(400, "At least one grade ID is required");
     }

@@ -58,19 +58,13 @@ const ContentItemSchema = new Schema<IContentItem>(
     },
     url: {
       type: String,
-      required: function (this: IContentItem) {
-        return this.type === "video" || this.type === "pdf";
-      },
+    required:false,
+      default: null
     },
     publicId: {
       type: String,
-      required: function (this: IContentItem) {
-        return (
-          (this.type === "video" || this.type === "pdf") &&
-          this.url &&
-          !this.url.includes("youtube")
-        );
-      },
+   required:false,
+   default: null
     },
     textContent: {
       type: String,
