@@ -12,7 +12,6 @@ import QuestionsSection, {
 } from "@/components/admin/chapters/QuestionsSection";
 import BasicInfoSection from "@/components/admin/chapters/BasicInfoSection";
 import ContentUploadSection from "@/components/admin/chapters/ContentUploadSection";
-
 interface Grade {
   _id: string;
   grade: string;
@@ -23,14 +22,12 @@ interface Grade {
     orderIndex: number;
   }>;
 }
-
 interface Unit {
   _id: string;
   name: string;
   description?: string;
   orderIndex: number;
 }
-
 interface ContentItem {
   type: "video" | "text" | "pdf" | "mixed";
   order: number;
@@ -39,7 +36,6 @@ interface ContentItem {
   videoUrl?: string;
   file?: File;
 }
-
 export default function SuperAdminUploadChapter() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -51,16 +47,13 @@ export default function SuperAdminUploadChapter() {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [grades, setGrades] = useState<Grade[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
-  
   const [contentItems, setContentItems] = useState<ContentItem[]>([
-    { type: "video", order: 0, title: "" }
+    { type: "video", order: 0, title: "" },
   ]);
-  
   const [questions, setQuestions] = useState<Question[]>([
     { id: "1", questionText: "", options: ["", "", "", ""], correctAnswer: "" },
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   useEffect(() => {
     const fetchGrades = async () => {
       try {
@@ -72,7 +65,6 @@ export default function SuperAdminUploadChapter() {
     };
     fetchGrades();
   }, []);
-
   useEffect(() => {
     if (selectedGrades.length === 0) {
       setUnits([]);
@@ -91,53 +83,56 @@ export default function SuperAdminUploadChapter() {
     }
     setSelectedUnit("");
   }, [selectedGrades, grades]);
-
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (!title.trim()) {
       newErrors.title = "Title is required";
     } else if (title.length > 200) {
       newErrors.title = "Title must be less than 200 characters";
     }
-
     if (!description.trim()) {
       newErrors.description = "Description is required";
     }
-
     if (selectedGrades.length === 0) {
       newErrors.gradeIds = "At least one grade must be selected";
     }
-
     if (!selectedUnit) {
       newErrors.unitId = "Unit is required";
     }
-
     if (chapter < 1) {
       newErrors.chapterNumber = "Chapter number must be at least 1";
     }
-
     if (contentItems.length === 0) {
       newErrors.contentItems = "At least one content item is required";
     } else {
       for (let i = 0; i < contentItems.length; i++) {
         const item = contentItems[i];
-        
-        // For mixed type, at least one of video or text should be provided
-        if (item.type === "mixed") {
-          const hasVideo = (item.videoUrl?.trim() || item.file);
+        if (item.type === "text") {
+          if (!item.textContent?.trim()) {
+            newErrors[`content_${i}`] = "Text content is required";
+            break;
+          }
+        } else if (item.type === "video") {
+          if (!item.videoUrl?.trim() && !item.file) {
+            newErrors[`content_${i}`] = "Video URL or file is required";
+            break;
+          }
+        } else if (item.type === "pdf") {
+          if (!item.file) {
+            newErrors[`content_${i}`] = "PDF file is required";
+            break;
+          }
+        } else if (item.type === "mixed") {
+          const hasVideo = item.videoUrl?.trim() || item.file;
           const hasText = item.textContent?.trim();
           if (!hasVideo && !hasText) {
-            newErrors[`content_${i}`] = "Provide at least video or text content";
+            newErrors[`content_${i}`] =
+              "Provide at least video or text content";
             break;
           }
         }
-        
-        // No validation for individual types since all are optional
-        // Users can choose to add content later if needed
       }
     }
-
     if (questions.length === 0) {
       newErrors.questions = "At least one question is required";
     } else {
@@ -147,11 +142,11 @@ export default function SuperAdminUploadChapter() {
           newErrors.questions = `Question ${i + 1}: Question text is required`;
           break;
         }
-        const filledOptions = q.options.filter((opt) => opt && opt.trim());
         if (q.options.length !== 4) {
           newErrors.questions = `Question ${i + 1}: Must have exactly 4 options`;
           break;
         }
+        const filledOptions = q.options.filter((opt) => opt && opt.trim());
         if (filledOptions.length < 2) {
           newErrors.questions = `Question ${i + 1}: At least 2 options must be filled`;
           break;
@@ -166,11 +161,9 @@ export default function SuperAdminUploadChapter() {
         }
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -179,57 +172,66 @@ export default function SuperAdminUploadChapter() {
       });
       return;
     }
-
     setLoading(true);
     setSuccess(false);
-
-    const formattedQuestions = questions.map((q) => ({
-      questionText: q.questionText.trim(),
-      options: q.options.filter((opt) => opt && opt.trim()),
-      correctAnswer: q.correctAnswer.trim(),
-    }));
-
     try {
       const formData = new FormData();
-      
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("unitId", selectedUnit);
       formData.append("chapterNumber", chapter.toString());
       formData.append("gradeIds", JSON.stringify(selectedGrades));
-      
-      const contentItemsData = contentItems.map((item, index) => ({
-        type: item.type,
-        order: index,
-        title: item.title || "",
-        ...(item.type === "text" && { textContent: item.textContent }),
-        ...(item.type === "video" && item.videoUrl && { videoUrl: item.videoUrl }),
-      }));
-      
+      const contentItemsData = contentItems.map((item, index) => {
+        const baseItem = {
+          type: item.type,
+          order: index,
+          title: item.title || "",
+        };
+        if (item.type === "text") {
+          return { ...baseItem, textContent: item.textContent };
+        } else if (item.type === "video") {
+          if (item.videoUrl) {
+            return { ...baseItem, videoUrl: item.videoUrl };
+          }
+          return baseItem;
+        } else if (item.type === "pdf") {
+          return baseItem;
+        } else if (item.type === "mixed") {
+          const mixedItem: any = { ...baseItem };
+          if (item.videoUrl) {
+            mixedItem.videoUrl = item.videoUrl;
+          }
+          if (item.textContent) {
+            mixedItem.textContent = item.textContent;
+          }
+          return mixedItem;
+        }
+        return baseItem;
+      });
       formData.append("contentItems", JSON.stringify(contentItemsData));
-      
       contentItems.forEach((item, index) => {
         if (item.file) {
           formData.append(`content_${index}`, item.file);
         }
       });
-      
+      const formattedQuestions = questions.map((q) => ({
+        questionText: q.questionText.trim(),
+        options: q.options.filter((opt) => opt && opt.trim()),
+        correctAnswer: q.correctAnswer.trim(),
+      }));
       formData.append("questions", JSON.stringify(formattedQuestions));
-
       await api.post("/chapters/bulk", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
       setSuccess(true);
       toast.success("Content Uploaded!", {
         description: `Your educational content has been uploaded to ${selectedGrades.length} grade(s).`,
       });
-
       setTimeout(() => {
         router.push("/dashboard/super-admin/chapters");
       }, 1500);
     } catch (err: any) {
-      console.error(err);
+      console.error("Upload error:", err);
       const errorMessage =
         err.response?.data?.message || "An error occurred during upload.";
       toast.error("Upload Failed", {
@@ -239,7 +241,6 @@ export default function SuperAdminUploadChapter() {
       setLoading(false);
     }
   };
-
   return (
     <div className="p-6 relative">
       <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 mb-8 rounded-3xl">
@@ -253,17 +254,16 @@ export default function SuperAdminUploadChapter() {
           </p>
         </div>
       </div>
-
       <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pb-8">
         {success && (
           <Alert className="mb-8 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg rounded-2xl">
             <CheckCircle className="h-5 w-5 text-emerald-600" />
             <AlertDescription className="text-emerald-800 font-medium">
-              Content uploaded successfully! Students can now access this material.
+              Content uploaded successfully! Students can now access this
+              material.
             </AlertDescription>
           </Alert>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-8">
           <BasicInfoSection
             title={title}
@@ -280,19 +280,16 @@ export default function SuperAdminUploadChapter() {
             units={units}
             errors={errors}
           />
-
           <ContentUploadSection
             contentItems={contentItems}
             setContentItems={setContentItems}
             errors={errors}
           />
-
           <QuestionsSection
             questions={questions}
             setQuestions={setQuestions}
             errors={errors}
           />
-
           <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
             <Button
               type="button"

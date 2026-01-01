@@ -73,9 +73,9 @@ const chapterValidation = [
         throw new Error("At least one content item is required");
       }
       items.forEach((item: any, index: number) => {
-        if (!["video", "text", "pdf"].includes(item.type)) {
+        if (!["video", "text", "pdf", "mixed"].includes(item.type)) {
           throw new Error(
-            `Content item ${index + 1}: type must be video, text, or pdf`
+            `Content item ${index + 1}: type must be video, text, pdf, or mixed`
           );
         }
         if (item.type === "text" && !item.textContent) {
@@ -84,6 +84,22 @@ const chapterValidation = [
           );
         }
         if (item.type === "video" && !item.videoUrl) {
+          throw new Error(
+            `Content item ${index + 1}: videoUrl is required for video type`
+          );
+        }
+        if (item.type === "pdf") {
+        }
+        if (item.type === "mixed") {
+          const hasVideo = item.videoUrl?.trim();
+          const hasText = item.textContent?.trim();
+          if (!hasVideo && !hasText) {
+            throw new Error(
+              `Content item ${
+                index + 1
+              }: mixed type requires either videoUrl or textContent`
+            );
+          }
         }
       });
       return true;
@@ -470,9 +486,7 @@ router.get(
   "/:gradeId/chapters/count",
   authenticate,
   authorizeRoles("admin", "teacher", "superAdmin"),
-  [
-    param("gradeId").isMongoId().withMessage("Invalid grade ID"),
-  ],
+  [param("gradeId").isMongoId().withMessage("Invalid grade ID")],
   handleValidationErrors,
   getChapterCountHandler
 );

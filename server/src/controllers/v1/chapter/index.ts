@@ -96,8 +96,17 @@ export const createChapterHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { title, description, chapterNumber, questions, unitId, gradeIds } =
-      req.body;
+    const { title, description, chapterNumber, questions, unitId } = req.body;
+
+    let gradeIds = req.body.gradeIds;
+    if (typeof gradeIds === "string") {
+      try {
+        gradeIds = JSON.parse(gradeIds);
+      } catch (error) {
+        throw new ApiError(400, "Invalid gradeIds format");
+      }
+    }
+
     if (!gradeIds || !Array.isArray(gradeIds) || gradeIds.length === 0) {
       throw new ApiError(400, "At least one grade ID is required");
     }
