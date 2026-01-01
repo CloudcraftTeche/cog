@@ -1,7 +1,4 @@
-
-
 import { model, Schema, Types } from "mongoose";
-
 export interface ITeacherAttendance {
   _id?: Types.ObjectId;
   studentId: Types.ObjectId;
@@ -13,7 +10,6 @@ export interface ITeacherAttendance {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 export const TeacherAttendanceSchema = new Schema<ITeacherAttendance>(
   {
     studentId: {
@@ -33,9 +29,9 @@ export const TeacherAttendanceSchema = new Schema<ITeacherAttendance>(
       ref: "Grade",
       index: true,
     },
-    date: { 
-      type: Date, 
-      required: [true, "Date is required"], 
+    date: {
+      type: Date,
+      required: [true, "Date is required"],
       index: true,
       validate: {
         validator: (v: Date) => v <= new Date(),
@@ -58,9 +54,11 @@ export const TeacherAttendanceSchema = new Schema<ITeacherAttendance>(
   },
   { timestamps: true }
 );
-
 TeacherAttendanceSchema.index({ studentId: 1, date: 1 }, { unique: true });
 TeacherAttendanceSchema.index({ date: -1, status: 1 });
 TeacherAttendanceSchema.index({ gradeId: 1, date: -1 });
 TeacherAttendanceSchema.index({ teacherId: 1, date: -1 });
-export const TeacherAttendance = model<ITeacherAttendance>("TeacherAttendance", TeacherAttendanceSchema);
+export const TeacherAttendance = model<ITeacherAttendance>(
+  "TeacherAttendance",
+  TeacherAttendanceSchema
+);

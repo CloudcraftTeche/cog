@@ -1,6 +1,5 @@
 import { model, Schema, Types } from "mongoose";
 import { QuestionSchema, IQuestion } from "../shared/Question.schema";
-
 export interface IAssignment {
   _id: Types.ObjectId;
   title: string;
@@ -22,7 +21,6 @@ export interface IAssignment {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 export const AssignmentSchema = new Schema<IAssignment>(
   {
     title: {
@@ -85,7 +83,6 @@ export const AssignmentSchema = new Schema<IAssignment>(
     endDate: {
       type: Date,
       required: [true, "End date is required"],
-      
       index: true,
     },
     status: {
@@ -120,8 +117,6 @@ export const AssignmentSchema = new Schema<IAssignment>(
   },
   { timestamps: true }
 );
-
 AssignmentSchema.index({ status: 1, startDate: -1 });
 AssignmentSchema.index({ createdBy: 1, status: 1 });
-
 export const Assignment = model<IAssignment>("Assignment", AssignmentSchema);

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../../../utils/ApiError";
 import { Admin, IAdmin } from "../../../models/user/Admin.model";
-
 export const createAdminController = async (
   req: Request,
   res: Response,
@@ -9,12 +8,10 @@ export const createAdminController = async (
 ): Promise<void> => {
   try {
     const { name, email, password, phone, gender } = req.body as IAdmin;
-
     const existing = await Admin.findOne({ email });
     if (existing) {
       throw new ApiError(409, "Email already exists");
     }
-
     const admin = await Admin.create({
       name,
       email,
@@ -23,11 +20,9 @@ export const createAdminController = async (
       gender,
       role: "admin",
     });
-
     if (!admin) {
       throw new ApiError(400, "Failed to create admin");
     }
-
     res.status(201).json({
       success: true,
       message: "Admin created successfully",
@@ -45,7 +40,6 @@ export const createAdminController = async (
     next(err);
   }
 };
-
 export const updateAdminController = async (
   req: Request,
   res: Response,
@@ -54,16 +48,13 @@ export const updateAdminController = async (
   try {
     const { id } = req.params;
     const updateData = req.body as Partial<IAdmin>;
-
     const updated = await Admin.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
-
     if (!updated) {
       throw new ApiError(404, "Admin not found");
     }
-
     res.status(200).json({
       success: true,
       message: "Admin updated successfully",
@@ -80,7 +71,6 @@ export const updateAdminController = async (
     next(err);
   }
 };
-
 export const deleteAdminController = async (
   req: Request,
   res: Response,
@@ -88,13 +78,10 @@ export const deleteAdminController = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-
     const deleted = await Admin.findByIdAndDelete(id);
-
     if (!deleted) {
       throw new ApiError(404, "Admin not found");
     }
-
     res
       .status(200)
       .json({ success: true, message: "Admin deleted successfully" });
@@ -102,7 +89,6 @@ export const deleteAdminController = async (
     next(err);
   }
 };
-
 export const getAdminByIdController = async (
   req: Request,
   res: Response,
@@ -110,18 +96,15 @@ export const getAdminByIdController = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-
     const admin = await Admin.findById(id).select("-password");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
-
     res.status(200).json({ success: true, data: admin });
   } catch (err) {
     next(err);
   }
 };
-
 export const getAllAdminsController = async (
   req: Request,
   res: Response,
@@ -131,12 +114,10 @@ export const getAllAdminsController = async (
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
     const [admins, total] = await Promise.all([
       Admin.find().skip(skip).limit(limit).select("-password"),
       Admin.countDocuments(),
     ]);
-
     res.status(200).json({
       success: true,
       total,
@@ -148,8 +129,3 @@ export const getAllAdminsController = async (
     next(err);
   }
 };
-
-
-
-
-

@@ -14,7 +14,9 @@ export const getStudentTodoOverview = async (
 ) => {
   try {
     const studentId = new mongoose.Types.ObjectId(req.userId);
-    const student = await Student.findById(studentId).select("name email gradeId").lean();
+    const student = await Student.findById(studentId)
+      .select("name email gradeId")
+      .lean();
     if (!student) {
       throw new ApiError(404, "Student not found");
     }
@@ -27,8 +29,8 @@ export const getStudentTodoOverview = async (
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const allAssignments = await Assignment.find({ 
-      gradeId: student.gradeId 
+    const allAssignments = await Assignment.find({
+      gradeId: student.gradeId,
     }).lean();
     const submissions = await Submission.find({
       studentId: studentId,
@@ -47,13 +49,16 @@ export const getStudentTodoOverview = async (
         ...a,
         isPastDue: new Date(a.endDate) < today,
         daysLeft: Math.ceil(
-          (new Date(a.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+          (new Date(a.endDate).getTime() - today.getTime()) /
+            (1000 * 60 * 60 * 24)
         ),
       }))
-      .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
-    const recentChapters = await Chapter.find({ 
+      .sort(
+        (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
+      );
+    const recentChapters = await Chapter.find({
       gradeId: student.gradeId,
-      isPublished: true 
+      isPublished: true,
     })
       .sort({ createdAt: -1 })
       .limit(5)
@@ -81,12 +86,12 @@ export const getStudentTodoOverview = async (
       .select("studentProgress")
       .lean();
     const completedDates = completedChapters
-      .flatMap((chapter) => 
+      .flatMap((chapter) =>
         chapter.studentProgress
           ?.filter(
-            (p) => 
-              p.studentId.toString() === studentId.toString() && 
-              p.status === "completed" && 
+            (p) =>
+              p.studentId.toString() === studentId.toString() &&
+              p.status === "completed" &&
               p.completedAt
           )
           .map((p) => new Date(p.completedAt!))
@@ -105,9 +110,9 @@ export const getStudentTodoOverview = async (
         break;
       }
     }
-    const totalChapters = await Chapter.countDocuments({ 
+    const totalChapters = await Chapter.countDocuments({
       gradeId: student.gradeId,
-      isPublished: true 
+      isPublished: true,
     });
     const completedCount = await Chapter.countDocuments({
       gradeId: student.gradeId,
@@ -115,9 +120,10 @@ export const getStudentTodoOverview = async (
       "studentProgress.studentId": studentId,
       "studentProgress.status": "completed",
     });
-    const completionPercentage = totalChapters > 0 
-      ? Math.round((completedCount / totalChapters) * 100) 
-      : 0;
+    const completionPercentage =
+      totalChapters > 0
+        ? Math.round((completedCount / totalChapters) * 100)
+        : 0;
     const recentSubmissions = await Submission.find({ studentId })
       .sort({ createdAt: -1 })
       .limit(5)
@@ -172,8 +178,8 @@ export const getStudentAssignments = async (
     const skip = (Number(page) - 1) * Number(limit);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const assignments = await Assignment.find({ 
-      gradeId: student.gradeId 
+    const assignments = await Assignment.find({
+      gradeId: student.gradeId,
     }).lean();
     const submissions = await Submission.find({
       studentId: studentId,
@@ -193,7 +199,9 @@ export const getStudentAssignments = async (
         score: submission?.score || null,
         submittedAt: submission?.createdAt || null,
         feedback: submission?.feedback || null,
-        daysLeft: Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
+        daysLeft: Math.ceil(
+          (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        ),
       };
     });
     if (status === "pending") {
@@ -211,7 +219,10 @@ export const getStudentAssignments = async (
       return dateA - dateB;
     });
     const total = filteredAssignments.length;
-    const paginatedAssignments = filteredAssignments.slice(skip, skip + Number(limit));
+    const paginatedAssignments = filteredAssignments.slice(
+      skip,
+      skip + Number(limit)
+    );
     res.json({
       success: true,
       data: paginatedAssignments,

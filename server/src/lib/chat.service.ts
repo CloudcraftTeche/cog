@@ -34,9 +34,9 @@ export class ChatService {
       gradeId,
     });
     if (!chatRoom) {
-      const students=await Student.find({gradeId}).select("-password")
-      const teachers= await Teacher.find({gradeId}).select("-password")
-      const grade = await Grade.findById(gradeId)
+      const students = await Student.find({ gradeId }).select("-password");
+      const teachers = await Teacher.find({ gradeId }).select("-password");
+      const grade = await Grade.findById(gradeId);
       if (!grade) {
         throw new Error("Grade not found");
       }
@@ -156,10 +156,7 @@ export class ChatService {
   ) {
     const query: any = {
       isDeleted: false,
-      $or: [
-        { senderId: userId },
-        { "recipients.userId": userId },
-      ],
+      $or: [{ senderId: userId }, { "recipients.userId": userId }],
       content: { $regex: searchQuery, $options: "i" },
     };
     if (options.messageType) {

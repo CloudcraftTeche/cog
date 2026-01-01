@@ -1,5 +1,4 @@
 import { createEmailTransporter } from "../../utils/email/transporter";
-
 export const sendPasswordResetEmail = async (
   name: string,
   email: string,
@@ -7,7 +6,6 @@ export const sendPasswordResetEmail = async (
   userType: string
 ): Promise<void> => {
   const transporter = createEmailTransporter();
-
   const emailHtml = `
     <!DOCTYPE html>
     <html>
@@ -49,12 +47,10 @@ export const sendPasswordResetEmail = async (
     </body>
     </html>
   `;
-
   await transporter?.sendMail({
-    from: `${process.env.EMAIL_USER }`,
+    from: `${process.env.EMAIL_USER}`,
     to: email,
     subject: "Password Reset Request",
     html: emailHtml,
   });
 };
-

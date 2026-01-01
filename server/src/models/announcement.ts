@@ -1,6 +1,4 @@
-import mongoose, { Document, Model, Schema, Types } from "mongoose"
-
-
+import mongoose, { Document, Model, Schema, Types } from "mongoose";
 export interface IAnnouncement extends Document {
   title: string;
   content: string;
@@ -15,9 +13,7 @@ export interface IAnnouncement extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
 const DEFAULT_ACCENT_COLOR = "#15803d";
-
 const AnnouncementSchema = new Schema<IAnnouncement>(
   {
     title: { type: String, required: true, trim: true },
@@ -36,10 +32,12 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
       enum: ["all", "specific"],
       default: "all",
     },
-    targetGrades: [{
-      type: Schema.Types.ObjectId,
-      ref: "Grade",
-    }],
+    targetGrades: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Grade",
+      },
+    ],
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -55,12 +53,9 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
     },
   }
 );
-
 AnnouncementSchema.index({ createdAt: -1 });
 AnnouncementSchema.index({ isPinned: 1, createdAt: -1 });
 AnnouncementSchema.index({ targetGrades: 1 });
-
 export const Announcement: Model<IAnnouncement> =
   mongoose.models.Announcement ||
   mongoose.model<IAnnouncement>("Announcement", AnnouncementSchema);
-

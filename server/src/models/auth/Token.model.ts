@@ -1,5 +1,4 @@
 import { Schema, model, Document, Types } from "mongoose";
-
 export interface IToken extends Document {
   _id: Types.ObjectId;
   token: string;
@@ -8,20 +7,19 @@ export interface IToken extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
 const TokenSchema = new Schema<IToken>(
   {
-    token: { 
-      type: String, 
-      required: [true, "Token is required"], 
-      unique: true, 
-      index: true 
+    token: {
+      type: String,
+      required: [true, "Token is required"],
+      unique: true,
+      index: true,
     },
-    userId: { 
-      type: Schema.Types.ObjectId, 
-      ref: "User", 
-      required: [true, "User reference is required"], 
-      index: true 
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User reference is required"],
+      index: true,
     },
     expiresAt: {
       type: Date,
@@ -30,6 +28,4 @@ const TokenSchema = new Schema<IToken>(
   },
   { timestamps: true }
 );
-
-
 export const Token = model<IToken>("Token", TokenSchema);

@@ -246,21 +246,28 @@ export const modifySubmission = async (
     const studentId = req.userId;
     const submission = await Submission.findById(submissionId);
     if (!submission) throw new ApiError(404, "Submission not found");
-    console.log("Submission modification request received",submission.studentId, studentId);
+    console.log(
+      "Submission modification request received",
+      submission.studentId,
+      studentId
+    );
     if (submission.studentId.toString() !== studentId.toString()) {
       throw new ApiError(403, "You can only edit your own submissions");
     }
-    // if (submission.score !== null && submission.score !== undefined) {
-    //   throw new ApiError(400, "Cannot modify graded submission");
-    // }
     const assignment = await Assignment.findById(submission.assignmentId);
     if (!assignment) throw new ApiError(404, "Assignment not found");
     const now = new Date();
     if (now > new Date(assignment.endDate)) {
-      throw new ApiError(400, "Assignment deadline has passed. Cannot edit submission.");
+      throw new ApiError(
+        400,
+        "Assignment deadline has passed. Cannot edit submission."
+      );
     }
     if (assignment.status !== "active") {
-      throw new ApiError(400, "Assignment is no longer active. Cannot edit submission.");
+      throw new ApiError(
+        400,
+        "Assignment is no longer active. Cannot edit submission."
+      );
     }
     if (req.file) {
       const filename = req.file.originalname;
@@ -272,7 +279,9 @@ export const modifySubmission = async (
               await deleteFromCloudinary(submission.videoPublicId);
             }
             console.log(
-              `Uploading video (attempt ${attempt + 1}/${maxRetries + 1}): ${filename}`
+              `Uploading video (attempt ${attempt + 1}/${
+                maxRetries + 1
+              }): ${filename}`
             );
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
@@ -292,7 +301,9 @@ export const modifySubmission = async (
               await deleteFromCloudinary(submission.pdfPublicId);
             }
             console.log(
-              `Uploading PDF (attempt ${attempt + 1}/${maxRetries + 1}): ${filename}`
+              `Uploading PDF (attempt ${attempt + 1}/${
+                maxRetries + 1
+              }): ${filename}`
             );
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
@@ -410,14 +421,19 @@ export const gradeSubmission = async (
     } else if (user.role === "teacher") {
       const teacher = await Teacher.findById(userId).select("gradeId");
       if (!teacher) throw new ApiError(404, "Teacher not found");
-      const assignmentGradeId = typeof assignment.gradeId === 'object' 
-        ? assignment.gradeId._id 
-        : assignment.gradeId;
-      const teacherGradeId = typeof teacher.gradeId === 'object'
-        ? teacher.gradeId._id
-        : teacher.gradeId;
+      const assignmentGradeId =
+        typeof assignment.gradeId === "object"
+          ? assignment.gradeId._id
+          : assignment.gradeId;
+      const teacherGradeId =
+        typeof teacher.gradeId === "object"
+          ? teacher.gradeId._id
+          : teacher.gradeId;
       if (assignmentGradeId.toString() !== teacherGradeId.toString()) {
-        throw new ApiError(403, "You can only grade submissions for your assigned grade");
+        throw new ApiError(
+          403,
+          "You can only grade submissions for your assigned grade"
+        );
       }
     } else {
       throw new ApiError(403, "Only teachers and admins can grade submissions");

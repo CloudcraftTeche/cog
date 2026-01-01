@@ -58,13 +58,13 @@ const ContentItemSchema = new Schema<IContentItem>(
     },
     url: {
       type: String,
-    required:false,
-      default: null
+      required: false,
+      default: null,
     },
     publicId: {
       type: String,
-   required:false,
-   default: null
+      required: false,
+      default: null,
     },
     textContent: {
       type: String,

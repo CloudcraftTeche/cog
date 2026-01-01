@@ -9,23 +9,25 @@ export interface ITeacher extends IUser {
 }
 
 const TeacherSchema = new Schema<ITeacher>({
-  qualifications: { 
-    type: String, 
-    trim: true 
-  },
-  specializations: [{
+  qualifications: {
     type: String,
     trim: true,
-  }],
-  gradeId: { 
-    type: Schema.Types.ObjectId, 
-    ref: "Grade", 
+  },
+  specializations: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
+  gradeId: {
+    type: Schema.Types.ObjectId,
+    ref: "Grade",
     required: [true, "GradeId assignment is required"],
     index: true,
   },
-  createdBy: { 
-    type: Schema.Types.ObjectId, 
-    ref: "Admin", 
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "Admin",
     required: [true, "Creator reference is required"],
   },
 });

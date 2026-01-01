@@ -1,7 +1,12 @@
 import { Response, NextFunction, Request } from "express";
 import { Types } from "mongoose";
-import {  TokenExpiredError } from "jsonwebtoken";
-import { verifyAccessToken, verifyRefreshToken, generateAccessToken, generateRefreshToken } from "../utils/jwt";
+import { TokenExpiredError } from "jsonwebtoken";
+import {
+  verifyAccessToken,
+  verifyRefreshToken,
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/jwt";
 import { User } from "../models/user/User.model";
 import { Token } from "../models/auth/Token.model";
 export interface AuthenticatedRequest extends Request {
@@ -16,7 +21,9 @@ const TOKEN_CONFIG = {
 const getCookieOptions = (isRefresh = false) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+  sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as
+    | "none"
+    | "lax",
   maxAge: isRefresh ? TOKEN_CONFIG.refresh.maxAge : TOKEN_CONFIG.access.maxAge,
   path: "/",
 });
@@ -27,7 +34,9 @@ export const authenticate = async (
 ) => {
   try {
     const authHeader = req.headers["authorization"] as string | undefined;
-    let accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    let accessToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
     accessToken ??= req.cookies?.accessToken;
     let userId: Types.ObjectId | null = null;
     if (accessToken) {
@@ -67,7 +76,10 @@ export const authenticate = async (
         const newRefreshToken = generateRefreshToken(userId);
         await Token.findOneAndUpdate(
           { userId },
-          { token: newRefreshToken, expiresAt: new Date(Date.now() + TOKEN_CONFIG.refresh.maxAge) },
+          {
+            token: newRefreshToken,
+            expiresAt: new Date(Date.now() + TOKEN_CONFIG.refresh.maxAge),
+          },
           { upsert: true }
         );
         res.cookie("accessToken", newAccessToken, getCookieOptions(false));
@@ -109,7 +121,9 @@ export const optionalAuth = async (
 ) => {
   try {
     const authHeader = req.headers["authorization"] as string | undefined;
-    const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : req.cookies?.accessToken;
+    const accessToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : req.cookies?.accessToken;
     if (accessToken) {
       try {
         const payload = verifyAccessToken(accessToken) as { userId: string };
@@ -119,8 +133,7 @@ export const optionalAuth = async (
           req.user = user;
           req.userRole = user.role;
         }
-      } catch {
-      }
+      } catch {}
     }
     next();
   } catch {

@@ -1,7 +1,5 @@
 import { Schema, model, Document, Types } from "mongoose";
-
 export type ChatRoomType = "direct" | "grade" | "broadcast";
-
 export interface IChatParticipant {
   userId: Types.ObjectId;
   role: "admin" | "teacher" | "student" | "superAdmin";
@@ -9,7 +7,6 @@ export interface IChatParticipant {
   lastReadAt?: Date;
   unreadCount: number;
 }
-
 export interface IChatRoom extends Document {
   _id: Types.ObjectId;
   roomType: ChatRoomType;
@@ -25,7 +22,6 @@ export interface IChatRoom extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
 const ChatParticipantSchema = new Schema<IChatParticipant>(
   {
     userId: {
@@ -51,7 +47,6 @@ const ChatParticipantSchema = new Schema<IChatParticipant>(
   },
   { _id: false }
 );
-
 const ChatRoomSchema = new Schema<IChatRoom>(
   {
     roomType: {
@@ -105,10 +100,8 @@ const ChatRoomSchema = new Schema<IChatRoom>(
     },
   }
 );
-
 ChatRoomSchema.index({ "participants.userId": 1, isActive: 1 });
 ChatRoomSchema.index({ gradeId: 1, roomType: 1 });
 ChatRoomSchema.index({ roomType: 1, isActive: 1 });
 ChatRoomSchema.index({ "lastMessage.sentAt": -1 });
-
 export const ChatRoom = model<IChatRoom>("ChatRoom", ChatRoomSchema);

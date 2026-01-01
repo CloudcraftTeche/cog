@@ -1,12 +1,10 @@
 import { Schema, Types } from "mongoose";
-
 export interface IUnit {
   _id?: Types.ObjectId;
   name: string;
   description?: string;
   orderIndex: number;
 }
-
 export const UnitSchema = new Schema<IUnit>(
   {
     name: {

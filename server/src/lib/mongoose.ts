@@ -1,7 +1,6 @@
 import type { ConnectOptions } from "mongoose";
 import mongoose from "mongoose";
 import config from "../config/config";
-
 const connectOptions: ConnectOptions = {
   dbName: "scriptureschool",
   appName: "scriptureschool",
@@ -11,7 +10,6 @@ const connectOptions: ConnectOptions = {
     version: "1",
   },
 };
-
 const connectToDatabase = async (): Promise<void> => {
   try {
     await mongoose.connect(config.DB_URL, connectOptions);
@@ -24,7 +22,6 @@ const connectToDatabase = async (): Promise<void> => {
     }
   }
 };
-
 const disconnectFromDatabase = async (): Promise<void> => {
   try {
     await mongoose.disconnect();
@@ -35,5 +32,4 @@ const disconnectFromDatabase = async (): Promise<void> => {
     }
   }
 };
-
 export { connectToDatabase, disconnectFromDatabase };

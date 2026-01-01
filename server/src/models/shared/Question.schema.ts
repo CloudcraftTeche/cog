@@ -1,12 +1,10 @@
 import { Schema } from "mongoose";
-
 export interface IQuestion {
   questionText: string;
   options: string[];
-  correctAnswer: string;  
-  selectedAnswer?: string;  
+  correctAnswer: string;
+  selectedAnswer?: string;
 }
-
 export const QuestionSchema = new Schema<IQuestion>(
   {
     questionText: {

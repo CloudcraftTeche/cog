@@ -19,24 +19,25 @@ export const createGradeHandler = async (
     if (existing) {
       throw new ApiError(409, "Grade already exists");
     }
-    const unitsData = units && Array.isArray(units)
-      ? units.map((unit: any, index: number) => ({
-          name: unit.name.trim(),
-          description: unit.description?.trim(),
-          orderIndex: index,
-        }))
-      : [];
+    const unitsData =
+      units && Array.isArray(units)
+        ? units.map((unit: any, index: number) => ({
+            name: unit.name.trim(),
+            description: unit.description?.trim(),
+            orderIndex: index,
+          }))
+        : [];
     const newGrade = await Grade.create({
       grade: grade.trim(),
       description: description?.trim(),
       units: unitsData,
       isActive: isActive !== undefined ? isActive : true,
       academicYear: academicYear?.trim(),
-      assignments:[],
-      attendanceRecords:[],
-      students:[],
-      teachers:[],
-      submissions:[]
+      assignments: [],
+      attendanceRecords: [],
+      students: [],
+      teachers: [],
+      submissions: [],
     });
     res.status(201).json({
       message: "Grade created successfully",
@@ -107,7 +108,9 @@ export const getGradeByIdHandler = async (
       throw new ApiError(400, "Invalid ID");
     }
     const grade = await Grade.findById(id)
-      .select("_id grade description units isActive academicYear createdAt updatedAt")
+      .select(
+        "_id grade description units isActive academicYear createdAt updatedAt"
+      )
       .lean();
     if (!grade) {
       throw new ApiError(404, "Grade not found");
@@ -116,9 +119,9 @@ export const getGradeByIdHandler = async (
       ...grade,
       units: grade.units || [],
     };
-    res.status(200).json({ 
-      message: "Grade fetched", 
-      data: responseData 
+    res.status(200).json({
+      message: "Grade fetched",
+      data: responseData,
     });
   } catch (err) {
     next(err);
@@ -163,18 +166,22 @@ export const updateGradeHandler = async (
     }
     if (units !== undefined && Array.isArray(units)) {
       updateData.units = units.map((unit: any, index: number) => ({
-        _id: unit._id && mongoose.isValidObjectId(unit._id) ? unit._id : new mongoose.Types.ObjectId(),
+        _id:
+          unit._id && mongoose.isValidObjectId(unit._id)
+            ? unit._id
+            : new mongoose.Types.ObjectId(),
         name: unit.name.trim(),
         description: unit.description?.trim(),
         orderIndex: index,
       }));
     }
-    const updated = await Grade.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).lean();
-    res.status(200).json({ message: "Grade updated successfully", data: updated });
+    const updated = await Grade.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    }).lean();
+    res
+      .status(200)
+      .json({ message: "Grade updated successfully", data: updated });
   } catch (err) {
     next(err);
   }
@@ -193,7 +200,9 @@ export const deleteGradeHandler = async (
     if (!deleted) {
       throw new ApiError(404, "Grade not found");
     }
-    res.status(200).json({ message: "Grade deleted successfully", data: deleted });
+    res
+      .status(200)
+      .json({ message: "Grade deleted successfully", data: deleted });
   } catch (err) {
     next(err);
   }
@@ -311,15 +320,13 @@ export const getGradeBasicInfoHandler = async (
     if (!mongoose.isValidObjectId(id)) {
       throw new ApiError(400, "Invalid ID");
     }
-    const grade = await Grade.findById(id)
-      .select("_id grade")
-      .lean();
+    const grade = await Grade.findById(id).select("_id grade").lean();
     if (!grade) {
       throw new ApiError(404, "Grade not found");
     }
-    res.status(200).json({ 
-      message: "Grade basic info fetched", 
-      data: grade 
+    res.status(200).json({
+      message: "Grade basic info fetched",
+      data: grade,
     });
   } catch (err) {
     next(err);
@@ -331,7 +338,7 @@ export const getTeacherUnitsHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const teacherId = req.user._id; 
+    const teacherId = req.user._id;
     const teacher = await Teacher.findById(teacherId).select("gradeId").lean();
     console.log(teacher);
     if (!teacher) {
@@ -488,7 +495,7 @@ export const reorderTeacherUnitsHandler = async (
     if (!Array.isArray(unitIds) || unitIds.length === 0) {
       throw new ApiError(400, "Unit IDs array is required");
     }
-    if (!unitIds.every(id => mongoose.isValidObjectId(id))) {
+    if (!unitIds.every((id) => mongoose.isValidObjectId(id))) {
       throw new ApiError(400, "Invalid unit ID in array");
     }
     const teacher = await Teacher.findById(teacherId).select("gradeId").lean();
@@ -500,7 +507,7 @@ export const reorderTeacherUnitsHandler = async (
       throw new ApiError(404, "Grade not found");
     }
     const reorderedUnits = unitIds.map((id, index) => {
-      const unit = grade.units.find(u => u._id?.toString() === id);
+      const unit = grade.units.find((u) => u._id?.toString() === id);
       if (!unit) {
         throw new ApiError(404, `Unit with ID ${id} not found`);
       }

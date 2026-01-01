@@ -1,15 +1,14 @@
-import { createEmailTransporter } from "../../utils/email/transporter"
-
+import { createEmailTransporter } from "../../utils/email/transporter";
 export const sendChapterReminderEmail = async (
   to: string,
   name: string,
   chapterTitle: string
 ) => {
-  const transporter = createEmailTransporter()
+  const transporter = createEmailTransporter();
   const mailOptions = {
     from: `"Scripture School Admin" ${process.env.EMAIL_USER}`,
     to,
-    subject: `Reminder: Please complete ${chapterTitle||""}`,
+    subject: `Reminder: Please complete ${chapterTitle || ""}`,
     html: `
       <div style="font-family: 'Inter', sans-serif; background-color: #f8f8f8; padding: 20px;">
         <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
@@ -25,7 +24,9 @@ export const sendChapterReminderEmail = async (
               Please log in to the portal and complete the chapter as soon as possible to stay on track with your studies.
             </p>
             <div style="text-align: center; margin-top: 30px;">
-              <a href="${process.env.FRONTEND_URL}" style="display: inline-block; background-color: #4a90e2; color: #ffffff; padding: 12px 25px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; transition: background-color 0.3s ease;">
+              <a href="${
+                process.env.FRONTEND_URL
+              }" style="display: inline-block; background-color: #4a90e2; color: #ffffff; padding: 12px 25px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; transition: background-color 0.3s ease;">
                 Go to Portal
               </a>
             </div>
@@ -41,7 +42,6 @@ export const sendChapterReminderEmail = async (
         </div>
       </div>
     `,
-  }
-  await transporter.sendMail(mailOptions)
-}
-
+  };
+  await transporter.sendMail(mailOptions);
+};

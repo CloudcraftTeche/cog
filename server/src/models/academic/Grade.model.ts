@@ -1,8 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 import { IUnit, UnitSchema } from "./Unit.schema";
-import { AssignmentSchema, IAssignment } from "../assignment/Assignment.schema";
-import { ISubmission, SubmissionSchema } from "../assignment/Submission.schema";
-import { AttendanceSchema, IAttendance } from "../attendance/Attendance.schema";
+import { ISubmission } from "../assignment/Submission.schema";
+import { IAttendance } from "../attendance/Attendance.schema";
 export interface IGrade extends Document {
   _id: Types.ObjectId;
   grade: string;

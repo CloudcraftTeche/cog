@@ -90,7 +90,6 @@ export const getStudentQueries = async (
         .limit(limitNum),
       Query.countDocuments(filter),
     ]);
-    
     res.status(200).json({
       success: true,
       total,
@@ -154,8 +153,6 @@ export const getQueryById = async (
       .populate("assignedTo", "name email role")
       .populate("responses.from", "name email role profilePictureUrl")
       .populate("escalatedFrom", "name email role");
-    
-      
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
@@ -193,7 +190,6 @@ export const addResponse = async (
       .populate("assignedTo", "name email role")
       .populate("responses.from", "name email role profilePictureUrl")
       .populate("escalatedFrom", "name email role");
-
     if (!query) {
       throw new ApiError(404, "Query not found");
     }

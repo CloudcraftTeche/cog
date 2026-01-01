@@ -669,10 +669,7 @@ export const submitChapterHandler = async (
       score: providedScore,
       studentId: targetStudentId,
     } = req.body;
-    console.log("Request body:", req.body);
-    console.log("Request body answers:", req.body.answers);
-    console.log("Type of answers:", typeof req.body.answers);
-    console.log("User role:", req.userRole);
+
     const studentId = new mongoose.Types.ObjectId(
       targetStudentId || req.userId
     );
@@ -681,7 +678,6 @@ export const submitChapterHandler = async (
       if (typeof req.body.answers === "string") {
         try {
           answers = JSON.parse(req.body.answers);
-          console.log("Parsed answers from JSON string:", answers);
         } catch (parseError) {
           console.error("Failed to parse answers JSON:", parseError);
           throw new ApiError(
@@ -697,13 +693,11 @@ export const submitChapterHandler = async (
         answers = Object.keys(answersObj)
           .sort((a, b) => parseInt(a) - parseInt(b))
           .map((key) => answersObj[key]);
-        console.log("Converted answers from object:", answers);
       } else if (Array.isArray(req.body.answers)) {
         answers = req.body.answers;
-        console.log("Answers already array:", answers);
       }
     }
-    console.log("Final answers array:", answers);
+
     const grade = await Grade.findById(gradeId);
     if (!grade) {
       throw new ApiError(404, "Grade not found");

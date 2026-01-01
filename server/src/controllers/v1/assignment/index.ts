@@ -1,4 +1,7 @@
-import { deleteFromCloudinary, uploadToCloudinary } from "../../../config/cloudinary";
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "../../../config/cloudinary";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { Grade } from "../../../models/academic/Grade.model";
 import { Assignment } from "../../../models/assignment/Assignment.schema";

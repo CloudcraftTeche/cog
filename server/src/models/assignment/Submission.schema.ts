@@ -26,13 +26,13 @@ export interface ISubmission {
 }
 const AnswerSchema = new Schema<IAnswer>(
   {
-    question: { 
-      type: QuestionSchema, 
-      required: [true, "Question is required"] 
+    question: {
+      type: QuestionSchema,
+      required: [true, "Question is required"],
     },
-    answer: { 
-      type: String, 
-      required: [true, "Answer is required"] 
+    answer: {
+      type: String,
+      required: [true, "Answer is required"],
     },
     isCorrect: Boolean,
   },
@@ -88,7 +88,7 @@ export const SubmissionSchema = new Schema<ISubmission>(
       type: Number,
       min: [0, "Score cannot be negative"],
       validate: {
-        validator: async function(this: ISubmission, value: number) {
+        validator: async function (this: ISubmission, value: number) {
           if (!value) return true;
           const Assignment = model("Assignment");
           const assignment = await Assignment.findById(this.assignmentId);
@@ -101,8 +101,8 @@ export const SubmissionSchema = new Schema<ISubmission>(
       type: String,
       trim: true,
     },
-    submittedAt: { 
-      type: Date, 
+    submittedAt: {
+      type: Date,
       default: Date.now,
       index: true,
     },

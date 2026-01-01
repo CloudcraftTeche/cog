@@ -25,11 +25,11 @@ export interface IUser extends Document {
 }
 const UserSchema = new Schema<IUser>(
   {
-    name: { 
-      type: String, 
-      required: [true, "Name is required"], 
-      trim: true, 
-      index: true 
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+      index: true,
     },
     email: {
       type: String,
@@ -44,26 +44,26 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, 
+      select: false,
     },
-    phone: { 
-      type: String, 
+    phone: {
+      type: String,
       trim: true,
       match: [/^\+?[\d\s-()]+$/, "Please provide a valid phone number"],
     },
-    gender: { 
-      type: String, 
+    gender: {
+      type: String,
       enum: {
         values: ["male", "female", "other"],
         message: "{VALUE} is not a valid gender",
-      }
+      },
     },
-    dateOfBirth: { 
+    dateOfBirth: {
       type: Date,
       validate: {
         validator: (v: Date) => v < new Date(),
         message: "Date of birth must be in the past",
-      }
+      },
     },
     profilePictureUrl: String,
     profilePicturePublicId: String,
@@ -95,12 +95,12 @@ const UserSchema = new Schema<IUser>(
         return ret;
       },
     },
-    toObject: { 
+    toObject: {
       virtuals: true,
       transform: (_doc, ret) => {
         delete (ret as any).password;
         return ret;
-      }
+      },
     },
   }
 );

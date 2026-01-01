@@ -29,18 +29,21 @@ export const registerStudent = async (
     if (existingEmail) {
       throw new ApiError(409, "Email already exists");
     }
-    const existingRollInGrade = await Student.findOne({ 
-      rollNumber, 
-      gradeId: gradeIdName 
+    const existingRollInGrade = await Student.findOne({
+      rollNumber,
+      gradeId: gradeIdName,
     });
     if (existingRollInGrade) {
       throw new ApiError(409, "Roll number already exists in this grade");
     }
     let profilePictureUrl = "";
     let profilePicturePublicId = "";
-      if (req.file) {
-      const result: any = await uploadToCloudinary(req.file.buffer, "student/profiles");
-      profilePictureUrl = result.secure_url ;
+    if (req.file) {
+      const result: any = await uploadToCloudinary(
+        req.file.buffer,
+        "student/profiles"
+      );
+      profilePictureUrl = result.secure_url;
       profilePicturePublicId = result.public_id;
     }
     const rawPassword = crypto.randomBytes(6).toString("base64");
@@ -90,9 +93,9 @@ export const modifyStudent = async (
     const student = await Student.findOne({ _id: id, role: "student" });
     if (!student) throw new ApiError(404, "Student not found");
     if (updates.email && updates.email !== student.email) {
-      const existingEmail = await Student.findOne({ 
+      const existingEmail = await Student.findOne({
         email: updates.email,
-        _id: { $ne: id }
+        _id: { $ne: id },
       });
       if (existingEmail) {
         throw new ApiError(409, "Email already exists");
@@ -105,7 +108,7 @@ export const modifyStudent = async (
         const existingRollInGrade = await Student.findOne({
           rollNumber: targetRollNumber,
           gradeId: targetGradeId,
-          _id: { $ne: id }
+          _id: { $ne: id },
         });
         if (existingRollInGrade) {
           throw new ApiError(409, "Roll number already exists in this grade");
@@ -117,7 +120,10 @@ export const modifyStudent = async (
       if (student.profilePicturePublicId) {
         await cloudinary.uploader.destroy(student.profilePicturePublicId);
       }
-      const result:any = await uploadToCloudinary(req.file.buffer, "student/profiles");
+      const result: any = await uploadToCloudinary(
+        req.file.buffer,
+        "student/profiles"
+      );
       updates.profilePictureUrl = result.secure_url;
       updates.profilePicturePublicId = result.public_id;
     }
@@ -204,9 +210,9 @@ export const createStudentByTeacher = async (
       throw new ApiError(409, "Email already exists");
     }
     if (rollNumber) {
-      const existingRollInGrade = await Student.findOne({ 
-        rollNumber, 
-        gradeId: teacherGradeId 
+      const existingRollInGrade = await Student.findOne({
+        rollNumber,
+        gradeId: teacherGradeId,
       });
       if (existingRollInGrade) {
         throw new ApiError(409, "Roll number already exists in your grade");
@@ -215,7 +221,10 @@ export const createStudentByTeacher = async (
     let profilePictureUrl = "";
     let profilePicturePublicId = "";
     if (req.file) {
-      const result: any = await uploadToCloudinary(req.file.buffer, "student/profiles");
+      const result: any = await uploadToCloudinary(
+        req.file.buffer,
+        "student/profiles"
+      );
       profilePictureUrl = result.secure_url;
       profilePicturePublicId = result.public_id;
     }
@@ -235,10 +244,9 @@ export const createStudentByTeacher = async (
       profilePicturePublicId,
       role: "student",
     });
-    await Grade.findByIdAndUpdate(
-      teacherGradeId,
-      { $addToSet: { students: student._id } }
-    );
+    await Grade.findByIdAndUpdate(teacherGradeId, {
+      $addToSet: { students: student._id },
+    });
     res.status(201).json({
       success: true,
       message: "Student successfully created",
@@ -268,10 +276,10 @@ export const updateStudentByTeacher = async (
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
-    const student = await Student.findOne({ 
-      _id: id, 
+    const student = await Student.findOne({
+      _id: id,
       role: "student",
-      gradeId: teacher.gradeId 
+      gradeId: teacher.gradeId,
     });
     if (!student) {
       throw new ApiError(404, "Student not found in your grade");
@@ -280,9 +288,9 @@ export const updateStudentByTeacher = async (
       throw new ApiError(403, "You cannot change student's grade");
     }
     if (updates.email && updates.email !== student.email) {
-      const existingEmail = await Student.findOne({ 
+      const existingEmail = await Student.findOne({
         email: updates.email,
-        _id: { $ne: id }
+        _id: { $ne: id },
       });
       if (existingEmail) {
         throw new ApiError(409, "Email already exists");
@@ -292,7 +300,7 @@ export const updateStudentByTeacher = async (
       const existingRollInGrade = await Student.findOne({
         rollNumber: updates.rollNumber,
         gradeId: teacher.gradeId,
-        _id: { $ne: id }
+        _id: { $ne: id },
       });
       if (existingRollInGrade) {
         throw new ApiError(409, "Roll number already exists in your grade");
@@ -302,7 +310,10 @@ export const updateStudentByTeacher = async (
       if (student.profilePicturePublicId) {
         await cloudinary.uploader.destroy(student.profilePicturePublicId);
       }
-      const result: any = await uploadToCloudinary(req.file.buffer, "student/profiles");
+      const result: any = await uploadToCloudinary(
+        req.file.buffer,
+        "student/profiles"
+      );
       updates.profilePictureUrl = result.secure_url;
       updates.profilePicturePublicId = result.public_id;
     }
@@ -331,10 +342,10 @@ export const deleteStudentByTeacher = async (
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
-    const student = await Student.findOne({ 
-      _id: id, 
+    const student = await Student.findOne({
+      _id: id,
       role: "student",
-      gradeId: teacher.gradeId 
+      gradeId: teacher.gradeId,
     });
     if (!student) {
       throw new ApiError(404, "Student not found in your grade");
@@ -344,10 +355,9 @@ export const deleteStudentByTeacher = async (
       student.profilePicturePublicId
         ? cloudinary.uploader.destroy(student.profilePicturePublicId)
         : Promise.resolve(),
-      Grade.findByIdAndUpdate(
-        teacher.gradeId,
-        { $pull: { students: student._id } }
-      ),
+      Grade.findByIdAndUpdate(teacher.gradeId, {
+        $pull: { students: student._id },
+      }),
       Chapter.updateMany(
         { "studentProgress.studentId": studentObjectId },
         { $pull: { studentProgress: { studentId: studentObjectId } } }
@@ -378,9 +388,9 @@ export const fetchTeacherStudents = async (
       throw new ApiError(404, "Teacher not found");
     }
     const searchRegex = new RegExp(query as string, "i");
-    const filter: any = { 
+    const filter: any = {
       role: "student",
-      gradeId: teacher.gradeId 
+      gradeId: teacher.gradeId,
     };
     if (query) {
       filter.$or = [
@@ -417,10 +427,10 @@ export const fetchTeacherStudentById = async (
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
-    const student = await Student.findOne({ 
-      _id: id, 
+    const student = await Student.findOne({
+      _id: id,
       role: "student",
-      gradeId: teacher.gradeId 
+      gradeId: teacher.gradeId,
     }).select("-password");
     if (!student) {
       throw new ApiError(404, "Student not found in your grade");
@@ -442,10 +452,10 @@ export const fetchTeacherStudentProgress = async (
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
-    const student = await Student.findOne({ 
-      _id: id, 
+    const student = await Student.findOne({
+      _id: id,
       role: "student",
-      gradeId: teacher.gradeId 
+      gradeId: teacher.gradeId,
     });
     if (!student) {
       throw new ApiError(404, "Student not found in your grade");
@@ -609,7 +619,7 @@ export const markChapterCompleted = async (
   next: NextFunction
 ): Promise<any> => {
   try {
-    const { chapterId, quizScore } = req.body; 
+    const { chapterId, quizScore } = req.body;
     const { id: studentId } = req.params;
     const [student, chapter] = await Promise.all([
       Student.findOne({ _id: studentId, role: "student" }),
@@ -698,7 +708,10 @@ export const fetchStudentsByGrade = async (
       throw new ApiError(400, "Invalid grade ID format");
     }
     const pageNum = Math.max(parseInt(page as string) || 1, 1);
-    const limitNum = Math.min(Math.max(parseInt(limit as string) || 10, 1), 100);
+    const limitNum = Math.min(
+      Math.max(parseInt(limit as string) || 10, 1),
+      100
+    );
     const skip = (pageNum - 1) * limitNum;
     const grade = await Grade.findById(gradeId).select("grade").lean();
     if (!grade) {

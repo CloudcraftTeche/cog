@@ -75,10 +75,10 @@ export const getOrCreateGradeRoom = async (req: Request, res: Response) => {
         role: student.role,
         unreadCount: 0,
       }));
-      participants.push({ 
-        userId: user._id, 
+      participants.push({
+        userId: user._id,
         role: user.role,
-        unreadCount: 0 
+        unreadCount: 0,
       });
       room = await ChatRoom.create({
         roomType: "grade",
@@ -114,7 +114,7 @@ export const getMyRooms = async (req: Request, res: Response) => {
       .populate("gradeId", "grade section")
       .populate("lastMessage.senderId", "name avatar")
       .sort({ "lastMessage.sentAt": -1, updatedAt: -1 });
-    const roomsWithUnread = rooms.map((room:any) => {
+    const roomsWithUnread = rooms.map((room: any) => {
       const participant = room.participants.find(
         (p: any) => p.userId._id.toString() === userId
       );

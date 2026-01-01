@@ -151,7 +151,8 @@ export const getTeacherChaptersHandler = async (
     const admin = await User.findById(userId).select("role");
     let gradeId: string | null | undefined = null;
     if (teacher) {
-      if (!teacher.gradeId) throw new ApiError(400, "Teacher has no assigned grade");
+      if (!teacher.gradeId)
+        throw new ApiError(400, "Teacher has no assigned grade");
       gradeId = teacher.gradeId.toString();
     }
     const filter: any = {};
@@ -195,7 +196,9 @@ export const getTeacherChaptersHandler = async (
         }));
     if (teacher) {
       const teacherObjectId = new mongoose.Types.ObjectId(userId);
-      const allChapters = await TeacherChapter.find({ gradeId: teacher.gradeId })
+      const allChapters = await TeacherChapter.find({
+        gradeId: teacher.gradeId,
+      })
         .sort({ unitId: 1, chapterNumber: 1 })
         .select("_id unitId teacherProgress")
         .lean();
@@ -215,7 +218,9 @@ export const getTeacherChaptersHandler = async (
         let isAccessible = globalIndex === 0;
         if (globalIndex > 0) {
           const previousChapter = allChapters[globalIndex - 1];
-          const prevProgress = completionMap.get(previousChapter._id.toString());
+          const prevProgress = completionMap.get(
+            previousChapter._id.toString()
+          );
           isAccessible = prevProgress?.status === "completed";
         }
         const isCompleted = progress?.status === "completed";
@@ -365,7 +370,9 @@ export const updateTeacherChapterHandler = async (
         textContent,
         chapterNumber,
         unitId: unitId ? new mongoose.Types.ObjectId(unitId) : chapter.unitId,
-        gradeId: gradeId ? new mongoose.Types.ObjectId(gradeId) : chapter.gradeId,
+        gradeId: gradeId
+          ? new mongoose.Types.ObjectId(gradeId)
+          : chapter.gradeId,
         questions: parsedQuestions,
       },
       { new: true, runValidators: true }
@@ -498,7 +505,10 @@ export const submitTeacherChapterHandler = async (
       });
     }
     if (!Array.isArray(answers) || answers.length === 0) {
-      throw new ApiError(400, "Answers array is required for chapters with questions");
+      throw new ApiError(
+        400,
+        "Answers array is required for chapters with questions"
+      );
     }
     let correctCount = 0;
     const totalQuestions = chapter.questions.length;

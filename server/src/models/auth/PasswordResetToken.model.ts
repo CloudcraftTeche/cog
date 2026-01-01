@@ -10,15 +10,15 @@ export interface IPasswordResetToken extends Document {
 }
 const PasswordResetTokenSchema = new Schema<IPasswordResetToken>(
   {
-    userId: { 
-      type: Schema.Types.ObjectId, 
-      ref: "User", 
-      required: [true, "User reference is required"], 
-      index: true 
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User reference is required"],
+      index: true,
     },
-    token: { 
-      type: String, 
-      required: [true, "Token is required"], 
+    token: {
+      type: String,
+      required: [true, "Token is required"],
       unique: true,
       index: true,
     },

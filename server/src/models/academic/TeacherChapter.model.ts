@@ -146,9 +146,26 @@ const TeacherChapterSchema = new Schema<ITeacherChapter>(
     toObject: { virtuals: true },
   }
 );
-TeacherChapterSchema.index({ gradeId: 1, unitId: 1, chapterNumber: 1 }, { unique: true });
-TeacherChapterSchema.index({ gradeId: 1, unitId: 1, isPublished: 1, chapterNumber: 1 });
+TeacherChapterSchema.index(
+  { gradeId: 1, unitId: 1, chapterNumber: 1 },
+  { unique: true }
+);
+TeacherChapterSchema.index({
+  gradeId: 1,
+  unitId: 1,
+  isPublished: 1,
+  chapterNumber: 1,
+});
 TeacherChapterSchema.index({ createdBy: 1, createdAt: -1 });
-TeacherChapterSchema.index({ "teacherProgress.teacherId": 1, "teacherProgress.status": 1 });
-TeacherChapterSchema.index({ "teacherProgress.teacherId": 1, "teacherProgress.completedAt": -1 });
-export const TeacherChapter = model<ITeacherChapter>("TeacherChapter", TeacherChapterSchema);
+TeacherChapterSchema.index({
+  "teacherProgress.teacherId": 1,
+  "teacherProgress.status": 1,
+});
+TeacherChapterSchema.index({
+  "teacherProgress.teacherId": 1,
+  "teacherProgress.completedAt": -1,
+});
+export const TeacherChapter = model<ITeacherChapter>(
+  "TeacherChapter",
+  TeacherChapterSchema
+);
