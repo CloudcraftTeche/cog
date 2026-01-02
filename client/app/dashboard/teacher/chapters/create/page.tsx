@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import api from "@/lib/api";
 import QuestionsSection, {
   Question,
 } from "@/components/admin/chapters/QuestionsSection";
@@ -16,14 +16,12 @@ import {
   TeacherChapterService,
   TeacherGrade,
 } from "@/components/teacher/chapter/chapterApiAndTypes";
-
 interface Unit {
   _id: string;
   name: string;
   description?: string;
   orderIndex: number;
 }
-
 interface ContentItem {
   type: "video" | "text" | "pdf" | "mixed";
   order: number;
@@ -32,40 +30,30 @@ interface ContentItem {
   videoUrl?: string;
   file?: File;
 }
-
 export default function TeacherCreateChapterPage() {
   const router = useRouter();
   const { user } = useAuth();
-
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [chapter, setChapter] = useState<number>(1);
   const [selectedUnit, setSelectedUnit] = useState("");
-
   const [grade, setGrade] = useState<TeacherGrade | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
-  
   const [contentItems, setContentItems] = useState<ContentItem[]>([
     { type: "video", order: 0, title: "" }
   ]);
-  
   const [questions, setQuestions] = useState<Question[]>([
     { id: "1", questionText: "", options: ["", "", "", ""], correctAnswer: "" },
   ]);
-
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   useEffect(() => {
     if (!user?.id) return;
-
     const fetchGrade = async () => {
       try {
         const gradeData = await TeacherChapterService.getTeacherGrade(user.id);
         setGrade(gradeData);
-        
-        // Set units from the grade data
         if (gradeData?.units) {
           const sortedUnits = [...gradeData.units].sort(
             (a, b) => a.orderIndex - b.orderIndex
@@ -76,39 +64,46 @@ export default function TeacherCreateChapterPage() {
         toast.error(error.message || "Failed to fetch grade");
       }
     };
-
     fetchGrade();
   }, [user?.id]);
-
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (!title.trim()) {
       newErrors.title = "Title is required";
     } else if (title.length > 200) {
       newErrors.title = "Title must be less than 200 characters";
     }
-
     if (!description.trim()) {
       newErrors.description = "Description is required";
     }
-
     if (!selectedUnit) {
       newErrors.unitId = "Unit is required";
     }
-
     if (chapter < 1) {
       newErrors.chapterNumber = "Chapter number must be at least 1";
     }
-
     if (contentItems.length === 0) {
       newErrors.contentItems = "At least one content item is required";
     } else {
       for (let i = 0; i < contentItems.length; i++) {
         const item = contentItems[i];
-        
-        // For mixed type, at least one of video or text should be provided
-        if (item.type === "mixed") {
+        if (item.type === "video") {
+          const hasVideo = (item.videoUrl?.trim() || item.file);
+          if (!hasVideo) {
+            newErrors[`content_${i}`] = "Video URL or file is required";
+            break;
+          }
+        } else if (item.type === "text") {
+          if (!item.textContent?.trim()) {
+            newErrors[`content_${i}`] = "Text content is required";
+            break;
+          }
+        } else if (item.type === "pdf") {
+          if (!item.file) {
+            newErrors[`content_${i}`] = "PDF file is required";
+            break;
+          }
+        } else if (item.type === "mixed") {
           const hasVideo = (item.videoUrl?.trim() || item.file);
           const hasText = item.textContent?.trim();
           if (!hasVideo && !hasText) {
@@ -118,7 +113,6 @@ export default function TeacherCreateChapterPage() {
         }
       }
     }
-
     if (questions.length === 0) {
       newErrors.questions = "At least one question is required";
     } else {
@@ -147,68 +141,77 @@ export default function TeacherCreateChapterPage() {
         }
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) {
       toast.error("Validation Error", {
         description: "Please fix all errors before submitting",
       });
       return;
     }
-
+    if (!grade?._id) {
+      toast.error("Error", {
+        description: "Grade information not found",
+      });
+      return;
+    }
     setLoading(true);
     setSuccess(false);
-
-    const formattedQuestions = questions.map((q) => ({
-      questionText: q.questionText.trim(),
-      options: q.options.filter((opt) => opt && opt.trim()),
-      correctAnswer: q.correctAnswer.trim(),
-    }));
-
     try {
-      const formData:any = new FormData();
-      
+      const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("unitId", selectedUnit);
       formData.append("chapterNumber", chapter.toString());
-      
-      const contentItemsData = contentItems.map((item, index) => ({
-        type: item.type,
-        order: index,
-        title: item.title || "",
-        ...(item.type === "text" && { textContent: item.textContent }),
-        ...(item.type === "video" && item.videoUrl && { videoUrl: item.videoUrl }),
-      }));
-      
+      const contentItemsData = contentItems.map((item, index) => {
+        const baseItem: any = {
+          type: item.type,
+          order: index,
+          title: item.title || "",
+        };
+        if (item.type === "text") {
+          baseItem.textContent = item.textContent;
+        } else if (item.type === "video") {
+          if (item.videoUrl) {
+            baseItem.videoUrl = item.videoUrl;
+          }
+        } else if (item.type === "mixed") {
+          if (item.videoUrl) {
+            baseItem.videoUrl = item.videoUrl;
+          }
+          if (item.textContent) {
+            baseItem.textContent = item.textContent;
+          }
+        }
+        return baseItem;
+      });
       formData.append("contentItems", JSON.stringify(contentItemsData));
-      
       contentItems.forEach((item, index) => {
         if (item.file) {
           formData.append(`content_${index}`, item.file);
         }
       });
-      
+      const formattedQuestions = questions.map((q) => ({
+        questionText: q.questionText.trim(),
+        options: q.options.filter((opt) => opt && opt.trim()),
+        correctAnswer: q.correctAnswer.trim(),
+      }));
       formData.append("questions", JSON.stringify(formattedQuestions));
-
-      await TeacherChapterService.createChapter(formData);
-
+      await api.post(`/chapters/${grade._id}/chapters`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setSuccess(true);
       toast.success("Content Uploaded!", {
         description: "Your educational content has been uploaded successfully.",
       });
-
       setTimeout(() => {
         router.push("/dashboard/teacher/chapters");
       }, 1500);
     } catch (err: any) {
-      console.error(err);
+      console.error("Error creating chapter:", err);
       const errorMessage =
         err.response?.data?.message || "An error occurred during upload.";
       toast.error("Upload Failed", {
@@ -218,7 +221,6 @@ export default function TeacherCreateChapterPage() {
       setLoading(false);
     }
   };
-
   if (!grade) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 flex items-center justify-center p-4">
@@ -229,7 +231,6 @@ export default function TeacherCreateChapterPage() {
       </div>
     );
   }
-
   return (
     <div className="p-6 relative">
       <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 mb-8 rounded-3xl">
@@ -243,7 +244,6 @@ export default function TeacherCreateChapterPage() {
           </p>
         </div>
       </div>
-
       <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pb-8">
         {success && (
           <Alert className="mb-8 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg rounded-2xl">
@@ -253,9 +253,8 @@ export default function TeacherCreateChapterPage() {
             </AlertDescription>
           </Alert>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Info Section */}
+          {}
           <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6 border border-slate-200">
             <div className="flex items-center space-x-3 pb-3 border-b border-slate-200">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
@@ -263,7 +262,6 @@ export default function TeacherCreateChapterPage() {
               </div>
               <h2 className="text-2xl font-bold text-slate-800">Basic Information</h2>
             </div>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -282,7 +280,6 @@ export default function TeacherCreateChapterPage() {
                   <p className="text-red-500 text-sm mt-1">{errors.title}</p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Description *
@@ -300,7 +297,6 @@ export default function TeacherCreateChapterPage() {
                   <p className="text-red-500 text-sm mt-1">{errors.description}</p>
                 )}
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -310,7 +306,6 @@ export default function TeacherCreateChapterPage() {
                     Grade {grade.grade}
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Chapter Number *
@@ -329,7 +324,6 @@ export default function TeacherCreateChapterPage() {
                   )}
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Select Unit *
@@ -354,19 +348,16 @@ export default function TeacherCreateChapterPage() {
               </div>
             </div>
           </div>
-
           <ContentUploadSection
             contentItems={contentItems}
             setContentItems={setContentItems}
             errors={errors}
           />
-
           <QuestionsSection
             questions={questions}
             setQuestions={setQuestions}
             errors={errors}
           />
-
           <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
             <Button
               type="button"
