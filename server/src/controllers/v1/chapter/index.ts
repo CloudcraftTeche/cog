@@ -367,21 +367,35 @@ export const getGradeChaptersHandler = async (
     let gradeId: string | null | undefined = null;
     if (student) {
       gradeId = student.gradeId?.toString();
+      if (!gradeId) {
+        throw new ApiError(400, "Student has no assigned grade");
+      }
     } else if (teacher) {
-      if (!teacher.gradeId)
+      if (!teacher.gradeId) {
         throw new ApiError(400, "Teacher has no assigned grade");
+      }
       gradeId = teacher.gradeId.toString();
-    }
-    const filter: any = {};
-    if (admin) {
-    } else if (gradeId) {
-      filter.gradeId = gradeId;
+    } else if (admin) {
+      const gradeIdParam = req.params.gradeId;
+      if (gradeIdParam) {
+        gradeId = gradeIdParam;
+      }
     } else {
       throw new ApiError(403, "Unauthorized access");
     }
-    if (search) filter.title = { $regex: new RegExp(search as string, "i") };
-    if (unitId) filter.unitId = unitId;
-    if (chapterNumber) filter.chapterNumber = chapterNumber;
+    const filter: any = {};
+    if (gradeId) {
+      filter.gradeId = gradeId;
+    }
+    if (search) {
+      filter.title = { $regex: new RegExp(search as string, "i") };
+    }
+    if (unitId) {
+      filter.unitId = unitId;
+    }
+    if (chapterNumber) {
+      filter.chapterNumber = chapterNumber;
+    }
     const grade = gradeId
       ? await Grade.findById(gradeId).select("units grade")
       : null;
@@ -669,7 +683,6 @@ export const submitChapterHandler = async (
       score: providedScore,
       studentId: targetStudentId,
     } = req.body;
-
     const studentId = new mongoose.Types.ObjectId(
       targetStudentId || req.userId
     );
@@ -697,7 +710,6 @@ export const submitChapterHandler = async (
         answers = req.body.answers;
       }
     }
-
     const grade = await Grade.findById(gradeId);
     if (!grade) {
       throw new ApiError(404, "Grade not found");
