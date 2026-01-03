@@ -13,12 +13,13 @@ import {
   MessageSquare,
 } from "lucide-react";
 import api from "@/lib/api";
-import { OverviewStats } from "./admin/dashboard/OverviewStats";
 import { ExportSection } from "./admin/dashboard/ExportSection";
 import { ChartsSection } from "./admin/dashboard/ChartsSection";
 import { HeatmapView } from "./admin/dashboard/HeatmapView";
 import { ReportsView } from "./admin/dashboard/ReportsView";
 import { SyllabusCoverage } from "./admin/dashboard/SyllabusCoverage";
+import { SuperAdminOverviewStats } from "./admin/dashboard/OverviewStatsSuperAdmin";
+import { WeeklyActiveStudents } from "./teacher/dashboard/WeeklyActive";
 export default function SuperAdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [selectedView, setSelectedView] = useState("dashboard");
@@ -101,8 +102,8 @@ export default function SuperAdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {selectedView === "dashboard" && (
           <>
-            <OverviewStats overview={dashboardData?.overview} />
-            <ExportSection />
+            <SuperAdminOverviewStats overview={dashboardData?.overview} />
+            <WeeklyActiveStudents />
             <ChartsSection charts={dashboardData?.charts} />
             <SyllabusCoverage />
             <InsightsSection insights={dashboardData?.insights} />

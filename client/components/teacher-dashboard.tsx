@@ -180,7 +180,6 @@ const TeacherDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
@@ -204,23 +203,18 @@ const TeacherDashboard: React.FC = () => {
           </nav>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === "overview" && (
           <div className="space-y-6">
             <OverviewStats overview={dashboardData.overview} />
-
             <WeeklyActiveStudents />
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AttendanceChart data={dashboardData.charts.attendanceByDay} />
               <ChapterProgressChart
                 data={dashboardData.charts.chapterProgress}
               />
             </div>
-
             <SyllabusCoverage />
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <RecentQueriesTable
@@ -240,7 +234,6 @@ const TeacherDashboard: React.FC = () => {
             />
             <ChapterProgressChart data={dashboardData.charts.chapterProgress} />
             <AttendanceChart data={dashboardData.charts.attendanceByDay} />
-
             <StrugglingStudents />
           </div>
         )}

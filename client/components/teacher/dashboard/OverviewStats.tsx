@@ -1,5 +1,7 @@
+"use client";
 import React from 'react';
 import { Users, BookOpen, FileText, MessageSquare } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface OverviewStatsProps {
   overview: {
@@ -11,7 +13,7 @@ interface OverviewStatsProps {
 }
 
 export const OverviewStats: React.FC<OverviewStatsProps> = ({ overview }) => {
-  
+  const router = useRouter();
   const stats = [
     {
       name: 'Total Students',
@@ -20,7 +22,8 @@ export const OverviewStats: React.FC<OverviewStatsProps> = ({ overview }) => {
       gradient: 'from-blue-500 to-cyan-500',
       bgGradient: 'from-blue-50 to-cyan-50',
       iconColor: 'text-blue-600',
-      shadow: 'shadow-blue-100'
+      shadow: 'shadow-blue-100',
+      link: '/dashboard/teacher/students'
     },
     {
       name: 'Total Chapters',
@@ -29,7 +32,8 @@ export const OverviewStats: React.FC<OverviewStatsProps> = ({ overview }) => {
       gradient: 'from-green-500 to-emerald-500',
       bgGradient: 'from-green-50 to-emerald-50',
       iconColor: 'text-green-600',
-      shadow: 'shadow-green-100'
+      shadow: 'shadow-green-100',
+      link: '/dashboard/teacher/chapters'
     },
     {
       name: 'Total Assignments',
@@ -38,7 +42,8 @@ export const OverviewStats: React.FC<OverviewStatsProps> = ({ overview }) => {
       gradient: 'from-purple-500 to-pink-500',
       bgGradient: 'from-purple-50 to-pink-50',
       iconColor: 'text-purple-600',
-      shadow: 'shadow-purple-100'
+      shadow: 'shadow-purple-100',
+      link: '/dashboard/teacher/assignments'
     },
     {
       name: 'Pending Queries',
@@ -47,7 +52,8 @@ export const OverviewStats: React.FC<OverviewStatsProps> = ({ overview }) => {
       gradient: 'from-orange-500 to-red-500',
       bgGradient: 'from-orange-50 to-red-50',
       iconColor: 'text-orange-600',
-      shadow: 'shadow-orange-100'
+      shadow: 'shadow-orange-100',
+      link: '/dashboard/teacher/queries'
     },
   ];
 
@@ -59,6 +65,7 @@ export const OverviewStats: React.FC<OverviewStatsProps> = ({ overview }) => {
           <div 
             key={stat.name} 
             className={`bg-gradient-to-br ${stat.bgGradient} rounded-2xl shadow-lg ${stat.shadow} p-6 hover:shadow-xl hover:scale-105 transition-all duration-300 border border-white/50`}
+            onClick={() => router.push(stat.link)}
           >
             <div className="flex items-center justify-between">
               <div>

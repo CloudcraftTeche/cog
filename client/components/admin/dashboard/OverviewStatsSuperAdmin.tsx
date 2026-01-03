@@ -22,7 +22,7 @@ interface OverviewStatsProps {
   };
 }
 
-export const OverviewStats = ({ overview }: OverviewStatsProps) => {
+export const SuperAdminOverviewStats = ({ overview }: OverviewStatsProps) => {
   const router=useRouter();
   const stats = [
     {
@@ -31,7 +31,7 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => {
       icon: Users,
       gradient: "from-purple-500 via-purple-600 to-indigo-700",
       iconColor: "text-purple-100",
-      link: "/dashboard/admin/students",
+      link: "/dashboard/super-admin/students",
     },
     {
       title: "Teachers",
@@ -39,7 +39,7 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => {
       icon: GraduationCap,
       gradient: "from-blue-500 via-blue-600 to-cyan-700",
       iconColor: "text-blue-100",
-      link: "/dashboard/admin/teachers",
+      link: "/dashboard/super-admin/teachers",
     },
     {
       title: "Chapters",
@@ -47,7 +47,7 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => {
       icon: BookOpen,
       gradient: "from-emerald-500 via-green-600 to-teal-700",
       iconColor: "text-green-100",
-      link: "/dashboard/admin/chapters",
+      link: "/dashboard/super-admin/chapters",
     },
     {
       title: "Announcements",
@@ -55,7 +55,7 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => {
       icon: FileText,
       gradient: "from-orange-500 via-red-600 to-pink-700",
       iconColor: "text-orange-100",
-      link: "/dashboard/admin/announcements",
+      link: "/dashboard/super-admin/announcements",
     },
   ];
 
@@ -65,14 +65,14 @@ export const OverviewStats = ({ overview }: OverviewStatsProps) => {
       value: overview?.totalGrades ?? 0,
       icon: Layers,
       gradient: "from-indigo-500 via-purple-600 to-violet-700",
-      link: "/dashboard/admin/grades",
+      link: "/dashboard/super-admin/grades",
     },
     {
       title: "Queries",
       value: overview?.totalQueries ?? 0,
       icon: BookMarked,
       gradient: "from-pink-500 via-rose-600 to-red-700",
-      link: "/dashboard/admin/queries",
+      link: "/dashboard/super-admin/queries",
     },
   ];
 

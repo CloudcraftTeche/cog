@@ -8,6 +8,7 @@ import { ChartsSection } from "./admin/dashboard/ChartsSection";
 import { HeatmapView } from "./admin/dashboard/HeatmapView";
 import { ReportsView } from "./admin/dashboard/ReportsView";
 import { SyllabusCoverage } from "./admin/dashboard/SyllabusCoverage";
+import { WeeklyActiveStudents } from "./teacher/dashboard/WeeklyActive";
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [selectedView, setSelectedView] = useState("dashboard");
@@ -90,16 +91,19 @@ export default function AdminDashboard() {
         {selectedView === "dashboard" && (
           <>
             <OverviewStats overview={dashboardData?.overview} />
+            <WeeklyActiveStudents/>
             <ChartsSection charts={dashboardData?.charts} />
-            <SyllabusCoverage/>
+            <SyllabusCoverage />
             <InsightsSection insights={dashboardData?.insights} />
           </>
         )}
         {selectedView === "heatmap" && (
-          <HeatmapView attendanceTrend={dashboardData?.charts?.attendanceTrend} />
+          <HeatmapView
+            attendanceTrend={dashboardData?.charts?.attendanceTrend}
+          />
         )}
         {selectedView === "reports" && (
-          <ReportsView 
+          <ReportsView
             recentAnnouncements={dashboardData?.insights?.recentAnnouncements}
             recentQueries={dashboardData?.insights?.recentQueries}
           />
@@ -108,7 +112,12 @@ export default function AdminDashboard() {
     </div>
   );
 }
-const DashboardNav = ({ selectedView, setSelectedView, refreshing, handleRefresh }: any) => {
+const DashboardNav = ({
+  selectedView,
+  setSelectedView,
+  refreshing,
+  handleRefresh,
+}: any) => {
   return (
     <nav className="relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -152,7 +161,9 @@ const DashboardNav = ({ selectedView, setSelectedView, refreshing, handleRefresh
             disabled={refreshing}
             className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 shadow-lg disabled:opacity-50"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+            />
             <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
@@ -161,7 +172,11 @@ const DashboardNav = ({ selectedView, setSelectedView, refreshing, handleRefresh
   );
 };
 const InsightsSection = ({ insights }: any) => {
-  const { topPerformers = [], recentAnnouncements = [], recentQueries = [] } = insights || {};
+  const {
+    topPerformers = [],
+    recentAnnouncements = [],
+    recentQueries = [],
+  } = insights || {};
   return (
     <div className="space-y-10">
       {}
@@ -176,7 +191,9 @@ const InsightsSection = ({ insights }: any) => {
               <h3 className="text-3xl font-black bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
                 Top Performing Students
               </h3>
-              <p className="text-gray-500 font-medium">Based on chapter completion and scores</p>
+              <p className="text-gray-500 font-medium">
+                Based on chapter completion and scores
+              </p>
             </div>
           </div>
           {topPerformers.length > 0 ? (
@@ -184,28 +201,53 @@ const InsightsSection = ({ insights }: any) => {
               <table className="min-w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Rank</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Roll Number</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Completed Chapters</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Average Score</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                      Rank
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                      Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                      Roll Number
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                      Completed Chapters
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">
+                      Average Score
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {topPerformers.map((student: any, index: number) => (
-                    <tr key={student.studentId} className="hover:bg-yellow-50/50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-bold text-gray-900">#{index + 1}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">{student.name || "N/A"}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{student.rollNumber || "N/A"}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-green-600">{student.completedChapters}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-blue-600">{student.averageScore}%</td>
+                    <tr
+                      key={student.studentId}
+                      className="hover:bg-yellow-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                        #{index + 1}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                        {student.name || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {student.rollNumber || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-green-600">
+                        {student.completedChapters}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-blue-600">
+                        {student.averageScore}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-8">No top performers data available</p>
+            <p className="text-center text-gray-500 py-8">
+              No top performers data available
+            </p>
           )}
         </div>
       </div>
@@ -221,8 +263,13 @@ const InsightsSection = ({ insights }: any) => {
             {recentAnnouncements.length > 0 ? (
               <div className="space-y-4">
                 {recentAnnouncements.map((announcement: any) => (
-                  <div key={announcement._id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <h4 className="font-bold text-gray-900">{announcement.title}</h4>
+                  <div
+                    key={announcement._id}
+                    className="p-4 bg-blue-50 rounded-xl border border-blue-200"
+                  >
+                    <h4 className="font-bold text-gray-900">
+                      {announcement.title}
+                    </h4>
                     <p className="text-sm text-gray-600">
                       {new Date(announcement.createdAt).toLocaleDateString()}
                     </p>
@@ -230,7 +277,9 @@ const InsightsSection = ({ insights }: any) => {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 py-8">No recent announcements</p>
+              <p className="text-center text-gray-500 py-8">
+                No recent announcements
+              </p>
             )}
           </div>
         </div>
@@ -244,15 +293,24 @@ const InsightsSection = ({ insights }: any) => {
             {recentQueries.length > 0 ? (
               <div className="space-y-4">
                 {recentQueries.map((query: any) => (
-                  <div key={query._id} className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                  <div
+                    key={query._id}
+                    className="p-4 bg-purple-50 rounded-xl border border-purple-200"
+                  >
                     <h4 className="font-bold text-gray-900">{query.subject}</h4>
-                    <p className="text-sm text-gray-600">From: {query.from?.name || "Unknown"}</p>
+                    <p className="text-sm text-gray-600">
+                      From: {query.from?.name || "Unknown"}
+                    </p>
                     <div className="flex items-center justify-between mt-2">
-                      <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
-                        query.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                        query.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                          query.status === "resolved"
+                            ? "bg-green-100 text-green-700"
+                            : query.status === "pending"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
                         {query.status}
                       </span>
                       <span className="text-xs text-gray-500">
@@ -263,7 +321,9 @@ const InsightsSection = ({ insights }: any) => {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 py-8">No recent queries</p>
+              <p className="text-center text-gray-500 py-8">
+                No recent queries
+              </p>
             )}
           </div>
         </div>

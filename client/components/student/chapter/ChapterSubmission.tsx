@@ -479,6 +479,13 @@ export default function QuizAndSubmission({
                   <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               )}
+               <Button
+                variant="outline"
+                onClick={()=>{ window.location.href=`/dashboard/student/assignments`}}
+                className="w-full sm:w-auto bg-white border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50 text-gray-700 font-medium px-4 sm:px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <span className="text-sm sm:text-base">Assignments</span>
+              </Button>
             </div>
           </div>
         )}
