@@ -18,9 +18,10 @@ const api = axios.create({
 });
 api.interceptors.request.use(
   (config) => {
-    const token = typeof window !== "undefined" 
-      ? localStorage.getItem("accessToken") 
-      : null;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,7 +32,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { 
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
     if (!originalRequest) {
@@ -69,7 +70,7 @@ api.interceptors.response.use(
           withCredentials: true,
           headers: {
             Authorization: `Bearer ${
-              typeof window !== "undefined" 
+              typeof window !== "undefined"
                 ? localStorage.getItem("accessToken") || ""
                 : ""
             }`,
@@ -84,7 +85,7 @@ api.interceptors.response.use(
           if (user) {
             localStorage.setItem("user", JSON.stringify(user));
           }
-          const expiry = Date.now() + 15 * 60 * 1000;
+          const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
           localStorage.setItem("tokenExpiry", expiry.toString());
         }
         processQueue(null, newToken);
@@ -102,7 +103,10 @@ api.interceptors.response.use(
         localStorage.removeItem("tokenExpiry");
       }
       processQueue(refreshError, null);
-      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.includes("/login")
+      ) {
         const returnUrl = encodeURIComponent(window.location.pathname);
         window.location.href = `/login?returnUrl=${returnUrl}&sessionExpired=true`;
       }

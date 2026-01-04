@@ -24,8 +24,8 @@ interface TokenPayload {
   exp: number;
 }
 const TOKEN_CONFIG = {
-  access: { maxAge: 1 * 24 * 60 * 1000 },
-  refresh: { maxAge: 30 * 24 * 60 * 60 * 1000 },
+  access: { maxAge: 7 * 24 * 60 * 60 * 1000 },
+  refresh: { maxAge: 7 * 24 * 60 * 60 * 1000 },
 } as const;
 const getCookieOptions = (isRefresh = false) => ({
   httpOnly: true,
@@ -71,7 +71,7 @@ const formatUserResponse = (user: InstanceType<typeof User>) => ({
   avatar: user.profilePictureUrl,
 });
 export const login = async (
-  req: Request<{}, {}, { email: string; password: string }>,
+  req: Request<{ email: string; password: string }>,
   res: Response,
   next: NextFunction
 ) => {
@@ -221,7 +221,7 @@ export const getProfile = async (
   }
 };
 export const forgotPassword = async (
-  req: Request<{}, {}, { email: string }>,
+  req: Request<{ email: string }>,
   res: Response,
   next: NextFunction
 ) => {
@@ -253,11 +253,12 @@ export const forgotPassword = async (
   }
 };
 export const resetPassword = async (
-  req: Request<
-    {},
-    {},
-    { token: string; email: string; password: string; confirmPassword: string }
-  >,
+  req: Request<{
+    token: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  }>,
   res: Response,
   next: NextFunction
 ) => {

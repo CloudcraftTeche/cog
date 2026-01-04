@@ -16,8 +16,9 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 }
-const TOKEN_CHECK_INTERVAL = 5 * 60 * 1000;
-const TOKEN_REFRESH_THRESHOLD = 2 * 60 * 1000;
+const TOKEN_CHECK_INTERVAL = 24 * 60 * 60 * 1000; 
+const TOKEN_REFRESH_THRESHOLD = 24 * 60 * 60 * 1000;
+
 export function useAuth() {
   const router = useRouter();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
