@@ -8,7 +8,7 @@ import { ChartsSection } from "./admin/dashboard/ChartsSection";
 import { HeatmapView } from "./admin/dashboard/HeatmapView";
 import { ReportsView } from "./admin/dashboard/ReportsView";
 import { SyllabusCoverage } from "./admin/dashboard/SyllabusCoverage";
-import { WeeklyActiveStudents } from "./teacher/dashboard/WeeklyActive";
+import { WeeklyActiveStudents } from "./admin/dashboard/WeeklyActiveStudents";
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [selectedView, setSelectedView] = useState("dashboard");

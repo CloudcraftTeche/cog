@@ -11,7 +11,7 @@ export const WeeklyActiveStudents: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/dashboard/teacher");
+      const response = await api.get("/dashboard/admin");
       setActiveStudents(response.data.data.overview?.weeklyActiveStudents || 0);
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to load data");
