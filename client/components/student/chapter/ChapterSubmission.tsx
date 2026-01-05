@@ -14,6 +14,7 @@ interface QuizAndSubmissionProps {
   selectedAnswers: Record<number, string>;
   submitted: boolean;
   currentScore: number;
+  hasNextChapter?: boolean; // Made optional with default
   onAnswerChange: (questionIndex: number, answer: string) => void;
   onSubmitSuccess: (result: any) => void;
   onRetake: () => void;
@@ -28,6 +29,7 @@ export default function QuizAndSubmission({
   selectedAnswers,
   submitted,
   currentScore,
+  hasNextChapter = false, // Default value
   onAnswerChange,
   onSubmitSuccess,
   onRetake,
@@ -159,7 +161,7 @@ export default function QuizAndSubmission({
         if (previewUrl && submissionType === 'video') {
           URL.revokeObjectURL(previewUrl);
         }
-        onSubmitSuccess(score);
+        onSubmitSuccess({ score });
         toast.success(`Chapter submitted successfully! Your score: ${score}%`, {
           duration: 5000,
         });
@@ -475,7 +477,9 @@ export default function QuizAndSubmission({
                   onClick={onNextChapter}
                   className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-4 sm:px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                 >
-                  <span className="text-sm sm:text-base">Next Chapter</span>
+                  <span className="text-sm sm:text-base">
+                    {hasNextChapter ? "Next Chapter" : "View All Chapters"}
+                  </span>
                   <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               )}
