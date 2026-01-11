@@ -3,7 +3,6 @@ import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { ApiError } from "../../../utils/ApiError";
 import mongoose from "mongoose";
 import { Student } from "../../../models/user/Student.model";
-import { Grade } from "../../../models/academic/Grade.model";
 import { Chapter } from "../../../models/academic/Chapter.model";
 import { Assignment } from "../../../models/assignment/Assignment.schema";
 import { Submission } from "../../../models/assignment/Submission.schema";
@@ -14,55 +13,62 @@ export const getStudentTodoOverview = async (
 ) => {
   try {
     const studentId = new mongoose.Types.ObjectId(req.userId);
+    console.log('>>> Starting Todo Overview');
+    console.log('>>> Student ID:', studentId.toString());
     const student = await Student.findById(studentId)
       .select("name email gradeId")
       .lean();
-    if (!student) {
-      throw new ApiError(404, "Student not found");
-    }
-    if (!student.gradeId) {
-      throw new ApiError(404, "Student not assigned to any grade");
-    }
-    const grade = await Grade.findById(student.gradeId).lean();
-    if (!grade) {
-      throw new ApiError(404, "Grade not found");
+    if (!student || !student.gradeId) {
+      throw new ApiError(404, "Student not found or not assigned to grade");
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const allAssignments = await Assignment.find({
-      gradeId: student.gradeId,
-    }).lean();
-    const submissions = await Submission.find({
-      studentId: studentId,
-    }).lean();
+    const allChapters = await Chapter.find({ gradeId: student.gradeId }).lean();
+    let completedCount = 0;
+    const completedChaptersList = [];
+    for (const chapter of allChapters) {
+      if (!chapter.studentProgress || chapter.studentProgress.length === 0) {
+        continue;
+      }
+      for (const progress of chapter.studentProgress) {
+        const progressStudentId = progress.studentId.toString();
+        const targetStudentId = studentId.toString();
+        if (progressStudentId === targetStudentId && progress.status === 'completed') {
+          completedCount++;
+          completedChaptersList.push({
+            title: chapter.title,
+            studentId: progressStudentId,
+            status: progress.status
+          });
+          break;
+        }
+      }
+    }
+    console.log('>>> Completed chapters count:', completedCount);
+    console.log('>>> Completed chapters:', JSON.stringify(completedChaptersList, null, 2));
+    const totalChapters = allChapters.length;
+    const completionPercentage = totalChapters > 0 
+      ? Math.round((completedCount / totalChapters) * 100) 
+      : 0;
+    const allAssignments = await Assignment.find({ gradeId: student.gradeId }).lean();
+    const submissions = await Submission.find({ studentId }).lean();
     const submittedAssignmentIds = new Set(
       submissions.map((s) => s.assignmentId.toString())
     );
     const dueAssignments = allAssignments
-      .filter((a) => {
-        const notSubmitted = !submittedAssignmentIds.has(a._id.toString());
-        const isPastDue = new Date(a.endDate) < today;
-        const isUpcoming = new Date(a.endDate) >= today;
-        return notSubmitted && (isPastDue || isUpcoming);
-      })
+      .filter((a) => !submittedAssignmentIds.has(a._id.toString()))
       .map((a) => ({
         ...a,
         isPastDue: new Date(a.endDate) < today,
         daysLeft: Math.ceil(
-          (new Date(a.endDate).getTime() - today.getTime()) /
-            (1000 * 60 * 60 * 24)
+          (new Date(a.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
         ),
       }))
-      .sort(
-        (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
-      );
-    const recentChapters = await Chapter.find({
-      gradeId: student.gradeId,
-      isPublished: true,
-    })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean();
+      .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+      .slice(0, 5);
+    const recentChapters = allChapters
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
     const todayChapters = recentChapters
       .map((chapter) => {
         const progress = chapter.studentProgress?.find(
@@ -72,58 +78,35 @@ export const getStudentTodoOverview = async (
           ...chapter,
           status: progress?.status || "accessible",
           isCompleted: progress?.status === "completed",
-          completedAt: progress?.completedAt,
-          score: progress?.score,
         };
       })
       .filter((c) => c.status !== "completed")
       .slice(0, 3);
-    const completedChapters = await Chapter.find({
-      gradeId: student.gradeId,
-      "studentProgress.studentId": studentId,
-      "studentProgress.status": "completed",
-    })
-      .select("studentProgress")
-      .lean();
-    const completedDates = completedChapters
-      .flatMap((chapter) =>
-        chapter.studentProgress
-          ?.filter(
-            (p) =>
-              p.studentId.toString() === studentId.toString() &&
-              p.status === "completed" &&
-              p.completedAt
-          )
-          .map((p) => new Date(p.completedAt!))
-      )
-      .filter((date): date is Date => date !== undefined)
-      .sort((a, b) => b.getTime() - a.getTime());
+    const completedDatesMap = new Map();
+    for (const chapter of allChapters) {
+      if (!chapter.studentProgress) continue;
+      for (const progress of chapter.studentProgress) {
+        if (
+          progress.studentId.toString() === studentId.toString() &&
+          progress.status === 'completed' &&
+          progress.completedAt
+        ) {
+          const dateKey = new Date(progress.completedAt).toISOString().split('T')[0];
+          completedDatesMap.set(dateKey, true);
+        }
+      }
+    }
     let streak = 0;
     let checkDate = new Date(today);
-    for (let i = 0; i < completedDates.length; i++) {
-      const completedDate = new Date(completedDates[i]);
-      completedDate.setHours(0, 0, 0, 0);
-      if (completedDate.getTime() === checkDate.getTime()) {
+    while (true) {
+      const dateKey = checkDate.toISOString().split('T')[0];
+      if (completedDatesMap.has(dateKey)) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
-      } else if (completedDate.getTime() < checkDate.getTime()) {
+      } else {
         break;
       }
     }
-    const totalChapters = await Chapter.countDocuments({
-      gradeId: student.gradeId,
-      isPublished: true,
-    });
-    const completedCount = await Chapter.countDocuments({
-      gradeId: student.gradeId,
-      isPublished: true,
-      "studentProgress.studentId": studentId,
-      "studentProgress.status": "completed",
-    });
-    const completionPercentage =
-      totalChapters > 0
-        ? Math.round((completedCount / totalChapters) * 100)
-        : 0;
     const recentSubmissions = await Submission.find({ studentId })
       .sort({ createdAt: -1 })
       .limit(5)
@@ -151,7 +134,7 @@ export const getStudentTodoOverview = async (
           totalAssignments: allAssignments.length,
           submittedAssignments: submissions.length,
         },
-        dueAssignments: dueAssignments.slice(0, 5),
+        dueAssignments,
         todayChapters,
         recentActivity: enrichedSubmissions,
       },

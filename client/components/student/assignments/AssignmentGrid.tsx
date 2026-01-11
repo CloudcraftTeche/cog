@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,11 +26,9 @@ import api from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IAssignment, ISubmission, UserRole } from "@/types/assignment.types";
 import { AssignmentCard } from "./AssignmentCard";
-
 interface AssignmentsGridProps {
   userRole?: UserRole;
 }
-
 function LoadingSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
   return (
     <div
@@ -68,7 +65,6 @@ function LoadingSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
     </div>
   );
 }
-
 export function AssignmentsGrid({
   userRole = "student",
 }: AssignmentsGridProps) {
@@ -80,11 +76,9 @@ export function AssignmentsGrid({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [contentFilter, setContentFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
   const fetchData = async () => {
     setLoading(true);
     setError(null);
-
     if (!process.env.NEXT_PUBLIC_SERVERURL) {
       setError(
         "API server URL not configured. Please set NEXT_PUBLIC_SERVERURL environment variable."
@@ -92,21 +86,18 @@ export function AssignmentsGrid({
       setLoading(false);
       return;
     }
-
     try {
       const [assignmentsRes, submissionsRes] = await Promise.all([
         api.get("/assignments"),
         userRole === "student"
           ? api
-              .get("/assignments/my/submissions")
+              .get("/assignments/my/submissions/all")
               .catch(() => ({ data: { success: true, data: [] } }))
           : Promise.resolve({ data: { success: true, data: [] } }),
       ]);
-
       if (assignmentsRes.data.success) {
         setAssignments(assignmentsRes.data.data);
       }
-
       if (userRole === "student" && submissionsRes.data.success) {
         const submitted = submissionsRes.data.data.map((s: ISubmission) =>
           typeof s.assignmentId === "object"
@@ -125,21 +116,17 @@ export function AssignmentsGrid({
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, [userRole]);
-
   const filteredAssignments = useMemo(() => {
     return assignments.filter((assignment) => {
       const matchesSearch =
         assignment.title.toLowerCase().includes(search.toLowerCase()) ||
         assignment.description.toLowerCase().includes(search.toLowerCase());
-
       const now = new Date();
       const startDate = new Date(assignment.startDate);
       const endDate = new Date(assignment.endDate);
-
       let matchesStatus = true;
       if (statusFilter === "active") {
         matchesStatus =
@@ -156,10 +143,8 @@ export function AssignmentsGrid({
           now >= startDate &&
           now <= endDate;
       }
-
       const matchesContent =
         contentFilter === "all" || assignment.contentType === contentFilter;
-
       return matchesSearch && matchesStatus && matchesContent;
     });
   }, [
@@ -170,13 +155,11 @@ export function AssignmentsGrid({
     userRole,
     submittedIds,
   ]);
-
   return (
     <div className="space-y-8">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-info p-6 sm:p-8 text-primary-foreground">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
-
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 sm:p-4 rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg">
@@ -194,7 +177,6 @@ export function AssignmentsGrid({
               </p>
             </div>
           </div>
-
           <div className="flex items-center gap-3">
             <Button
               variant="secondary"
@@ -222,7 +204,6 @@ export function AssignmentsGrid({
           </div>
         </div>
       </div>
-
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl shadow-primary/5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
@@ -234,7 +215,6 @@ export function AssignmentsGrid({
               className="pl-12 h-12 rounded-xl bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
             />
           </div>
-
           <div className="flex flex-wrap items-center gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[150px] h-12 rounded-xl bg-background/50 border-border/50">
@@ -254,7 +234,6 @@ export function AssignmentsGrid({
                 )}
               </SelectContent>
             </Select>
-
             <Select value={contentFilter} onValueChange={setContentFilter}>
               <SelectTrigger className="w-full sm:w-[140px] h-12 rounded-xl bg-background/50 border-border/50">
                 <SelectValue placeholder="Type" />
@@ -266,7 +245,6 @@ export function AssignmentsGrid({
                 <SelectItem value="pdf">PDF</SelectItem>
               </SelectContent>
             </Select>
-
             <Tabs
               value={viewMode}
               onValueChange={(v) => setViewMode(v as "grid" | "list")}
@@ -290,8 +268,7 @@ export function AssignmentsGrid({
           </div>
         </div>
       </div>
-
-      {/* Error State */}
+      {}
       {error && (
         <div className="flex flex-col items-center justify-center py-16 px-6 rounded-2xl border-2 border-dashed border-destructive/30 bg-destructive/5">
           <div className="p-4 rounded-full bg-destructive/10 mb-4">
@@ -310,11 +287,9 @@ export function AssignmentsGrid({
           </Button>
         </div>
       )}
-
-      {/* Loading State */}
+      {}
       {loading && <LoadingSkeleton viewMode={viewMode} />}
-
-      {/* Empty State */}
+      {}
       {!loading && !error && filteredAssignments.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 px-6 rounded-2xl border-2 border-dashed border-border bg-gradient-to-br from-muted/30 to-transparent">
           <div className="p-5 rounded-full bg-gradient-to-br from-primary/20 to-info/20 mb-5">
@@ -330,8 +305,7 @@ export function AssignmentsGrid({
           </p>
         </div>
       )}
-
-      {/* Assignments Grid */}
+      {}
       {!loading && !error && filteredAssignments.length > 0 && (
         <div
           className={
