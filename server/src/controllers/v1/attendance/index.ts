@@ -328,14 +328,14 @@ export const exportAttendance = async (
     if (teacherId) {
       query.teacherId = teacherId;
     }
-    console.log("FINAL QUERY:", query);
+    
     const records = await Attendance.find(query)
       .populate("studentId", "name email rollNumber gradeId")
       .populate("teacherId", "name email")
       .populate("gradeId", "grade")
       .sort({ date: -1 })
       .lean();
-    console.log("FOUND:", records.length);
+    
     res.json(records);
   } catch (e: any) {
     res.status(400).json({ error: e.message });

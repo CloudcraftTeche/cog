@@ -241,4 +241,59 @@ ChapterSchema.index({
   "studentProgress.studentId": 1,
   "studentProgress.completedAt": -1,
 });
+ChapterSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  async function (next) {
+    try {
+      const { deleteFromCloudinary } = await import(
+        "../../config/cloudinary"
+      );
+      for (const item of this.contentItems) {
+        if (item.publicId && (item.type === "video" || item.type === "pdf")) {
+          const resourceType = item.type === "video" ? "video" : "raw";
+          await deleteFromCloudinary(item.publicId, resourceType).catch((err) =>
+            console.error("Failed to delete content item file:", err)
+          );
+        }
+      }
+      if (this.studentProgress) {
+        for (const progress of this.studentProgress) {
+          if (progress.submissions) {
+            for (const submission of progress.submissions) {
+              if (
+                submission.filePublicId &&
+                (submission.type === "video" || submission.type === "pdf")
+              ) {
+                const resourceType =
+                  submission.type === "video" ? "video" : "raw";
+                await deleteFromCloudinary(
+                  submission.filePublicId,
+                  resourceType
+                ).catch((err) =>
+                  console.error("Failed to delete submission file:", err)
+                );
+              }
+            }
+          }
+        }
+      }
+      next();
+    } catch (error: any) {
+      console.error("Error in Chapter cascading delete:", error);
+      next(error);
+    }
+  }
+);
+ChapterSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const docToDelete = await this.model.findOne(this.getFilter());
+    if (docToDelete) {
+      await docToDelete.deleteOne();
+    }
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
 export const Chapter = model<IChapter>("Chapter", ChapterSchema);

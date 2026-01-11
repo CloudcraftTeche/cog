@@ -117,4 +117,46 @@ export const SubmissionSchema = new Schema<ISubmission>(
 SubmissionSchema.index({ assignmentId: 1, studentId: 1 }, { unique: true });
 SubmissionSchema.index({ studentId: 1, submittedAt: -1 });
 SubmissionSchema.index({ assignmentId: 1, score: -1 });
+SubmissionSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  async function (next) {
+    try {
+      const { deleteFromCloudinary } = await import(
+        "../../config/cloudinary"
+      );
+      const deletePromises = [];
+      if (this.videoPublicId) {
+        deletePromises.push(
+          deleteFromCloudinary(this.videoPublicId, "video").catch((err) =>
+            console.error("Failed to delete submission video:", err)
+          )
+        );
+      }
+      if (this.pdfPublicId) {
+        deletePromises.push(
+          deleteFromCloudinary(this.pdfPublicId, "raw").catch((err) =>
+            console.error("Failed to delete submission PDF:", err)
+          )
+        );
+      }
+      await Promise.allSettled(deletePromises);
+      next();
+    } catch (error: any) {
+      console.error("Error in Submission cascading delete:", error);
+      next(error);
+    }
+  }
+);
+SubmissionSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const docToDelete = await this.model.findOne(this.getFilter());
+    if (docToDelete) {
+      await docToDelete.deleteOne();
+    }
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
 export const Submission = model<ISubmission>("Submission", SubmissionSchema);

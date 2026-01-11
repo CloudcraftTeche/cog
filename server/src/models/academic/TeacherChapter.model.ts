@@ -165,6 +165,29 @@ TeacherChapterSchema.index({
   "teacherProgress.teacherId": 1,
   "teacherProgress.completedAt": -1,
 });
+TeacherChapterSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  async function (next) {
+    try {
+      next();
+    } catch (error: any) {
+      console.error("Error in TeacherChapter cascading delete:", error);
+      next(error);
+    }
+  }
+);
+TeacherChapterSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const docToDelete = await this.model.findOne(this.getFilter());
+    if (docToDelete) {
+      await docToDelete.deleteOne();
+    }
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
 export const TeacherChapter = model<ITeacherChapter>(
   "TeacherChapter",
   TeacherChapterSchema

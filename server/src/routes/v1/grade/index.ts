@@ -1,5 +1,5 @@
-import { Router, Request, Response, NextFunction } from "express";
-import { body, param, query, validationResult } from "express-validator";
+import { Router } from "express";
+import { body, param, query } from "express-validator";
 import {
   createGradeHandler,
   listGradesHandler,
@@ -18,8 +18,11 @@ import {
   reorderTeacherUnitsHandler,
   getGradesByTeacherHandler,
   getGradeStudentsHandler,
+  getGradeCompletionReport,
+  getGradeCompletionReportById,
 } from "../../../controllers/v1/grade";
 import { authenticate } from "../../../middleware/authenticate";
+import { authorizeRoles } from "../../../middleware/authorizeRoles";
 const router = Router();
 router.post(
   "/",
@@ -60,6 +63,20 @@ router.post(
       .withMessage("Unit description must not exceed 500 characters"),
   ],
   createGradeHandler
+);
+router.get(
+  "/completion-report",
+  authenticate,
+    authorizeRoles("admin","superAdmin","teacher"),
+
+  getGradeCompletionReport
+);
+router.get(
+  "/completion-report/:gradeId",
+  authenticate,
+    authorizeRoles("admin","superAdmin","teacher"),
+
+  getGradeCompletionReportById
 );
 router.get(
   "/",

@@ -102,7 +102,9 @@ export default function SuperAdminDashboard() {
         {selectedView === "dashboard" && (
           <>
             <SuperAdminOverviewStats overview={dashboardData?.overview} />
-            <WeeklyActiveStudents />
+            <div className="my-3">
+              <WeeklyActiveStudents />
+            </div>
             <ChartsSection charts={dashboardData?.charts} />
             <SyllabusCoverage />
             <InsightsSection insights={dashboardData?.insights} />

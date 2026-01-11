@@ -42,7 +42,7 @@ export default function AdminAssignmentsPage() {
         params: {
           search: searchTerm,
           page,
-          limit: 50,
+          limit: 10,
           status: statusFilter !== "all" ? statusFilter : undefined,
         },
       });

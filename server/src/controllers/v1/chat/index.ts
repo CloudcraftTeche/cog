@@ -95,14 +95,14 @@ export const sendUnicastMessage = async (req: Request, res: Response) => {
       role: recipient.role,
       avatar: recipient.profilePictureUrl || null,
     };
-    console.log("💬 Unicast message created:", message._id);
+    
     await updateRoomLastMessage("unicast", content, senderId, recipientId);
     try {
       const io = getIO();
       io.to(`user-${recipientId}`).emit("new-message", messageWithRecipient);
-      console.log(`📤 Message emitted to user-${recipientId}`);
+      
       io.to(`user-${senderId}`).emit("new-message", messageWithRecipient);
-      console.log(`📤 Message emitted to user-${senderId}`);
+      
       io.to(`user-${recipientId}`).emit("room-updated", {
         type: "new-message",
         lastMessage: {
@@ -172,13 +172,13 @@ export const sendGradeMessage = async (req: Request, res: Response) => {
       { path: "senderId", select: "name email role profilePictureUrl" },
       { path: "gradeId", select: "grade section" },
     ]);
-    console.log("📢 Grade message created:", message._id);
-    console.log(`📊 Broadcasting to ${recipients.length} students`);
+    
+    
     await updateRoomLastMessage("grade", content, senderId, undefined, gradeId);
     try {
       const io = getIO();
       io.to(`grade-${gradeId}`).emit("new-message", message);
-      console.log(`📤 Message broadcast to grade-${gradeId}`);
+      
       io.to(`grade-${gradeId}`).emit("room-updated", {
         type: "new-message",
         gradeId,
@@ -246,12 +246,12 @@ export const sendBroadcastMessage = async (req: Request, res: Response) => {
     await message.populate([
       { path: "senderId", select: "name email role profilePictureUrl" },
     ]);
-    console.log("📣 Broadcast message created:", message._id);
-    console.log(`📊 Broadcasting to ${recipients.length} users`);
+    
+    
     try {
       const io = getIO();
       io.emit("new-message", message);
-      console.log("📤 Message broadcast to all users");
+      
     } catch (socketError) {
       console.error("❌ Socket.IO emission error:", socketError);
     }

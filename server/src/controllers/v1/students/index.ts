@@ -7,8 +7,6 @@ import { ApiError } from "../../../utils/ApiError";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { Student } from "../../../models/user/Student.model";
 import { Grade } from "../../../models/academic/Grade.model";
-import { Chapter } from "../../../models/academic/Chapter.model";
-import { Teacher } from "../../../models/user/Teacher.model";
 export const registerStudent = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -161,21 +159,7 @@ export const removeStudent = async (
     const { id } = req.params;
     const student = await Student.findOne({ _id: id, role: "student" });
     if (!student) throw new ApiError(404, "Student not found");
-    const studentObjectId = new mongoose.Types.ObjectId(id);
-    await Promise.all([
-      student.profilePicturePublicId
-        ? cloudinary.uploader.destroy(student.profilePicturePublicId)
-        : Promise.resolve(),
-      Grade.updateMany(
-        { students: student._id },
-        { $pull: { students: student._id } }
-      ),
-      Chapter.updateMany(
-        { "studentProgress.studentId": studentObjectId },
-        { $pull: { studentProgress: { studentId: studentObjectId } } }
-      ),
-      student.deleteOne(),
-    ]);
+    await student.deleteOne();
     res.status(200).json({
       success: true,
       message: "Student deleted successfully",
@@ -200,7 +184,9 @@ export const createStudentByTeacher = async (
       parentContact,
       address,
     } = req.body;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await import("../../../models/user/Teacher.model").then(
+      (m) => m.Teacher.findById(teacherId)
+    );
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -272,7 +258,9 @@ export const updateStudentByTeacher = async (
     const { id } = req.params;
     const teacherId = req.user?._id;
     const updates = req.body;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await import("../../../models/user/Teacher.model").then(
+      (m) => m.Teacher.findById(teacherId)
+    );
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -338,7 +326,9 @@ export const deleteStudentByTeacher = async (
   try {
     const { id } = req.params;
     const teacherId = req.user?._id;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await import("../../../models/user/Teacher.model").then(
+      (m) => m.Teacher.findById(teacherId)
+    );
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -350,20 +340,7 @@ export const deleteStudentByTeacher = async (
     if (!student) {
       throw new ApiError(404, "Student not found in your grade");
     }
-    const studentObjectId = new mongoose.Types.ObjectId(id);
-    await Promise.all([
-      student.profilePicturePublicId
-        ? cloudinary.uploader.destroy(student.profilePicturePublicId)
-        : Promise.resolve(),
-      Grade.findByIdAndUpdate(teacher.gradeId, {
-        $pull: { students: student._id },
-      }),
-      Chapter.updateMany(
-        { "studentProgress.studentId": studentObjectId },
-        { $pull: { studentProgress: { studentId: studentObjectId } } }
-      ),
-      student.deleteOne(),
-    ]);
+    await student.deleteOne();
     res.status(200).json({
       success: true,
       message: "Student deleted successfully",
@@ -383,7 +360,9 @@ export const fetchTeacherStudents = async (
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await import("../../../models/user/Teacher.model").then(
+      (m) => m.Teacher.findById(teacherId)
+    );
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -423,7 +402,9 @@ export const fetchTeacherStudentById = async (
   try {
     const { id } = req.params;
     const teacherId = req.user?._id;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await import("../../../models/user/Teacher.model").then(
+      (m) => m.Teacher.findById(teacherId)
+    );
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -448,7 +429,9 @@ export const fetchTeacherStudentProgress = async (
   try {
     const { id } = req.params;
     const teacherId = req.user?._id;
-    const teacher = await Teacher.findById(teacherId);
+    const teacher = await import("../../../models/user/Teacher.model").then(
+      (m) => m.Teacher.findById(teacherId)
+    );
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -460,6 +443,7 @@ export const fetchTeacherStudentProgress = async (
     if (!student) {
       throw new ApiError(404, "Student not found in your grade");
     }
+    const { Chapter } = await import("../../../models/academic/Chapter.model");
     const studentObjectId = new mongoose.Types.ObjectId(id);
     const totalChapters = await Chapter.countDocuments({
       gradeId: teacher.gradeId,
@@ -568,6 +552,7 @@ export const fetchStudentProgress = async (
     const { id } = req.params;
     const student = await Student.findOne({ _id: id, role: "student" });
     if (!student) throw new ApiError(404, "Student not found");
+    const { Chapter } = await import("../../../models/academic/Chapter.model");
     const studentObjectId = new mongoose.Types.ObjectId(id);
     const totalChapters = await Chapter.countDocuments({
       gradeId: student.gradeId,
@@ -621,6 +606,7 @@ export const markChapterCompleted = async (
   try {
     const { chapterId, quizScore } = req.body;
     const { id: studentId } = req.params;
+    const { Chapter } = await import("../../../models/academic/Chapter.model");
     const [student, chapter] = await Promise.all([
       Student.findOne({ _id: studentId, role: "student" }),
       Chapter.findOne({ _id: chapterId }),

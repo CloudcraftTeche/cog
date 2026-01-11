@@ -17,9 +17,11 @@ import {
   Award,
   TrendingUp,
   User,
+  FileSpreadsheet,
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 interface Student {
   _id: string;
   name: string;
@@ -62,7 +64,7 @@ export default function StudentsPage() {
   const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(9);
+  const [limit] = useState(6);
   const [query, setQuery] = useState("");
   const [grades, setGrades] = useState<Grade[]>([]);
   const [selectedGrade, setSelectedGrade] = useState("");
@@ -84,6 +86,7 @@ export default function StudentsPage() {
     useState<StudentProgress | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const fetchStudents = async () => {
     try {
       setLoading(true);
@@ -120,6 +123,95 @@ export default function StudentsPage() {
       toast.error(error?.response?.data?.message || "Failed to fetch progress");
     } finally {
       setLoadingProgress(false);
+    }
+  };
+  const exportToExcel = async () => {
+    try {
+      setExportingExcel(true);
+      toast.info("Preparing Excel export...");
+      const allStudentsResponse = await api.get("/students", {
+        params: {
+          query,
+          grade: selectedGrade || undefined,
+          limit: 1000,
+        },
+      });
+      const allStudents = allStudentsResponse.data.data;
+      const studentsWithProgress = await Promise.all(
+        allStudents.map(async (student: Student) => {
+          try {
+            const progressResponse = await api.get(
+              `/students/${student._id}/progress`
+            );
+            return {
+              student,
+              progress: progressResponse.data.data,
+            };
+          } catch (error) {
+            return {
+              student,
+              progress: null,
+            };
+          }
+        })
+      );
+      const excelData = studentsWithProgress.map(({ student, progress }) => {
+        const gradeName =
+          grades.find((g) => g._id === student.gradeId)?.grade || "N/A";
+        return {
+          Name: student.name,
+          "Roll Number": student.rollNumber || "N/A",
+          Email: student.email,
+          Grade: gradeName,
+          Gender: student.gender || "N/A",
+          "Date of Birth": student.dateOfBirth
+            ? new Date(student.dateOfBirth).toLocaleDateString()
+            : "N/A",
+          "Parent Contact": student.parentContact || "N/A",
+          Address: student.address
+            ? `${student.address.street || ""}, ${student.address.city || ""}, ${student.address.state || ""}, ${student.address.country || ""} ${student.address.postalCode || ""}`.trim()
+            : "N/A",
+          "Total Chapters": progress?.totalChapters || 0,
+          "Completed Chapters": progress?.completedCount || 0,
+          "Remaining Chapters": progress?.notCompletedChapters || 0,
+          "Completion Percentage": progress?.completionPercentage
+            ? `${progress.completionPercentage}%`
+            : "0%",
+        };
+      });
+      const detailedData: any[] = [];
+      studentsWithProgress.forEach(({ student, progress }) => {
+        if (progress && progress.completedChapters.length > 0) {
+          progress.completedChapters.forEach((chapter: any) => {
+            detailedData.push({
+              "Student Name": student.name,
+              "Roll Number": student.rollNumber || "N/A",
+              "Chapter Number": chapter.chapterNumber,
+              "Chapter Title": chapter.chapterTitle,
+              "Completed Date": new Date(
+                chapter.completedAt
+              ).toLocaleDateString(),
+              Score: chapter.score !== undefined ? `${chapter.score}%` : "N/A",
+            });
+          });
+        }
+      });
+      const wb = XLSX.utils.book_new();
+      const summaryWs = XLSX.utils.json_to_sheet(excelData);
+      XLSX.utils.book_append_sheet(wb, summaryWs, "Students Summary");
+      if (detailedData.length > 0) {
+        const detailedWs = XLSX.utils.json_to_sheet(detailedData);
+        XLSX.utils.book_append_sheet(wb, detailedWs, "Detailed Progress");
+      }
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `students_progress_${timestamp}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success("Excel file exported successfully!");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to export Excel file");
+      console.error("Export error:", error);
+    } finally {
+      setExportingExcel(false);
     }
   };
   useEffect(() => {
@@ -184,7 +276,7 @@ export default function StudentsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {}
+        
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 p-8 text-white shadow-xl">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -194,16 +286,35 @@ export default function StudentsPage() {
                 Manage and track your students ({totalStudents} total)
               </p>
             </div>
-            <button
-              onClick={() => router.push("/dashboard/admin/students/add")}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-400 via-pink-500 to-red-500 hover:from-orange-500 hover:via-pink-600 hover:to-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add New Student
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={exportToExcel}
+                disabled={exportingExcel || totalStudents === 0}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {exportingExcel ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-5 w-5 mr-2" />
+                    Export Excel
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => router.push("/dashboard/admin/students/add")}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-400 via-pink-500 to-red-500 hover:from-orange-500 hover:via-pink-600 hover:to-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add New Student
+              </button>
+            </div>
           </div>
         </div>
-        {}
+        
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 shadow-lg">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1">
@@ -246,7 +357,7 @@ export default function StudentsPage() {
             </div>
           </div>
         </div>
-        {}
+        
         {loading && (
           <div className="flex justify-center items-center py-16">
             <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-8 shadow-lg">
@@ -257,7 +368,7 @@ export default function StudentsPage() {
             </div>
           </div>
         )}
-        {}
+        
         {!loading && (
           <>
             {studentsList.length === 0 ? (
@@ -279,7 +390,7 @@ export default function StudentsPage() {
                       key={student._id}
                       className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden border border-gray-100"
                     >
-                      {}
+                      
                       <div
                         className={`h-24 bg-gradient-to-r ${gradient} relative`}
                       >
@@ -354,7 +465,7 @@ export default function StudentsPage() {
                           )}
                         </div>
                       </div>
-                      {}
+                      
                       <div className="pt-14 px-6 pb-6">
                         <div className="mb-4">
                           <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -413,7 +524,7 @@ export default function StudentsPage() {
                 })}
               </div>
             )}
-            {}
+            
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 pt-6">
                 <button
@@ -440,7 +551,7 @@ export default function StudentsPage() {
           </>
         )}
       </div>
-      {}
+      
       {deleteDialog.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in duration-200">
@@ -474,7 +585,7 @@ export default function StudentsPage() {
           </div>
         </div>
       )}
-      {}
+      
       {progressDialog.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-3xl w-full my-8 shadow-2xl animate-in zoom-in duration-200">
@@ -507,7 +618,7 @@ export default function StudentsPage() {
                 </div>
               ) : studentProgress ? (
                 <div className="space-y-6">
-                  {}
+                  
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 text-center shadow-sm">
                       <BookOpen className="h-8 w-8 text-blue-600 mx-auto mb-2" />
@@ -537,7 +648,7 @@ export default function StudentsPage() {
                       </div>
                     </div>
                   </div>
-                  {}
+                  
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 shadow-sm">
                     <div className="flex justify-between text-sm mb-3">
                       <span className="font-semibold text-gray-700">
@@ -556,7 +667,7 @@ export default function StudentsPage() {
                       />
                     </div>
                   </div>
-                  {}
+                  
                   {studentProgress.completedChapters.length > 0 ? (
                     <div>
                       <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">

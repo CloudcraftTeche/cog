@@ -106,7 +106,7 @@ router.get(
 router.get(
   "/grade/:gradeId",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin","superAdmin","teacher"),
   [
     oid("gradeId"),
     query("page").optional().isInt({ min: 1 }).withMessage("Page must be >= 1"),
@@ -133,7 +133,8 @@ router.get(
 router.get(
   "/:assignmentId/submissions",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+   authorizeRoles("admin","superAdmin","teacher"),
+
   [
     oid("assignmentId"),
     query("page").optional().isInt({ min: 1 }).withMessage("Page must be >= 1"),
@@ -171,7 +172,7 @@ router.get(
 router.post(
   "/grade/:gradeId",
   authenticate,
-  authorizeRoles("admin"),
+    authorizeRoles("admin","superAdmin","teacher"),
   upload.single("file"),
   [oid("gradeId"), ...createAssignmentValidators],
   validate,
@@ -180,7 +181,8 @@ router.post(
 router.post(
   "/multiple",
   authenticate,
-  authorizeRoles("admin"),
+    authorizeRoles("admin","superAdmin","teacher"),
+
   upload.single("file"),
   [
     body("gradeIds")
@@ -195,7 +197,8 @@ router.post(
 router.post(
   "/",
   authenticate,
-  authorizeRoles("teacher"),
+    authorizeRoles("admin","superAdmin","teacher"),
+
   upload.single("file"),
   createAssignmentValidators,
   validate,

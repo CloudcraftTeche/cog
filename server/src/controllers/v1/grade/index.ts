@@ -5,6 +5,42 @@ import { Grade } from "../../../models/academic/Grade.model";
 import { Teacher } from "../../../models/user/Teacher.model";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { Student } from "../../../models/user/Student.model";
+import { Chapter } from "../../../models/academic/Chapter.model";
+import { Assignment } from "../../../models/assignment/Assignment.schema";
+import { Attendance } from "../../../models/attendance/Attendance.schema";
+import { Submission } from "../../../models/assignment/Submission.schema";
+interface GradeReportData {
+  _id: string;
+  grade: string;
+  description?: string;
+  academicYear?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  teachers: Array<{
+    _id: string;
+    name: string;
+    email: string;
+  }>;
+  totalStudents: number;
+  totalChapters: number;
+  completedChapters: number;
+  partiallyCompletedChapters: number;
+  notStartedChapters: number;
+  averageChapterCompletion: number;
+  totalAssignments: number;
+  activeAssignments: number;
+  totalSubmissions: number;
+  gradedSubmissions: number;
+  pendingSubmissions: number;
+  averageAssignmentScore: number;
+  totalAttendanceRecords: number;
+  presentCount: number;
+  absentCount: number;
+  lateCount: number;
+  excusedCount: number;
+  attendanceRate: number;
+}
 export const createGradeHandler = async (
   req: Request,
   res: Response,
@@ -340,7 +376,7 @@ export const getTeacherUnitsHandler = async (
   try {
     const teacherId = req.user._id;
     const teacher = await Teacher.findById(teacherId).select("gradeId").lean();
-    console.log(teacher);
+    
     if (!teacher) {
       throw new ApiError(404, "Teacher not found");
     }
@@ -607,6 +643,318 @@ export const getGradeStudentsHandler = async (
         gradeName: grade.grade,
       },
       data: students,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+export const getGradeCompletionReport = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { page = 1, limit = 10, query = "" } = req.query;
+    const pageNum = Math.max(parseInt(page as string) || 1, 1);
+    const limitNum = Math.max(parseInt(limit as string) || 10, 1);
+    const skip = (pageNum - 1) * limitNum;
+    const filter: any = {};
+    if (query) {
+      filter.$or = [
+        { grade: { $regex: query, $options: "i" } },
+        { academicYear: { $regex: query, $options: "i" } },
+      ];
+    }
+    const [total, grades] = await Promise.all([
+      Grade.countDocuments(filter),
+      Grade.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+    ]);
+    const gradeReports: GradeReportData[] = await Promise.all(
+      grades.map(async (grade) => {
+        const gradeId = grade._id;
+        const [
+          teachers,
+          totalStudents,
+          chapters,
+          assignments,
+          submissions,
+          attendanceRecords,
+        ] = await Promise.all([
+          Teacher.find({ gradeId, role: "teacher" })
+            .select("name email")
+            .lean(),
+          Student.countDocuments({ gradeId, role: "student" }),
+          Chapter.find({ gradeId }).select("_id studentProgress").lean(),
+          Assignment.find({ gradeId }).select("_id status").lean(),
+          Assignment.find({ gradeId })
+            .select("_id")
+            .lean()
+            .then(async (gradeAssignments) => {
+              const assignmentIds = gradeAssignments.map((a) => a._id);
+              return Submission.find({ assignmentId: { $in: assignmentIds } })
+                .select("score")
+                .lean();
+            }),
+          Attendance.find({ gradeId }).select("status").lean(),
+        ]);
+        let fullyCompletedChapters = 0;
+        let partiallyCompletedChapters = 0;
+        let notStartedChapters = 0;
+        let totalCompletionPercentage = 0;
+        let chaptersWithData = 0;
+        chapters.forEach((chapter) => {
+          const completedCount =
+            chapter.studentProgress?.filter(
+              (p: any) => p.status === "completed"
+            ).length || 0;
+          if (totalStudents > 0) {
+            const chapterCompletionRate =
+              (completedCount / totalStudents) * 100;
+            totalCompletionPercentage += chapterCompletionRate;
+            chaptersWithData++;
+            if (completedCount === totalStudents) {
+              fullyCompletedChapters++;
+            } else if (completedCount > 0) {
+              partiallyCompletedChapters++;
+            } else {
+              notStartedChapters++;
+            }
+          } else {
+            notStartedChapters++;
+          }
+        });
+        const averageChapterCompletion =
+          chaptersWithData > 0
+            ? Math.round(totalCompletionPercentage / chaptersWithData)
+            : 0;
+        const activeAssignments = assignments.filter(
+          (a) => a.status === "active"
+        ).length;
+        const gradedSubmissions = submissions.filter(
+          (s) => s.score !== null && s.score !== undefined
+        ).length;
+        const pendingSubmissions = submissions.length - gradedSubmissions;
+        const scoredSubmissions = submissions.filter(
+          (s) => s.score !== null && s.score !== undefined
+        );
+        const averageAssignmentScore =
+          scoredSubmissions.length > 0
+            ? Math.round(
+                (scoredSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) /
+                  scoredSubmissions.length) *
+                  100
+              ) / 100
+            : 0;
+        const presentCount = attendanceRecords.filter(
+          (a) => a.status === "present"
+        ).length;
+        const absentCount = attendanceRecords.filter(
+          (a) => a.status === "absent"
+        ).length;
+        const lateCount = attendanceRecords.filter(
+          (a) => a.status === "late"
+        ).length;
+        const excusedCount = attendanceRecords.filter(
+          (a) => a.status === "excused"
+        ).length;
+        const attendanceRate =
+          attendanceRecords.length > 0
+            ? Math.round(
+                ((presentCount + lateCount) / attendanceRecords.length) *
+                  100 *
+                  100
+              ) / 100
+            : 0;
+        return {
+          _id: grade._id.toString(),
+          grade: grade.grade,
+          description: grade.description,
+          academicYear: grade.academicYear,
+          isActive: grade.isActive,
+          createdAt: grade.createdAt.toISOString(),
+          updatedAt: grade.updatedAt.toISOString(),
+          teachers: teachers.map((t) => ({
+            _id: t._id.toString(),
+            name: t.name,
+            email: t.email,
+          })),
+          totalStudents,
+          totalChapters: chapters.length,
+          completedChapters: fullyCompletedChapters,
+          partiallyCompletedChapters,
+          notStartedChapters,
+          averageChapterCompletion,
+          totalAssignments: assignments.length,
+          activeAssignments,
+          totalSubmissions: submissions.length,
+          gradedSubmissions,
+          pendingSubmissions,
+          averageAssignmentScore,
+          totalAttendanceRecords: attendanceRecords.length,
+          presentCount,
+          absentCount,
+          lateCount,
+          excusedCount,
+          attendanceRate,
+        };
+      })
+    );
+    res.status(200).json({
+      success: true,
+      message: "Grade completion report fetched successfully",
+      data: gradeReports,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+export const getGradeCompletionReportById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { gradeId } = req.params;
+    if (!mongoose.isValidObjectId(gradeId)) {
+      throw new ApiError(400, "Invalid grade ID");
+    }
+    const grade = await Grade.findById(gradeId).lean();
+    if (!grade) {
+      throw new ApiError(404, "Grade not found");
+    }
+    const [
+      teachers,
+      totalStudents,
+      chapters,
+      assignments,
+      submissions,
+      attendanceRecords,
+    ] = await Promise.all([
+      Teacher.find({ gradeId, role: "teacher" }).select("name email").lean(),
+      Student.countDocuments({ gradeId, role: "student" }),
+      Chapter.find({ gradeId }).select("_id studentProgress").lean(),
+      Assignment.find({ gradeId }).select("_id status").lean(),
+      Assignment.find({ gradeId })
+        .select("_id")
+        .lean()
+        .then(async (gradeAssignments) => {
+          const assignmentIds = gradeAssignments.map((a) => a._id);
+          return Submission.find({ assignmentId: { $in: assignmentIds } })
+            .select("score")
+            .lean();
+        }),
+      Attendance.find({ gradeId }).select("status").lean(),
+    ]);
+    let fullyCompletedChapters = 0;
+    let partiallyCompletedChapters = 0;
+    let notStartedChapters = 0;
+    let totalCompletionPercentage = 0;
+    let chaptersWithData = 0;
+    chapters.forEach((chapter) => {
+      const completedCount =
+        chapter.studentProgress?.filter((p: any) => p.status === "completed")
+          .length || 0;
+      if (totalStudents > 0) {
+        const chapterCompletionRate = (completedCount / totalStudents) * 100;
+        totalCompletionPercentage += chapterCompletionRate;
+        chaptersWithData++;
+        if (completedCount === totalStudents) {
+          fullyCompletedChapters++;
+        } else if (completedCount > 0) {
+          partiallyCompletedChapters++;
+        } else {
+          notStartedChapters++;
+        }
+      } else {
+        notStartedChapters++;
+      }
+    });
+    const averageChapterCompletion =
+      chaptersWithData > 0
+        ? Math.round(totalCompletionPercentage / chaptersWithData)
+        : 0;
+    const activeAssignments = assignments.filter(
+      (a) => a.status === "active"
+    ).length;
+    const gradedSubmissions = submissions.filter(
+      (s) => s.score !== null && s.score !== undefined
+    ).length;
+    const pendingSubmissions = submissions.length - gradedSubmissions;
+    const scoredSubmissions = submissions.filter(
+      (s) => s.score !== null && s.score !== undefined
+    );
+    const averageAssignmentScore =
+      scoredSubmissions.length > 0
+        ? Math.round(
+            (scoredSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) /
+              scoredSubmissions.length) *
+              100
+          ) / 100
+        : 0;
+    const presentCount = attendanceRecords.filter(
+      (a) => a.status === "present"
+    ).length;
+    const absentCount = attendanceRecords.filter(
+      (a) => a.status === "absent"
+    ).length;
+    const lateCount = attendanceRecords.filter(
+      (a) => a.status === "late"
+    ).length;
+    const excusedCount = attendanceRecords.filter(
+      (a) => a.status === "excused"
+    ).length;
+    const attendanceRate =
+      attendanceRecords.length > 0
+        ? Math.round(
+            ((presentCount + lateCount) / attendanceRecords.length) * 100 * 100
+          ) / 100
+        : 0;
+    const report: GradeReportData = {
+      _id: grade._id.toString(),
+      grade: grade.grade,
+      description: grade.description,
+      academicYear: grade.academicYear,
+      isActive: grade.isActive,
+      createdAt: grade.createdAt.toISOString(),
+      updatedAt: grade.updatedAt.toISOString(),
+      teachers: teachers.map((t) => ({
+        _id: t._id.toString(),
+        name: t.name,
+        email: t.email,
+      })),
+      totalStudents,
+      totalChapters: chapters.length,
+      completedChapters: fullyCompletedChapters,
+      partiallyCompletedChapters,
+      notStartedChapters,
+      averageChapterCompletion,
+      totalAssignments: assignments.length,
+      activeAssignments,
+      totalSubmissions: submissions.length,
+      gradedSubmissions,
+      pendingSubmissions,
+      averageAssignmentScore,
+      totalAttendanceRecords: attendanceRecords.length,
+      presentCount,
+      absentCount,
+      lateCount,
+      excusedCount,
+      attendanceRate,
+    };
+    res.status(200).json({
+      success: true,
+      message: "Grade completion report fetched successfully",
+      data: report,
     });
   } catch (err) {
     next(err);

@@ -54,11 +54,7 @@ export const submitAssignment = async (
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
           if (submissionType === "video") {
-            console.log(
-              `Uploading video (attempt ${attempt + 1}/${
-                maxRetries + 1
-              }): ${filename}, size: ${req.file.size} bytes`
-            );
+            
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
               "submissions/videos",
@@ -70,11 +66,7 @@ export const submitAssignment = async (
             console.log("Video upload successful:", videoUrl);
             break;
           } else if (submissionType === "pdf") {
-            console.log(
-              `Uploading PDF (attempt ${attempt + 1}/${
-                maxRetries + 1
-              }): ${filename}, size: ${req.file.size} bytes`
-            );
+           
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
               "submissions/pdfs",
@@ -88,10 +80,7 @@ export const submitAssignment = async (
           }
         } catch (uploadError: any) {
           lastError = uploadError;
-          console.error(
-            `Upload attempt ${attempt + 1} failed:`,
-            uploadError.message
-          );
+         
           if (uploadError.name === "TimeoutError" && attempt < maxRetries) {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             continue;

@@ -91,7 +91,9 @@ export default function AdminDashboard() {
         {selectedView === "dashboard" && (
           <>
             <OverviewStats overview={dashboardData?.overview} />
-            <WeeklyActiveStudents/>
+            <div className="my-3">
+              <WeeklyActiveStudents/>
+            </div>
             <ChartsSection charts={dashboardData?.charts} />
             <SyllabusCoverage />
             <InsightsSection insights={dashboardData?.insights} />

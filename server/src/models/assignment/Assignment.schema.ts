@@ -119,4 +119,64 @@ export const AssignmentSchema = new Schema<IAssignment>(
 );
 AssignmentSchema.index({ status: 1, startDate: -1 });
 AssignmentSchema.index({ createdBy: 1, status: 1 });
+AssignmentSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  async function (next) {
+    try {
+      const assignmentId = this._id;
+      const { Submission } = await import("./Submission.schema");
+      const { deleteFromCloudinary } = await import(
+        "../../config/cloudinary"
+      );
+      const deletePromises = [];
+      if (this.videoPublicId) {
+        deletePromises.push(
+          deleteFromCloudinary(this.videoPublicId, "video").catch((err) =>
+            console.error("Failed to delete assignment video:", err)
+          )
+        );
+      }
+      if (this.pdfPublicId) {
+        deletePromises.push(
+          deleteFromCloudinary(this.pdfPublicId, "raw").catch((err) =>
+            console.error("Failed to delete assignment PDF:", err)
+          )
+        );
+      }
+      await Promise.allSettled(deletePromises);
+      const submissions = await Submission.find({ assignmentId }).lean();
+      await Promise.all(
+        submissions.map(async (sub) => {
+          const deletePromises = [];
+          if (sub.videoPublicId) {
+            deletePromises.push(
+              deleteFromCloudinary(sub.videoPublicId, "video")
+            );
+          }
+          if (sub.pdfPublicId) {
+            deletePromises.push(deleteFromCloudinary(sub.pdfPublicId, "raw"));
+          }
+          return Promise.allSettled(deletePromises);
+        })
+      );
+      await Submission.deleteMany({ assignmentId });
+      next();
+    } catch (error: any) {
+      console.error("Error in Assignment cascading delete:", error);
+      next(error);
+    }
+  }
+);
+AssignmentSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const docToDelete = await this.model.findOne(this.getFilter());
+    if (docToDelete) {
+      await docToDelete.deleteOne();
+    }
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
 export const Assignment = model<IAssignment>("Assignment", AssignmentSchema);

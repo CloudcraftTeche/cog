@@ -505,7 +505,8 @@ router.get(
 router.get(
   "/:gradeId/chapters/:chapterId/completion-stats",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+    authorizeRoles("admin","superAdmin","teacher"),
+
   [
     param("gradeId").isMongoId().withMessage("Invalid grade ID format"),
     param("chapterId").isMongoId().withMessage("Invalid chapter ID format"),
@@ -530,7 +531,8 @@ router.get(
 router.get(
   "/:chapterId/pending-students",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+    authorizeRoles("admin","superAdmin","teacher"),
+
   [
     param("chapterId").isMongoId().withMessage("Invalid chapter ID format"),
     query("page")
@@ -559,7 +561,8 @@ router.post(
 router.post(
   "/:chapterId/remind-all",
   authenticate,
-  authorizeRoles("admin", "teacher"),
+    authorizeRoles("admin","superAdmin","teacher"),
+
   [param("chapterId").isMongoId().withMessage("Invalid chapter ID")],
   handleValidationErrors,
   sendBulkChapterRemindersHandler

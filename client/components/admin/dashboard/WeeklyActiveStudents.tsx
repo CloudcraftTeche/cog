@@ -39,7 +39,7 @@ export const WeeklyActiveStudents: React.FC = () => {
     );
   }
   return (
-    <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white hover:shadow-xl transition-all duration-300 hover:scale-105 my-3">
+    <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white hover:shadow-xl transition-all duration-300 hover:scale-105 ">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">

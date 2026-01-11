@@ -28,14 +28,14 @@ export const createAssignment = async (
   try {
     const role = await getUserRole(req.userId);
     let gradeId: any;
-    if (role === "admin") {
+    if (role === "admin" || role === "superAdmin") {
       gradeId = req.params.gradeId;
     } else if (role === "teacher") {
       const teacher = await Teacher.findById(req.userId).select("gradeId");
       if (!teacher) throw new ApiError(404, "Teacher not found");
       gradeId = teacher.gradeId;
     } else {
-      throw new ApiError(403, "Only admin and teacher can create assignments");
+      throw new ApiError(403, "Only admin ,superAdmin and teacher can create assignments");
     }
     const grade = await Grade.findById(gradeId);
     if (!grade) throw new ApiError(404, "Grade not found");
@@ -110,10 +110,10 @@ export const createAssignmentForMultipleGrades = async (
 ) => {
   try {
     const role = await getUserRole(req.userId);
-    if (role !== "admin") {
+    if (role !== "admin" && role !== "superAdmin") {
       throw new ApiError(
         403,
-        "Only admin can create assignments for multiple grades"
+        "Only admin and superAdmin can create assignments for multiple grades"
       );
     }
     const {
@@ -247,7 +247,7 @@ export const getAllAssignments = async (
     const enrichedAssignments = await Promise.all(
       assignments.map(async (assignment: any) => {
         let submittedStudents: any = [];
-        if (role === "admin" || role === "teacher") {
+        if (role === "admin" || role === "teacher" || role === "superAdmin") {
           const submissions = await Submission.find({
             assignmentId: assignment._id,
           }).select("studentId");
@@ -371,7 +371,7 @@ export const updateAssignment = async (
           "You can only update assignments for your assigned grade"
         );
       }
-    } else if (role !== "admin") {
+    } else if (role !== "admin" && role !== "superAdmin") {
       throw new ApiError(403, "Only admin and teacher can update assignments");
     }
     const {
@@ -469,7 +469,7 @@ export const deleteAssignment = async (
           "You can only delete assignments for your assigned grade"
         );
       }
-    } else if (role !== "admin") {
+    } else if (role !== "admin" && role !== "superAdmin") {
       throw new ApiError(403, "Only admin and teacher can delete assignments");
     }
     if (assignment.videoPublicId) {

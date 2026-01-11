@@ -154,12 +154,15 @@ export const getTeachersList = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10, query = "" } = req.query;
+    const { page = 1, limit = 10, query = "", gradeId } = req.query;
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
     const searchRegex = new RegExp(query as string, "i");
     const filter: any = { role: "teacher" };
+    if (gradeId) {
+      filter.gradeId = gradeId;
+    }
     if (query) {
       filter.$or = [
         { name: { $regex: searchRegex } },

@@ -116,6 +116,55 @@ UserSchema.pre<IUser>("save", async function (next) {
     next(error);
   }
 });
+UserSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  async function (next) {
+    try {
+      const userId = this._id;
+      const { Token } = await import("../auth/Token.model");
+      const { PasswordResetToken } = await import(
+        "../auth/PasswordResetToken.model"
+      );
+      const { Query } = await import("../query/Query.model");
+      const { Message } = await import("../chat/Message.model");
+      const { ChatRoom } = await import("../chat/Chat.model");
+      const { Announcement } = await import("../announcement");
+      await Promise.all([
+        Token.deleteMany({ userId }),
+        PasswordResetToken.deleteMany({ userId }),
+      ]);
+      await Query.deleteMany({
+        $or: [{ from: userId }, { to: userId }, { assignedTo: userId }],
+      });
+      await Message.deleteMany({ senderId: userId });
+      await Message.updateMany(
+        { "recipients.userId": userId },
+        { $pull: { recipients: { userId } } }
+      );
+      await ChatRoom.updateMany(
+        { "participants.userId": userId },
+        { $pull: { participants: { userId } } }
+      );
+      await ChatRoom.deleteMany({ participants: { $size: 0 } });
+      await Announcement.deleteMany({ createdBy: userId });
+      next();
+    } catch (error: any) {
+      next(error);
+    }
+  }
+);
+UserSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const docToDelete = await this.model.findOne(this.getFilter());
+    if (docToDelete) {
+      await docToDelete.deleteOne();
+    }
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
