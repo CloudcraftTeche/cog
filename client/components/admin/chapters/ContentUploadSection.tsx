@@ -11,7 +11,7 @@ import { Video, BookOpen, FileText, Plus, Trash2, Upload as UploadIcon, AlertCir
 import { toast } from "sonner";
 
 interface ContentItem {
-  type: "video" | "text" | "pdf" | "mixed";
+  type: "video" | "text" | "pdf"|"mixed";
   order: number;
   title?: string;
   textContent?: string;
@@ -56,6 +56,7 @@ export default function ContentUploadSection({
     const updated = [...contentItems];
     updated[index] = { ...updated[index], [field]: value };
     
+    // Clear previous content when changing type
     if (field === "type") {
       updated[index].textContent = undefined;
       updated[index].videoUrl = undefined;
@@ -68,18 +69,42 @@ export default function ContentUploadSection({
   const handleFileChange = (index: number, file: File | null) => {
     if (file) {
       const updated = [...contentItems];
+      
+      // Validate file type
+      const item = updated[index];
+      if (item.type === "video") {
+        if (!file.type.startsWith("video/")) {
+          toast.error("Please upload a valid video file");
+          return;
+        }
+      } else if (item.type === "pdf") {
+        if (file.type !== "application/pdf") {
+          toast.error("Please upload a valid PDF file");
+          return;
+        }
+      }
+      
+      // Validate file size (100MB max)
+      const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+      if (file.size > maxSize) {
+        toast.error("File size must be less than 100MB");
+        return;
+      }
+      
       updated[index].file = file;
+      // Clear videoUrl if file is uploaded
+      updated[index].videoUrl = undefined;
       setContentItems(updated);
+      toast.success(`File "${file.name}" attached`);
     }
   };
 
   const getContentIcon = (type: string) => {
     switch (type) {
-      case "video": return <Video className="w-5 h-5" />;
-      case "text": return <BookOpen className="w-5 h-5" />;
-      case "pdf": return <FileText className="w-5 h-5" />;
-      case "mixed": return <><Video className="w-4 h-4" /><BookOpen className="w-4 h-4" /></>;
-      default: return <BookOpen className="w-5 h-5" />;
+      case "video": return <Video className="w-5 h-5 text-white" />;
+      case "text": return <BookOpen className="w-5 h-5 text-white" />;
+      case "pdf": return <FileText className="w-5 h-5 text-white" />;
+      default: return <BookOpen className="w-5 h-5 text-white" />;
     }
   };
 
@@ -88,7 +113,6 @@ export default function ContentUploadSection({
       case "video": return "from-purple-500 to-pink-500";
       case "text": return "from-emerald-500 to-teal-500";
       case "pdf": return "from-orange-500 to-red-500";
-      case "mixed": return "from-indigo-500 to-purple-500";
       default: return "from-blue-500 to-indigo-500";
     }
   };
@@ -201,7 +225,7 @@ export default function ContentUploadSection({
                 </Label>
                 <Input
                   type="url"
-                  placeholder="https://youtube.com/... or upload a video file"
+                  placeholder="https://youtube.com/... or https://vimeo.com/..."
                   value={item.videoUrl || ""}
                   onChange={(e) => updateContentItem(index, "videoUrl", e.target.value)}
                   className={`h-11 border-2 rounded-xl ${
@@ -209,18 +233,25 @@ export default function ContentUploadSection({
                       ? "border-red-300 focus:border-red-500"
                       : "border-slate-200 focus:border-purple-500"
                   }`}
+                  disabled={!!item.file}
                 />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px bg-slate-300"></div>
+                  <span className="text-xs text-slate-500">OR</span>
+                  <div className="flex-1 h-px bg-slate-300"></div>
+                </div>
                 <div className="relative">
                   <Input
                     type="file"
                     accept="video/*"
                     onChange={(e) => handleFileChange(index, e.target.files?.[0] || null)}
                     className="h-11 border-2 border-slate-200 focus:border-purple-500 rounded-xl cursor-pointer"
+                    disabled={!!item.videoUrl}
                   />
                   {item.file && (
                     <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
                       <UploadIcon className="h-3 w-3" />
-                      {item.file.name}
+                      {item.file.name} ({(item.file.size / (1024 * 1024)).toFixed(2)} MB)
                     </p>
                   )}
                 </div>
@@ -231,7 +262,7 @@ export default function ContentUploadSection({
                   </p>
                 )}
                 <p className="text-xs text-slate-500">
-                  Provide a YouTube/Vimeo URL or upload a video file (MP4, WebM)
+                  Provide a YouTube/Vimeo URL or upload a video file (MP4, WebM, max 100MB)
                 </p>
               </div>
             )}
@@ -271,7 +302,7 @@ export default function ContentUploadSection({
                 </Label>
                 <Input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,application/pdf"
                   onChange={(e) => handleFileChange(index, e.target.files?.[0] || null)}
                   className={`h-11 border-2 rounded-xl cursor-pointer ${
                     errors[`content_${index}`]
@@ -282,7 +313,7 @@ export default function ContentUploadSection({
                 {item.file && (
                   <p className="text-sm text-green-600 flex items-center gap-1">
                     <UploadIcon className="h-3 w-3" />
-                    {item.file.name}
+                    {item.file.name} ({(item.file.size / (1024 * 1024)).toFixed(2)} MB)
                   </p>
                 )}
                 {errors[`content_${index}`] && (

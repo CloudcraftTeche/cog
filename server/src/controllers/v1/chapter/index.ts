@@ -15,15 +15,29 @@ import {
 const transporter = createEmailTransporter();
 const processContentItems = async (files: any, body: any) => {
   const contentItems = [];
-  const contentItemsData = JSON.parse(body.contentItems || "[]");
+  let contentItemsData;
+  try {
+    contentItemsData =
+      typeof body.contentItems === "string"
+        ? JSON.parse(body.contentItems)
+        : body.contentItems || [];
+  } catch (error) {
+    throw new ApiError(400, "Invalid contentItems format");
+  }
   for (let i = 0; i < contentItemsData.length; i++) {
     const item = contentItemsData[i];
     const contentItem: any = {
       type: item.type,
-      order: item.order || i,
-      title: item.title,
+      order: item.order !== undefined ? item.order : i,
+      title: item.title || "",
     };
     if (item.type === "text") {
+      if (!item.textContent || !item.textContent.trim()) {
+        throw new ApiError(
+          400,
+          `Text content is required for content item ${i + 1}`
+        );
+      }
       contentItem.textContent = item.textContent;
       contentItem.url = null;
       contentItem.publicId = null;
@@ -31,7 +45,8 @@ const processContentItems = async (files: any, body: any) => {
       if (
         item.videoUrl &&
         (item.videoUrl.includes("youtube.com") ||
-          item.videoUrl.includes("youtu.be"))
+          item.videoUrl.includes("youtu.be") ||
+          item.videoUrl.includes("vimeo.com"))
       ) {
         contentItem.url = item.videoUrl;
         contentItem.publicId = null;
@@ -46,9 +61,12 @@ const processContentItems = async (files: any, body: any) => {
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
       } else {
-        contentItem.url = null;
-        contentItem.publicId = null;
+        throw new ApiError(
+          400,
+          `Video URL or file is required for content item ${i + 1}`
+        );
       }
+      contentItem.textContent = null;
     } else if (item.type === "pdf") {
       if (files && files[`content_${i}`]) {
         const file = files[`content_${i}`][0];
@@ -61,16 +79,21 @@ const processContentItems = async (files: any, body: any) => {
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
       } else {
-        contentItem.url = null;
-        contentItem.publicId = null;
+        throw new ApiError(
+          400,
+          `PDF file is required for content item ${i + 1}`
+        );
       }
+      contentItem.textContent = null;
     } else if (item.type === "mixed") {
       contentItem.url = null;
       contentItem.publicId = null;
+      contentItem.textContent = null;
       if (
         item.videoUrl &&
         (item.videoUrl.includes("youtube.com") ||
-          item.videoUrl.includes("youtu.be"))
+          item.videoUrl.includes("youtu.be") ||
+          item.videoUrl.includes("vimeo.com"))
       ) {
         contentItem.url = item.videoUrl;
         contentItem.publicId = null;
@@ -85,7 +108,7 @@ const processContentItems = async (files: any, body: any) => {
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
       }
-      if (item.textContent) {
+      if (item.textContent && item.textContent.trim()) {
         contentItem.textContent = item.textContent;
       }
       if (!contentItem.url && !contentItem.textContent) {
@@ -94,6 +117,11 @@ const processContentItems = async (files: any, body: any) => {
           `Mixed content item ${i + 1} requires either video or text content`
         );
       }
+    } else {
+      throw new ApiError(
+        400,
+        `Invalid content type "${item.type}" for content item ${i + 1}`
+      );
     }
     contentItems.push(contentItem);
   }
@@ -129,39 +157,78 @@ export const createChapterHandler = async (
     if (!unitId || !mongoose.isValidObjectId(unitId)) {
       throw new ApiError(400, "Valid unit ID is required");
     }
+    if (!title || !title.trim()) {
+      throw new ApiError(400, "Title is required");
+    }
+    if (!description || !description.trim()) {
+      throw new ApiError(400, "Description is required");
+    }
+    if (!chapterNumber || chapterNumber < 1) {
+      throw new ApiError(400, "Valid chapter number is required");
+    }
     const contentItems = await processContentItems(req.files, req.body);
     if (contentItems.length === 0) {
       throw new ApiError(400, "At least one content item is required");
     }
-    const parsedQuestions = Array.isArray(questions)
-      ? questions
-      : JSON.parse(questions || "[]");
-    parsedQuestions.forEach((q: any, index: number) => {
-      if (!q.questionText || typeof q.questionText !== "string") {
-        throw new ApiError(
-          400,
-          `Question ${index + 1}: questionText is required`
+    let parsedQuestions = [];
+    try {
+      parsedQuestions =
+        typeof questions === "string"
+          ? JSON.parse(questions)
+          : Array.isArray(questions)
+          ? questions
+          : [];
+    } catch (error) {
+      throw new ApiError(400, "Invalid questions format");
+    }
+    if (parsedQuestions.length > 0) {
+      parsedQuestions.forEach((q: any, index: number) => {
+        if (
+          !q.questionText ||
+          typeof q.questionText !== "string" ||
+          !q.questionText.trim()
+        ) {
+          throw new ApiError(
+            400,
+            `Question ${
+              index + 1
+            }: questionText is required and cannot be empty`
+          );
+        }
+        if (!Array.isArray(q.options)) {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: options must be an array`
+          );
+        }
+        const validOptions = q.options.filter(
+          (opt: string) => opt && opt.trim()
         );
-      }
-      if (!Array.isArray(q.options) || q.options.length !== 4) {
-        throw new ApiError(
-          400,
-          `Question ${index + 1}: must have exactly 4 options`
-        );
-      }
-      if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
-        throw new ApiError(
-          400,
-          `Question ${index + 1}: correctAnswer is required`
-        );
-      }
-      if (!q.options.includes(q.correctAnswer)) {
-        throw new ApiError(
-          400,
-          `Question ${index + 1}: correctAnswer must be one of the options`
-        );
-      }
-    });
+        if (validOptions.length !== 4) {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: must have exactly 4 non-empty options`
+          );
+        }
+        if (
+          !q.correctAnswer ||
+          typeof q.correctAnswer !== "string" ||
+          !q.correctAnswer.trim()
+        ) {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: correctAnswer is required`
+          );
+        }
+        if (!validOptions.includes(q.correctAnswer)) {
+          throw new ApiError(
+            400,
+            `Question ${index + 1}: correctAnswer must be one of the options`
+          );
+        }
+        q.options = validOptions;
+      });
+    }
     const grades = await Grade.find({ _id: { $in: gradeIds } });
     if (grades.length !== gradeIds.length) {
       const foundIds = grades.map((g) => g._id.toString());
@@ -215,9 +282,9 @@ export const createChapterHandler = async (
         unitId: new mongoose.Types.ObjectId(unitId),
         createdBy: new mongoose.Types.ObjectId(req.userId),
         questions: parsedQuestions.map((q: any) => ({
-          questionText: q.questionText,
+          questionText: q.questionText.trim(),
           options: q.options,
-          correctAnswer: q.correctAnswer,
+          correctAnswer: q.correctAnswer.trim(),
           selectedAnswer: null,
         })),
       };
@@ -243,6 +310,7 @@ export const createChapterHandler = async (
       },
     });
   } catch (err) {
+    console.error("Create Chapter Error:", err);
     next(err);
   }
 };

@@ -68,9 +68,7 @@ const ContentItemSchema = new Schema<IContentItem>(
     },
     textContent: {
       type: String,
-      required: function (this: IContentItem) {
-        return this.type === "text";
-      },
+      required: false,
     },
     title: {
       type: String,
@@ -184,10 +182,22 @@ const ChapterSchema = new Schema<IChapter>(
     },
     questions: {
       type: [QuestionSchema],
-      required: true,
+      required: false,
+      default: [],
       validate: {
-        validator: (val: IQuestion[]) => val.length > 0,
-        message: "At least one question is required",
+        validator: function (val: IQuestion[]) {
+          if (val.length === 0) return true;
+          return val.every(
+            (q) =>
+              q.questionText &&
+              q.questionText.trim().length > 0 &&
+              Array.isArray(q.options) &&
+              q.options.length === 4 &&
+              q.correctAnswer &&
+              q.options.includes(q.correctAnswer)
+          );
+        },
+        message: "Questions must be valid if provided",
       },
     },
     createdBy: {
@@ -246,9 +256,7 @@ ChapterSchema.pre(
   { document: true, query: false },
   async function (next) {
     try {
-      const { deleteFromCloudinary } = await import(
-        "../../config/cloudinary"
-      );
+      const { deleteFromCloudinary } = await import("../../config/cloudinary");
       for (const item of this.contentItems) {
         if (item.publicId && (item.type === "video" || item.type === "pdf")) {
           const resourceType = item.type === "video" ? "video" : "raw";

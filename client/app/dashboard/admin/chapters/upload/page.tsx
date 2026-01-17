@@ -36,7 +36,7 @@ interface ContentItem {
   videoUrl?: string;
   file?: File;
 }
-export default function AdminUploadChapter() {
+export default function SuperAdminUploadChapter() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -122,14 +122,6 @@ export default function AdminUploadChapter() {
             newErrors[`content_${i}`] = "PDF file is required";
             break;
           }
-        } else if (item.type === "mixed") {
-          const hasVideo = item.videoUrl?.trim() || item.file;
-          const hasText = item.textContent?.trim();
-          if (!hasVideo && !hasText) {
-            newErrors[`content_${i}`] =
-              "Provide at least video or text content";
-            break;
-          }
         }
       }
     }
@@ -182,29 +174,15 @@ export default function AdminUploadChapter() {
       formData.append("chapterNumber", chapter.toString());
       formData.append("gradeIds", JSON.stringify(selectedGrades));
       const contentItemsData = contentItems.map((item, index) => {
-        const baseItem = {
+        const baseItem: any = {
           type: item.type,
           order: index,
           title: item.title || "",
         };
         if (item.type === "text") {
-          return { ...baseItem, textContent: item.textContent };
-        } else if (item.type === "video") {
-          if (item.videoUrl) {
-            return { ...baseItem, videoUrl: item.videoUrl };
-          }
-          return baseItem;
-        } else if (item.type === "pdf") {
-          return baseItem;
-        } else if (item.type === "mixed") {
-          const mixedItem: any = { ...baseItem };
-          if (item.videoUrl) {
-            mixedItem.videoUrl = item.videoUrl;
-          }
-          if (item.textContent) {
-            mixedItem.textContent = item.textContent;
-          }
-          return mixedItem;
+          baseItem.textContent = item.textContent;
+        } else if (item.type === "video" && item.videoUrl) {
+          baseItem.videoUrl = item.videoUrl;
         }
         return baseItem;
       });
@@ -220,6 +198,7 @@ export default function AdminUploadChapter() {
         correctAnswer: q.correctAnswer.trim(),
       }));
       formData.append("questions", JSON.stringify(formattedQuestions));
+
       await api.post("/chapters/bulk", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -232,6 +211,7 @@ export default function AdminUploadChapter() {
       }, 1500);
     } catch (err: any) {
       console.error("Upload error:", err);
+      console.error("Error response:", err.response?.data);
       const errorMessage =
         err.response?.data?.message || "An error occurred during upload.";
       toast.error("Upload Failed", {

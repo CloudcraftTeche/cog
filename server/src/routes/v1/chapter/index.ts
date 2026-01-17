@@ -54,7 +54,11 @@ const handleValidationErrors = (
 ) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw new ApiError(400, "Validation failed");
+    const errorMessages = errors
+      .array()
+      .map((err) => err.msg)
+      .join(", ");
+    throw new ApiError(400, `Validation failed: ${errorMessages}`);
   }
   next();
 };
@@ -68,41 +72,27 @@ const chapterValidation = [
   body("description").trim().notEmpty().withMessage("Description is required"),
   body("contentItems")
     .custom((value) => {
-      const items = JSON.parse(value || "[]");
-      if (items.length === 0) {
-        throw new Error("At least one content item is required");
-      }
-      items.forEach((item: any, index: number) => {
-        if (!["video", "text", "pdf", "mixed"].includes(item.type)) {
-          throw new Error(
-            `Content item ${index + 1}: type must be video, text, pdf, or mixed`
-          );
+      try {
+        const items = typeof value === "string" ? JSON.parse(value) : value;
+        if (!Array.isArray(items)) {
+          throw new Error("contentItems must be an array");
         }
-        if (item.type === "text" && !item.textContent) {
-          throw new Error(
-            `Content item ${index + 1}: textContent is required for text type`
-          );
+        if (items.length === 0) {
+          throw new Error("At least one content item is required");
         }
-        if (item.type === "video" && !item.videoUrl) {
-          throw new Error(
-            `Content item ${index + 1}: videoUrl is required for video type`
-          );
-        }
-        if (item.type === "pdf") {
-        }
-        if (item.type === "mixed") {
-          const hasVideo = item.videoUrl?.trim();
-          const hasText = item.textContent?.trim();
-          if (!hasVideo && !hasText) {
+        items.forEach((item: any, index: number) => {
+          if (!["video", "text", "pdf", "mixed"].includes(item.type)) {
             throw new Error(
               `Content item ${
                 index + 1
-              }: mixed type requires either videoUrl or textContent`
+              }: type must be video, text, pdf, or mixed`
             );
           }
-        }
-      });
-      return true;
+        });
+        return true;
+      } catch (e: any) {
+        throw new Error(e.message || "Invalid content items format");
+      }
     })
     .withMessage("Invalid content items format"),
   body("unitId").isMongoId().withMessage("Invalid unit ID"),
@@ -110,38 +100,59 @@ const chapterValidation = [
     .isInt({ min: 1 })
     .withMessage("Chapter number must be a positive integer"),
   body("questions")
+    .optional()
     .custom((value) => {
-      const questions = Array.isArray(value)
-        ? value
-        : JSON.parse(value || "[]");
-      if (questions.length === 0) {
-        throw new Error("At least one question is required");
+      try {
+        const questions = Array.isArray(value)
+          ? value
+          : JSON.parse(value || "[]");
+        if (questions.length === 0) {
+          return true;
+        }
+        questions.forEach((q: any, index: number) => {
+          if (
+            !q.questionText ||
+            typeof q.questionText !== "string" ||
+            !q.questionText.trim()
+          ) {
+            throw new Error(
+              `Question ${
+                index + 1
+              }: questionText is required and cannot be empty`
+            );
+          }
+          if (!Array.isArray(q.options)) {
+            throw new Error(`Question ${index + 1}: options must be an array`);
+          }
+          const validOptions = q.options.filter(
+            (opt: string) => opt && opt.trim()
+          );
+          if (validOptions.length !== 4) {
+            throw new Error(
+              `Question ${index + 1}: must have exactly 4 non-empty options`
+            );
+          }
+          if (
+            !q.correctAnswer ||
+            typeof q.correctAnswer !== "string" ||
+            !q.correctAnswer.trim()
+          ) {
+            throw new Error(
+              `Question ${
+                index + 1
+              }: correctAnswer is required and cannot be empty`
+            );
+          }
+          if (!validOptions.includes(q.correctAnswer)) {
+            throw new Error(
+              `Question ${index + 1}: correctAnswer must be one of the options`
+            );
+          }
+        });
+        return true;
+      } catch (e: any) {
+        throw new Error(e.message || "Invalid questions format");
       }
-      questions.forEach((q: any, index: number) => {
-        if (!q.questionText || typeof q.questionText !== "string") {
-          throw new Error(
-            `Question ${
-              index + 1
-            }: questionText is required and must be a string`
-          );
-        }
-        if (!Array.isArray(q.options) || q.options.length !== 4) {
-          throw new Error(`Question ${index + 1}: must have exactly 4 options`);
-        }
-        if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
-          throw new Error(
-            `Question ${
-              index + 1
-            }: correctAnswer is required and must be a string`
-          );
-        }
-        if (!q.options.includes(q.correctAnswer)) {
-          throw new Error(
-            `Question ${index + 1}: correctAnswer must be one of the options`
-          );
-        }
-      });
-      return true;
     })
     .withMessage("Invalid questions format"),
 ];
@@ -166,20 +177,20 @@ router.post(
     body("gradeIds")
       .custom((value) => {
         let ids = value;
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           try {
             ids = JSON.parse(value);
           } catch (e) {
-            throw new Error('gradeIds must be a valid JSON array');
+            throw new Error("gradeIds must be a valid JSON array");
           }
         }
         if (!Array.isArray(ids)) {
-          throw new Error('gradeIds must be an array');
+          throw new Error("gradeIds must be an array");
         }
         if (ids.length === 0) {
-          throw new Error('At least one grade ID is required');
+          throw new Error("At least one grade ID is required");
         }
-        const mongoose = require('mongoose');
+        const mongoose = require("mongoose");
         for (const id of ids) {
           if (!mongoose.isValidObjectId(id)) {
             throw new Error(`Invalid grade ID: ${id}`);
@@ -188,78 +199,7 @@ router.post(
         return true;
       })
       .withMessage("Invalid gradeIds format"),
-    body("title")
-      .trim()
-      .notEmpty()
-      .withMessage("Title is required")
-      .isLength({ min: 1, max: 200 })
-      .withMessage("Title must be between 1-200 characters"),
-    body("description")
-      .trim()
-      .notEmpty()
-      .withMessage("Description is required"),
-    body("contentItems")
-      .custom((value) => {
-        let items;
-        try {
-          items = JSON.parse(value || "[]");
-        } catch (e) {
-          throw new Error("contentItems must be valid JSON");
-        }
-        if (!Array.isArray(items)) {
-          throw new Error("contentItems must be an array");
-        }
-        if (items.length === 0) {
-          throw new Error("At least one content item is required");
-        }
-        return true;
-      })
-      .withMessage("Invalid content items format"),
-    body("unitId")
-      .isMongoId()
-      .withMessage("Invalid unit ID"),
-    body("chapterNumber")
-      .isInt({ min: 1 })
-      .withMessage("Chapter number must be a positive integer"),
-    body("questions")
-      .custom((value) => {
-        let questions;
-        try {
-          questions = Array.isArray(value) ? value : JSON.parse(value || "[]");
-        } catch (e) {
-          throw new Error("questions must be valid JSON");
-        }
-        if (!Array.isArray(questions)) {
-          throw new Error("questions must be an array");
-        }
-        if (questions.length === 0) {
-          throw new Error("At least one question is required");
-        }
-        questions.forEach((q: any, index: number) => {
-          if (!q.questionText || typeof q.questionText !== "string") {
-            throw new Error(
-              `Question ${index + 1}: questionText is required and must be a string`
-            );
-          }
-          if (!Array.isArray(q.options) || q.options.length !== 4) {
-            throw new Error(
-              `Question ${index + 1}: must have exactly 4 options`
-            );
-          }
-          if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
-            throw new Error(
-              `Question ${index + 1}: correctAnswer is required and must be a string`
-            );
-          }
-          if (!q.options.includes(q.correctAnswer)) {
-            throw new Error(
-              `Question ${index + 1}: correctAnswer must be one of the options`
-            );
-          }
-        });
-        return true;
-      })
-      .withMessage("Invalid questions format"),
+    ...chapterValidation,
   ],
   handleValidationErrors,
   createChapterHandler
@@ -319,28 +259,54 @@ router.put(
     body("questions")
       .optional()
       .custom((value) => {
-        const questions = Array.isArray(value)
-          ? value
-          : JSON.parse(value || "[]");
-        questions.forEach((q: any, index: number) => {
-          if (!q.questionText || typeof q.questionText !== "string") {
-            throw new Error(`Question ${index + 1}: questionText is required`);
-          }
-          if (!Array.isArray(q.options) || q.options.length !== 4) {
-            throw new Error(
-              `Question ${index + 1}: must have exactly 4 options`
+        try {
+          const questions = Array.isArray(value)
+            ? value
+            : JSON.parse(value || "[]");
+          questions.forEach((q: any, index: number) => {
+            if (
+              !q.questionText ||
+              typeof q.questionText !== "string" ||
+              !q.questionText.trim()
+            ) {
+              throw new Error(
+                `Question ${index + 1}: questionText is required`
+              );
+            }
+            if (!Array.isArray(q.options)) {
+              throw new Error(
+                `Question ${index + 1}: options must be an array`
+              );
+            }
+            const validOptions = q.options.filter(
+              (opt: string) => opt && opt.trim()
             );
-          }
-          if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
-            throw new Error(`Question ${index + 1}: correctAnswer is required`);
-          }
-          if (!q.options.includes(q.correctAnswer)) {
-            throw new Error(
-              `Question ${index + 1}: correctAnswer must be one of the options`
-            );
-          }
-        });
-        return true;
+            if (validOptions.length !== 4) {
+              throw new Error(
+                `Question ${index + 1}: must have exactly 4 non-empty options`
+              );
+            }
+            if (
+              !q.correctAnswer ||
+              typeof q.correctAnswer !== "string" ||
+              !q.correctAnswer.trim()
+            ) {
+              throw new Error(
+                `Question ${index + 1}: correctAnswer is required`
+              );
+            }
+            if (!validOptions.includes(q.correctAnswer)) {
+              throw new Error(
+                `Question ${
+                  index + 1
+                }: correctAnswer must be one of the options`
+              );
+            }
+          });
+          return true;
+        } catch (e: any) {
+          throw new Error(e.message);
+        }
       })
       .withMessage("Invalid questions format"),
   ],
@@ -505,8 +471,7 @@ router.get(
 router.get(
   "/:gradeId/chapters/:chapterId/completion-stats",
   authenticate,
-    authorizeRoles("admin","superAdmin","teacher"),
-
+  authorizeRoles("admin", "superAdmin", "teacher"),
   [
     param("gradeId").isMongoId().withMessage("Invalid grade ID format"),
     param("chapterId").isMongoId().withMessage("Invalid chapter ID format"),
@@ -531,8 +496,7 @@ router.get(
 router.get(
   "/:chapterId/pending-students",
   authenticate,
-    authorizeRoles("admin","superAdmin","teacher"),
-
+  authorizeRoles("admin", "superAdmin", "teacher"),
   [
     param("chapterId").isMongoId().withMessage("Invalid chapter ID format"),
     query("page")
@@ -561,8 +525,7 @@ router.post(
 router.post(
   "/:chapterId/remind-all",
   authenticate,
-    authorizeRoles("admin","superAdmin","teacher"),
-
+  authorizeRoles("admin", "superAdmin", "teacher"),
   [param("chapterId").isMongoId().withMessage("Invalid chapter ID")],
   handleValidationErrors,
   sendBulkChapterRemindersHandler
@@ -574,13 +537,5 @@ router.post(
   [param("chapterId").isMongoId().withMessage("Invalid chapter ID")],
   handleValidationErrors,
   sendInProgressRemindersHandler
-);
-router.get(
-  "/:gradeId/chapters/count",
-  authenticate,
-  authorizeRoles("admin", "teacher", "superAdmin"),
-  [param("gradeId").isMongoId().withMessage("Invalid grade ID")],
-  handleValidationErrors,
-  getChapterCountHandler
 );
 export default router;
