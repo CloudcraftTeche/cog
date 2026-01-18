@@ -1,4 +1,4 @@
-"use client";
+"use client";;
 import React, { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ import QuestionsSection, {
   Question,
 } from "@/components/admin/chapters/QuestionsSection";
 import BasicInfoSection from "@/components/admin/chapters/BasicInfoSection";
-import ContentUploadSection from "@/components/admin/chapters/ContentUploadSection";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import TeacherContentUploadSection from "@/components/admin/chapters/TeacherContentUploadSection";
@@ -80,7 +79,7 @@ export default function AdminUploadTeacherChapter() {
     const selectedGrade = grades.find((g) => g._id === firstGradeId);
     if (selectedGrade?.units) {
       const sortedUnits = [...selectedGrade.units].sort(
-        (a, b) => a.orderIndex - b.orderIndex
+        (a, b) => a.orderIndex - b.orderIndex,
       );
       setUnits(sortedUnits);
     } else {
@@ -165,7 +164,7 @@ export default function AdminUploadTeacherChapter() {
       (q) =>
         q.questionText.trim() &&
         q.options.filter((opt) => opt.trim()).length >= 2 &&
-        q.correctAnswer.trim()
+        q.correctAnswer.trim(),
     );
     const formattedQuestions = validQuestions.map((q) => ({
       questionText: q.questionText.trim(),
