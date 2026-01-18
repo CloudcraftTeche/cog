@@ -179,7 +179,7 @@ export default function SuperAdminUploadTeacherChapter() {
         contentType,
         unitId: selectedUnit,
         chapterNumber: chapter,
-        grades: selectedGrades,
+        gradeIds: selectedGrades,
         videoUrl: contentType === "video" ? videoUrl.trim() : undefined,
         textContent: contentType === "text" ? textContent.trim() : undefined,
         questions: formattedQuestions,
