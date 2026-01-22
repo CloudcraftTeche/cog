@@ -235,7 +235,7 @@ export const SubmissionContent = ({
       {submissionType === "text" && textContent && (
         <div className="bg-blue-50 rounded-lg p-3 border-l-4 border-blue-400">
           <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">
-            {truncateText(textContent, 150)}
+            {textContent}
           </p>
         </div>
       )}
