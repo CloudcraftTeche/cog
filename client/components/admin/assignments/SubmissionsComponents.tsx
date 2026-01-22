@@ -1,73 +1,42 @@
+"use client";
 
-
-
-export interface IQuestion {
-  _id: string;
-  questionText: string;
-  options: string[];
-  correctAnswer: string;
-  selectedAnswer?: string;
-}
-
-export interface IAnswer {
-  question: IQuestion;
-  answer: string;
-  isCorrect?: boolean;
-}
-
-export interface IStudent {
-  _id: string;
-  name: string;
-  email: string;
-  profilePictureUrl?: string;
-}
-
-export interface IAssignment {
-  _id: string;
-  title: string;
-  questions: IQuestion[];
-}
-
-export interface ISubmission {
-  _id: string;
-  assignment: IAssignment;
-  student: IStudent;
-  submissionType: "text" | "video" | "pdf";
-  videoUrl?: string;
-  pdfUrl?: string;
-  textContent?: string;
-  answers: IAnswer[];
-  score?: number;
-  feedback?: string;
-  submittedAt: string;
-  gradedAt?: string;
-  gradedBy?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SubmissionsResponse {
-  success: boolean;
-  data: ISubmission[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-  filters?: {
-    gradeStatus?: string;
-    search?: string;
-  };
-}
-
-export interface GradeSubmissionData {
-  score: number;
-  feedback: string;
-}
-
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronRight, Clock, Download, MessageSquare, Search, Users } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Download,
+  MessageSquare,
+  Search,
+  Users,
+  Star,
+  CheckCircle,
+  FileText,
+  Video,
+  FileImage,
+  Loader2,
+} from "lucide-react";
+import {
+  getScoreBadgeColor,
+  getScoreColor,
+  getScoreLabel,
+  getSubmissionTypeColor,
+  truncateText,
+} from "@/lib/admin/utils/submission.utils";
+import { ISubmission } from "@/types/admin/assignment.types";
+
+// Export types for use in pages
+export type { ISubmission };
+
+// ============================================================================
+// HEADER COMPONENT
+// ============================================================================
 
 interface SubmissionHeaderProps {
   searchTerm: string;
@@ -109,8 +78,9 @@ export const SubmissionHeader = ({
   );
 };
 
-
-import { FileText, Video, FileImage } from "lucide-react";
+// ============================================================================
+// SUBMISSION TYPE ICON
+// ============================================================================
 
 interface SubmissionTypeIconProps {
   type: string;
@@ -131,15 +101,9 @@ export const SubmissionTypeIcon = ({
   }
 };
 
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Star, CheckCircle } from "lucide-react";
-import { getScoreBadgeColor, getScoreColor, getScoreLabel, getSubmissionTypeColor, truncateText } from "@/utils/submission.utils";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// ============================================================================
+// GRADING FORM
+// ============================================================================
 
 interface GradingFormProps {
   submissionId: string;
@@ -244,7 +208,9 @@ export const GradingForm = ({
   );
 };
 
-
+// ============================================================================
+// SUBMISSION CONTENT
+// ============================================================================
 
 interface SubmissionContentProps {
   submissionType: "text" | "video" | "pdf";
@@ -323,7 +289,9 @@ export const SubmissionContent = ({
   );
 };
 
-
+// ============================================================================
+// GRADING DISPLAY
+// ============================================================================
 
 interface GradingDisplayProps {
   score?: number;
@@ -393,12 +361,62 @@ export const GradingDisplay = ({
   );
 };
 
+// ============================================================================
+// SUBMISSION ANSWERS
+// ============================================================================
 
+interface SubmissionAnswersProps {
+  answers: any[];
+  questions: any[];
+}
 
+export const SubmissionAnswers = ({
+  answers,
+  questions,
+}: SubmissionAnswersProps) => {
+  if (answers.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <h4 className="font-semibold text-gray-700 mb-3 text-sm sm:text-base">
+        Questions & Answers
+      </h4>
+      <div className="space-y-3">
+        {answers.map((answer, index) => {
+          const question = questions.find(
+            (q) => q._id === answer.question._id
+          );
+
+          return (
+            <div key={index} className="bg-gray-50 rounded-lg p-3 border">
+              <p className="font-medium text-xs sm:text-sm text-gray-800 mb-2">
+                Q{index + 1}:{" "}
+                {question?.questionText ||
+                  answer.question.questionText ||
+                  "Question not found"}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-600 bg-white rounded p-2 border-l-2 border-indigo-300">
+                {answer.answer}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// SUBMISSION CARD
+// ============================================================================
 
 interface SubmissionCardProps {
   submission: ISubmission;
-  onGradeSubmission: (submissionId: string, score: number, feedback: string) => void;
+  onGradeSubmission: (
+    submissionId: string,
+    score: number,
+    feedback: string
+  ) => void;
 }
 
 export const SubmissionCard = ({
@@ -412,7 +430,11 @@ export const SubmissionCard = ({
     setIsGrading(true);
   };
 
-  const handleGradeSubmit = (submissionId: string, score: number, feedback: string) => {
+  const handleGradeSubmit = (
+    submissionId: string,
+    score: number,
+    feedback: string
+  ) => {
     onGradeSubmission(submissionId, score, feedback);
     setIsGrading(false);
   };
@@ -434,7 +456,9 @@ export const SubmissionCard = ({
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex items-start gap-3 sm:gap-4">
             <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 sm:border-3 border-white shadow-md flex-shrink-0">
-              <AvatarImage src={submission.student?.profilePictureUrl || ""} />
+              <AvatarImage
+                src={submission.student?.profilePictureUrl || ""}
+              />
               <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-sm sm:text-base">
                 {getStudentInitials()}
               </AvatarFallback>
@@ -500,7 +524,7 @@ export const SubmissionCard = ({
 
           <SubmissionAnswers
             answers={submission.answers}
-            questions={submission.assignment.questions || []}
+            questions={submission?.assignment?.questions || []}
           />
 
           {isGrading ? (
@@ -524,48 +548,9 @@ export const SubmissionCard = ({
   );
 };
 
-
-interface SubmissionAnswersProps {
-  answers: IAnswer[];
-  questions: IQuestion[];
-}
-
-export const SubmissionAnswers = ({
-  answers,
-  questions,
-}: SubmissionAnswersProps) => {
-  if (answers.length === 0) return null;
-
-  return (
-    <div className="mb-4">
-      <h4 className="font-semibold text-gray-700 mb-3 text-sm sm:text-base">
-        Questions & Answers
-      </h4>
-      <div className="space-y-3">
-        {answers.map((answer, index) => {
-          const question = questions.find(
-            (q) => q._id === answer.question._id
-          );
-          
-          return (
-            <div
-              key={index}
-              className="bg-gray-50 rounded-lg p-3 border"
-            >
-              <p className="font-medium text-xs sm:text-sm text-gray-800 mb-2">
-                Q{index + 1}: {question?.questionText || answer.question.questionText || "Question not found"}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-600 bg-white rounded p-2 border-l-2 border-indigo-300">
-                {answer.answer}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
+// ============================================================================
+// PAGINATION
+// ============================================================================
 
 interface PaginationProps {
   currentPage: number;
@@ -656,8 +641,9 @@ export const Pagination = ({
   );
 };
 
-
-
+// ============================================================================
+// EMPTY STATES
+// ============================================================================
 
 export const NoSubmissionsState = () => {
   return (
@@ -692,9 +678,6 @@ export const NoSearchResultsState = () => {
     </div>
   );
 };
-
-
-import { Loader2 } from "lucide-react";
 
 export const LoadingState = () => {
   return (

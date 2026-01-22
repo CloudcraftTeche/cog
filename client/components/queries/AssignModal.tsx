@@ -1,14 +1,7 @@
 import React, { useState } from "react";
 import { X, UserPlus, Check } from "lucide-react";
-import { Query, User } from "@/types/query.types";
-interface AssignModalProps {
-  query: Query;
-  teachers?: User[];
-  admins?: User[];
-  onClose: () => void;
-  onAssign: (userId: string) => Promise<void>;
-  accentColor?: string;
-}
+import { AssignModalProps, Query, User } from "@/types/admin/query.types";
+
 const AssignModal: React.FC<AssignModalProps> = ({
   query,
   teachers = [],

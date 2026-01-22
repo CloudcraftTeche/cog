@@ -197,3 +197,42 @@ export interface EscalationData {
   to: string;
   reason: string;
 }
+
+export interface AssignModalProps {
+  query: Query;
+  teachers?: User[];
+  admins?: User[];
+  onClose: () => void;
+  onAssign: (userId: string) => Promise<void>;
+  accentColor?: string;
+}
+
+export interface EscalateModalProps {
+  query: Query;
+  superAdmins: User[];
+  onClose: () => void;
+  onEscalate: (to: string, reason: string) => Promise<void>;
+}
+
+
+export interface FilterBarProps {
+  filters: Filters;
+  onFilterChange: (filters: Filters) => void;
+  accentColor?: string;
+}
+
+export interface QueryCardProps {
+  query: Query;
+  onSelect: (query: Query) => void;
+  onStatusUpdate?: (queryId: string, status: string) => void;
+  actions?: React.ReactNode;
+  accentColor?: string;
+}
+
+export interface QueryDetailModalProps {
+  query: Query;
+  onClose: () => void;
+  onAddResponse?: (queryId: string, content: string) => Promise<void>;
+  canRespond?: boolean;
+  accentColor?: string;
+}

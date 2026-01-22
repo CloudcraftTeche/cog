@@ -22,7 +22,7 @@ import BasicInfoSection from "@/components/admin/chapters/BasicInfoSection";
 import ContentUploadSection from "@/components/admin/chapters/ContentUploadSection";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import TeacherContentUploadSection from "@/components/admin/chapters/TeacherContentUploadSection";
+import TeacherContentUploadSection from "@/components/admin/teacher-chapters/TeacherContentUploadSection";
 interface Grade {
   _id: string;
   grade: string;

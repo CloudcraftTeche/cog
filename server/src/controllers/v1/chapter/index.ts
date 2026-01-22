@@ -10,9 +10,42 @@ import { Teacher } from "../../../models/user/Teacher.model";
 import { User } from "../../../models/user/User.model";
 import {
   deleteFromCloudinary,
+  getSignedUrl,
+  isCloudinaryUrl,
   uploadToCloudinary,
 } from "../../../config/cloudinary";
 const transporter = createEmailTransporter();
+
+
+// Helper function to convert content items URLs to signed URLs
+const convertContentItemsToSignedUrls = (contentItems: any[]) => {
+  return contentItems.map((item) => {
+    const itemCopy = { ...item };
+    if ((item.type === "video" || item.type === "pdf" || item.type === "mixed") && item.url) {
+      if (isCloudinaryUrl(item.url) && item.publicId) {
+        const resourceType = item.type === "pdf" ? "raw" : "video";
+        itemCopy.url = getSignedUrl(item.publicId, resourceType, 86400); // 24 hours
+      }
+    }
+    return itemCopy;
+  });
+};
+
+// Helper function to convert submission URLs to signed URLs
+const convertSubmissionsToSignedUrls = (submissions: any[]) => {
+  return submissions.map((submission) => {
+    const submissionCopy = { ...submission };
+    if ((submission.type === "video" || submission.type === "pdf") && submission.fileUrl) {
+      if (isCloudinaryUrl(submission.fileUrl) && submission.filePublicId) {
+        const resourceType = submission.type === "pdf" ? "raw" : "video";
+        submissionCopy.fileUrl = getSignedUrl(submission.filePublicId, resourceType, 86400);
+      }
+    }
+    return submissionCopy;
+  });
+};
+
+
 const processContentItems = async (files: any, body: any) => {
   const contentItems = [];
   let contentItemsData;
@@ -35,7 +68,7 @@ const processContentItems = async (files: any, body: any) => {
       if (!item.textContent || !item.textContent.trim()) {
         throw new ApiError(
           400,
-          `Text content is required for content item ${i + 1}`
+          `Text content is required for content item ${i + 1}`,
         );
       }
       contentItem.textContent = item.textContent;
@@ -56,14 +89,14 @@ const processContentItems = async (files: any, body: any) => {
           file.buffer,
           "chapters/videos",
           "video",
-          file.originalname
+          file.originalname,
         );
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
       } else {
         throw new ApiError(
           400,
-          `Video URL or file is required for content item ${i + 1}`
+          `Video URL or file is required for content item ${i + 1}`,
         );
       }
       contentItem.textContent = null;
@@ -74,14 +107,14 @@ const processContentItems = async (files: any, body: any) => {
           file.buffer,
           "chapters/pdfs",
           "raw",
-          file.originalname
+          file.originalname,
         );
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
       } else {
         throw new ApiError(
           400,
-          `PDF file is required for content item ${i + 1}`
+          `PDF file is required for content item ${i + 1}`,
         );
       }
       contentItem.textContent = null;
@@ -103,7 +136,7 @@ const processContentItems = async (files: any, body: any) => {
           file.buffer,
           "chapters/videos",
           "video",
-          file.originalname
+          file.originalname,
         );
         contentItem.url = result.secure_url;
         contentItem.publicId = result.public_id;
@@ -114,13 +147,13 @@ const processContentItems = async (files: any, body: any) => {
       if (!contentItem.url && !contentItem.textContent) {
         throw new ApiError(
           400,
-          `Mixed content item ${i + 1} requires either video or text content`
+          `Mixed content item ${i + 1} requires either video or text content`,
         );
       }
     } else {
       throw new ApiError(
         400,
-        `Invalid content type "${item.type}" for content item ${i + 1}`
+        `Invalid content type "${item.type}" for content item ${i + 1}`,
       );
     }
     contentItems.push(contentItem);
@@ -130,7 +163,7 @@ const processContentItems = async (files: any, body: any) => {
 export const createChapterHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { title, description, chapterNumber, questions, unitId } = req.body;
@@ -146,12 +179,12 @@ export const createChapterHandler = async (
       throw new ApiError(400, "At least one grade ID is required");
     }
     const invalidGradeIds = gradeIds.filter(
-      (id) => !mongoose.isValidObjectId(id)
+      (id) => !mongoose.isValidObjectId(id),
     );
     if (invalidGradeIds.length > 0) {
       throw new ApiError(
         400,
-        `Invalid grade IDs: ${invalidGradeIds.join(", ")}`
+        `Invalid grade IDs: ${invalidGradeIds.join(", ")}`,
       );
     }
     if (!unitId || !mongoose.isValidObjectId(unitId)) {
@@ -176,8 +209,8 @@ export const createChapterHandler = async (
         typeof questions === "string"
           ? JSON.parse(questions)
           : Array.isArray(questions)
-          ? questions
-          : [];
+            ? questions
+            : [];
     } catch (error) {
       throw new ApiError(400, "Invalid questions format");
     }
@@ -192,22 +225,22 @@ export const createChapterHandler = async (
             400,
             `Question ${
               index + 1
-            }: questionText is required and cannot be empty`
+            }: questionText is required and cannot be empty`,
           );
         }
         if (!Array.isArray(q.options)) {
           throw new ApiError(
             400,
-            `Question ${index + 1}: options must be an array`
+            `Question ${index + 1}: options must be an array`,
           );
         }
         const validOptions = q.options.filter(
-          (opt: string) => opt && opt.trim()
+          (opt: string) => opt && opt.trim(),
         );
         if (validOptions.length !== 4) {
           throw new ApiError(
             400,
-            `Question ${index + 1}: must have exactly 4 non-empty options`
+            `Question ${index + 1}: must have exactly 4 non-empty options`,
           );
         }
         if (
@@ -217,13 +250,13 @@ export const createChapterHandler = async (
         ) {
           throw new ApiError(
             400,
-            `Question ${index + 1}: correctAnswer is required`
+            `Question ${index + 1}: correctAnswer is required`,
           );
         }
         if (!validOptions.includes(q.correctAnswer)) {
           throw new ApiError(
             400,
-            `Question ${index + 1}: correctAnswer must be one of the options`
+            `Question ${index + 1}: correctAnswer must be one of the options`,
           );
         }
         q.options = validOptions;
@@ -248,7 +281,7 @@ export const createChapterHandler = async (
     if (gradesWithoutUnit.length > 0) {
       throw new ApiError(
         404,
-        `Unit not found in: ${gradesWithoutUnit.join(", ")}`
+        `Unit not found in: ${gradesWithoutUnit.join(", ")}`,
       );
     }
     const existingChapters = await Chapter.find({
@@ -267,8 +300,8 @@ export const createChapterHandler = async (
       throw new ApiError(
         409,
         `Chapter number ${chapterNumber} already exists in ${conflicts.join(
-          ", "
-        )} for this unit`
+          ", ",
+        )} for this unit`,
       );
     }
     const createdChapters = [];
@@ -317,7 +350,7 @@ export const createChapterHandler = async (
 export const createChapterForSingleGradeHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId } = req.params;
@@ -330,7 +363,7 @@ export const createChapterForSingleGradeHandler = async (
 export const updateChapterHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<any> => {
   try {
     const { gradeId, chapterId } = req.params;
@@ -352,7 +385,7 @@ export const updateChapterHandler = async (
         if (item.publicId && (item.type === "video" || item.type === "pdf")) {
           await deleteFromCloudinary(
             item.publicId,
-            item.type === "video" ? "video" : "raw"
+            item.type === "video" ? "video" : "raw",
           );
         }
       }
@@ -367,25 +400,25 @@ export const updateChapterHandler = async (
         if (!q.questionText || typeof q.questionText !== "string") {
           throw new ApiError(
             400,
-            `Question ${index + 1}: questionText is required`
+            `Question ${index + 1}: questionText is required`,
           );
         }
         if (!Array.isArray(q.options) || q.options.length !== 4) {
           throw new ApiError(
             400,
-            `Question ${index + 1}: must have exactly 4 options`
+            `Question ${index + 1}: must have exactly 4 options`,
           );
         }
         if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
           throw new ApiError(
             400,
-            `Question ${index + 1}: correctAnswer is required`
+            `Question ${index + 1}: correctAnswer is required`,
           );
         }
         if (!q.options.includes(q.correctAnswer)) {
           throw new ApiError(
             400,
-            `Question ${index + 1}: correctAnswer must be one of the options`
+            `Question ${index + 1}: correctAnswer must be one of the options`,
           );
         }
       });
@@ -400,11 +433,11 @@ export const updateChapterHandler = async (
         unitId: unitId ? new mongoose.Types.ObjectId(unitId) : chapter.unitId,
         questions: parsedQuestions,
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).populate("gradeId", "grade");
     const grade = await Grade.findById(gradeId).select("units");
     const unit = grade?.units.find(
-      (u) => u._id?.toString() === updated?.unitId.toString()
+      (u) => u._id?.toString() === updated?.unitId.toString(),
     );
     res.status(200).json({
       success: true,
@@ -421,7 +454,7 @@ export const updateChapterHandler = async (
 export const getGradeChaptersHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<any> => {
   try {
     const { search = "", unitId, chapterNumber } = req.query;
@@ -479,15 +512,19 @@ export const getGradeChaptersHandler = async (
     const chaptersWithUnitNames = grade
       ? chapters.map((chapter) => {
           const unit = grade.units.find(
-            (u) => u._id?.toString() === chapter.unitId.toString()
+            (u) => u._id?.toString() === chapter.unitId.toString(),
           );
           return {
             ...chapter,
+            contentItems: convertContentItemsToSignedUrls(chapter.contentItems || []),
             unitName: unit?.name || null,
             unitDescription: unit?.description || null,
           };
         })
-      : chapters;
+      : chapters.map((chapter) => ({
+          ...chapter,
+          contentItems: convertContentItemsToSignedUrls(chapter.contentItems || []),
+        }));
     if (student) {
       const studentObjectId = new mongoose.Types.ObjectId(userId);
       const allChapters = await Chapter.find({ gradeId: student.gradeId })
@@ -497,7 +534,7 @@ export const getGradeChaptersHandler = async (
       const completionMap = new Map<string, any>();
       allChapters.forEach((ch) => {
         const progress = ch.studentProgress?.find(
-          (p) => p.studentId.toString() === studentObjectId.toString()
+          (p) => p.studentId.toString() === studentObjectId.toString(),
         );
         completionMap.set(ch._id.toString(), progress);
       });
@@ -505,13 +542,13 @@ export const getGradeChaptersHandler = async (
         const chapterIdStr = chapter._id.toString();
         const progress = completionMap.get(chapterIdStr);
         const globalIndex = allChapters.findIndex(
-          (c) => c._id.toString() === chapterIdStr
+          (c) => c._id.toString() === chapterIdStr,
         );
         let isAccessible = globalIndex === 0;
         if (globalIndex > 0) {
           const previousChapter = allChapters[globalIndex - 1];
           const prevProgress = completionMap.get(
-            previousChapter._id.toString()
+            previousChapter._id.toString(),
           );
           isAccessible = prevProgress?.status === "completed";
         }
@@ -521,10 +558,10 @@ export const getGradeChaptersHandler = async (
         const status = isCompleted
           ? "completed"
           : isInProgress
-          ? "in_progress"
-          : isAccessible
-          ? "accessible"
-          : "locked";
+            ? "in_progress"
+            : isAccessible
+              ? "accessible"
+              : "locked";
         return {
           ...chapter,
           status,
@@ -559,7 +596,7 @@ export const getGradeChaptersHandler = async (
 export const getChaptersByUnitHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, unitId } = req.params;
@@ -580,6 +617,7 @@ export const getChaptersByUnitHandler = async (
       .lean();
     const chaptersWithUnit = chapters.map((chapter) => ({
       ...chapter,
+      contentItems: convertContentItemsToSignedUrls(chapter.contentItems || []),
       unitName: unit.name,
       unitDescription: unit.description,
     }));
@@ -595,7 +633,7 @@ export const getChaptersByUnitHandler = async (
 export const getChapterHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { chapterId } = req.params;
@@ -615,12 +653,23 @@ export const getChapterHandler = async (
     }
     const grade = await Grade.findById(chapter.gradeId).select("units");
     const unit = grade?.units.find(
-      (u) => u._id?.toString() === chapter.unitId.toString()
+      (u) => u._id?.toString() === chapter.unitId.toString(),
     );
+
+    // Convert content items and submissions to signed URLs
+    const convertedContentItems = convertContentItemsToSignedUrls(chapter.contentItems || []);
+    
+    const convertedStudentProgress = chapter.studentProgress?.map((progress) => ({
+      ...progress,
+      submissions: convertSubmissionsToSignedUrls(progress.submissions || []),
+    }));
+
     res.status(200).json({
       success: true,
       data: {
         ...chapter,
+        contentItems: convertedContentItems,
+        studentProgress: convertedStudentProgress,
         unitName: unit?.name || null,
         unitDescription: unit?.description || null,
       },
@@ -632,7 +681,7 @@ export const getChapterHandler = async (
 export const deleteChapterHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { chapterId } = req.params;
@@ -644,7 +693,7 @@ export const deleteChapterHandler = async (
       if (item.publicId && (item.type === "video" || item.type === "pdf")) {
         await deleteFromCloudinary(
           item.publicId,
-          item.type === "video" ? "video" : "raw"
+          item.type === "video" ? "video" : "raw",
         );
       }
     }
@@ -658,7 +707,7 @@ export const deleteChapterHandler = async (
             ) {
               await deleteFromCloudinary(
                 submission.filePublicId,
-                submission.type === "video" ? "video" : "raw"
+                submission.type === "video" ? "video" : "raw",
               );
             }
           }
@@ -677,7 +726,7 @@ export const deleteChapterHandler = async (
 export const getChapterCountHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId } = req.params;
@@ -694,7 +743,7 @@ export const getChapterCountHandler = async (
 export const markChapterInProgressHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
@@ -704,7 +753,7 @@ export const markChapterInProgressHandler = async (
     }
     const studentId = new mongoose.Types.ObjectId(req.userId);
     const existingProgress = chapter.studentProgress?.find(
-      (p) => p.studentId.toString() === studentId.toString()
+      (p) => p.studentId.toString() === studentId.toString(),
     );
     if (existingProgress) {
       if (
@@ -742,7 +791,7 @@ export const markChapterInProgressHandler = async (
 export const submitChapterHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
@@ -752,7 +801,7 @@ export const submitChapterHandler = async (
       studentId: targetStudentId,
     } = req.body;
     const studentId = new mongoose.Types.ObjectId(
-      targetStudentId || req.userId
+      targetStudentId || req.userId,
     );
     let answers: any[] = [];
     if (req.body.answers) {
@@ -763,7 +812,7 @@ export const submitChapterHandler = async (
           console.error("Failed to parse answers JSON:", parseError);
           throw new ApiError(
             400,
-            "Invalid answers format - could not parse JSON"
+            "Invalid answers format - could not parse JSON",
           );
         }
       } else if (
@@ -789,6 +838,7 @@ export const submitChapterHandler = async (
     let finalScore: number;
     let correctCount = 0;
     let totalQuestions = chapter.questions.length;
+    let studentAnswers: any[] = [];
     if (answers && answers.length > 0) {
       answers.forEach((answer, index) => {
         if (!answer || typeof answer !== "object") {
@@ -797,7 +847,7 @@ export const submitChapterHandler = async (
         if (!answer.questionText || typeof answer.questionText !== "string") {
           throw new ApiError(
             400,
-            `Answer ${index + 1}: questionText is required`
+            `Answer ${index + 1}: questionText is required`,
           );
         }
         if (
@@ -806,20 +856,27 @@ export const submitChapterHandler = async (
         ) {
           throw new ApiError(
             400,
-            `Answer ${index + 1}: selectedAnswer is required`
+            `Answer ${index + 1}: selectedAnswer is required`,
           );
         }
       });
       chapter.questions.forEach((question) => {
         const studentAnswer = answers.find(
-          (ans: any) => ans.questionText === question.questionText
+          (ans: any) => ans.questionText === question.questionText,
         );
-        if (
+        const isCorrect =
           studentAnswer &&
-          studentAnswer.selectedAnswer === question.correctAnswer
-        ) {
+          studentAnswer.selectedAnswer === question.correctAnswer;
+        if (isCorrect) {
           correctCount++;
         }
+        studentAnswers.push({
+          questionText: question.questionText,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          selectedAnswer: studentAnswer?.selectedAnswer || null,
+          isCorrect: isCorrect,
+        });
       });
       finalScore = Math.round((correctCount / totalQuestions) * 100);
     } else if (providedScore !== undefined) {
@@ -832,12 +889,15 @@ export const submitChapterHandler = async (
       submission = {
         type: submissionType,
         submittedAt: new Date(),
+        content: null,
+        fileUrl: null,
+        filePublicId: null,
       };
       if (submissionType === "text") {
         if (!req.body.submissionContent) {
           throw new ApiError(
             400,
-            "Submission content is required for text submissions"
+            "Submission content is required for text submissions",
           );
         }
         submission.content = req.body.submissionContent;
@@ -849,19 +909,22 @@ export const submitChapterHandler = async (
           req.file.buffer,
           `chapter/submissions/${submissionType}s`,
           submissionType === "video" ? "video" : "raw",
-          req.file.originalname
+          req.file.originalname,
         );
         submission.fileUrl = result.secure_url;
         submission.filePublicId = result.public_id;
       }
     }
     const existingProgress = chapter.studentProgress?.find(
-      (p) => p.studentId.toString() === studentId.toString()
+      (p) => p.studentId.toString() === studentId.toString(),
     );
     if (existingProgress) {
       existingProgress.status = "completed";
       existingProgress.completedAt = new Date();
       existingProgress.score = finalScore;
+      if (studentAnswers.length > 0) {
+        (existingProgress as any).quizAnswers = studentAnswers;
+      }
       if (submission) {
         if (!existingProgress.submissions) {
           existingProgress.submissions = [];
@@ -879,6 +942,9 @@ export const submitChapterHandler = async (
         completedAt: new Date(),
         score: finalScore,
       };
+      if (studentAnswers.length > 0) {
+        newProgress.quizAnswers = studentAnswers;
+      }
       if (submission) {
         newProgress.submissions = [submission];
       }
@@ -911,7 +977,7 @@ export const submitChapterHandler = async (
 export const getCompletedChaptersHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, studentId } = req.params;
@@ -928,10 +994,10 @@ export const getCompletedChaptersHandler = async (
       .lean();
     const completedChapters = chapters.map((chapter) => {
       const progress = chapter.studentProgress?.find(
-        (p) => p.studentId.toString() === studentId
+        (p) => p.studentId.toString() === studentId,
       );
       const unit = grade.units.find(
-        (u) => u._id?.toString() === chapter.unitId.toString()
+        (u) => u._id?.toString() === chapter.unitId.toString(),
       );
       return {
         chapterId: chapter._id,
@@ -956,7 +1022,7 @@ export const getCompletedChaptersHandler = async (
 export const isChapterCompletedHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
@@ -971,7 +1037,7 @@ export const isChapterCompletedHandler = async (
       throw new ApiError(404, "Chapter not found");
     }
     const progress = chapter.studentProgress?.find(
-      (p) => p.studentId.toString() === req.userId
+      (p) => p.studentId.toString() === req.userId,
     );
     res.status(200).json({
       success: true,
@@ -991,7 +1057,7 @@ export const isChapterCompletedHandler = async (
 export const markChapterCompleteHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
@@ -1005,10 +1071,10 @@ export const markChapterCompleteHandler = async (
       throw new ApiError(404, "Chapter not found");
     }
     const targetStudentId = new mongoose.Types.ObjectId(
-      studentId || req.userId
+      studentId || req.userId,
     );
     const existingProgress = chapter.studentProgress?.find(
-      (p) => p.studentId.toString() === targetStudentId.toString()
+      (p) => p.studentId.toString() === targetStudentId.toString(),
     );
     if (existingProgress) {
       existingProgress.status = "completed";
@@ -1049,7 +1115,7 @@ export const markChapterCompleteHandler = async (
 export const getChapterCompletedStudentsHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<any> => {
   try {
     const { chapterId } = req.params;
@@ -1070,7 +1136,7 @@ export const getChapterCompletedStudentsHandler = async (
     }
     const completedProgress =
       chapter.studentProgress?.filter(
-        (progress) => progress.status === "completed"
+        (progress) => progress.status === "completed",
       ) || [];
     if (completedProgress.length === 0) {
       return res.status(200).json({
@@ -1085,7 +1151,7 @@ export const getChapterCompletedStudentsHandler = async (
     }
     const completedStudentIds = completedProgress.map((p) => p.studentId);
     const progressMap = new Map(
-      completedProgress.map((p) => [p.studentId.toString(), p])
+      completedProgress.map((p) => [p.studentId.toString(), p]),
     );
     const students = await Student.find({
       _id: { $in: completedStudentIds },
@@ -1132,7 +1198,7 @@ export const getChapterCompletedStudentsHandler = async (
     });
     const paginatedStudents = studentsWithCompletion.slice(
       skip,
-      skip + limitNum
+      skip + limitNum,
     );
     const total = studentsWithCompletion.length;
     const scores = studentsWithCompletion
@@ -1143,7 +1209,7 @@ export const getChapterCompletedStudentsHandler = async (
       averageScore:
         scores.length > 0
           ? Math.round(
-              (scores.reduce((a, b) => a + b, 0) / scores.length) * 100
+              (scores.reduce((a, b) => a + b, 0) / scores.length) * 100,
             ) / 100
           : 0,
       highestScore: scores.length > 0 ? Math.max(...scores) : 0,
@@ -1166,7 +1232,7 @@ export const getChapterCompletedStudentsHandler = async (
 export const getChapterCompletionStatsHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
@@ -1206,7 +1272,7 @@ export const getChapterCompletionStatsHandler = async (
               Math.round(
                 (completedScores.reduce((a, b) => a + b, 0) /
                   completedScores.length) *
-                  100
+                  100,
               ) / 100,
             highest: Math.max(...completedScores),
             lowest: Math.min(...completedScores),
@@ -1239,7 +1305,7 @@ export const getChapterCompletionStatsHandler = async (
 export const getChapterTopPerformersHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<any> => {
   try {
     const { chapterId } = req.params;
@@ -1300,7 +1366,7 @@ export const getChapterTopPerformersHandler = async (
 export const getChapterPendingStudentsHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { chapterId } = req.params;
@@ -1335,7 +1401,7 @@ export const getChapterPendingStudentsHandler = async (
     ]);
     const pendingWithStatus = pendingStudents.map((student) => {
       const progress = chapter.studentProgress?.find(
-        (p) => p.studentId.toString() === student._id.toString()
+        (p) => p.studentId.toString() === student._id.toString(),
       );
       return {
         studentId: student._id,
@@ -1364,7 +1430,7 @@ export const getChapterPendingStudentsHandler = async (
 export const sendChapterReminderHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { chapterId, studentId } = req.params;
@@ -1389,11 +1455,11 @@ export const sendChapterReminderHandler = async (
     if (student.gradeId?.toString() !== chapter.gradeId._id.toString()) {
       throw new ApiError(
         400,
-        "Student is not enrolled in this chapter's grade"
+        "Student is not enrolled in this chapter's grade",
       );
     }
     const progress = chapter.studentProgress?.find(
-      (p) => p.studentId.toString() === studentId
+      (p) => p.studentId.toString() === studentId,
     );
     if (progress?.status === "completed") {
       throw new ApiError(400, "Student has already completed this chapter");
@@ -1428,7 +1494,7 @@ export const sendChapterReminderHandler = async (
         ${
           progress?.status === "in_progress"
             ? `<p>We noticed you started this chapter on ${new Date(
-                progress.startedAt!
+                progress.startedAt!,
               ).toLocaleDateString()}. Don't give up - you're almost there!</p>`
             : `<p>You haven't started this chapter yet. It's a great time to begin!</p>`
         }
@@ -1469,7 +1535,7 @@ export const sendChapterReminderHandler = async (
 export const sendBulkChapterRemindersHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<any> => {
   try {
     const { chapterId } = req.params;
@@ -1513,7 +1579,7 @@ export const sendBulkChapterRemindersHandler = async (
       .join(", ");
     const emailPromises = pendingStudents.map(async (student) => {
       const progress = chapter.studentProgress?.find(
-        (p) => p.studentId.toString() === student._id.toString()
+        (p) => p.studentId.toString() === student._id.toString(),
       );
       const emailSubject = `Reminder: Complete Chapter ${chapter.chapterNumber} - ${chapter.title}`;
       const emailBody = `
@@ -1537,7 +1603,7 @@ export const sendBulkChapterRemindersHandler = async (
           ${
             progress?.status === "in_progress"
               ? `<p>We noticed you started this chapter on ${new Date(
-                  progress.startedAt!
+                  progress.startedAt!,
                 ).toLocaleDateString()}. Don't give up - you're almost there!</p>`
               : `<p>You haven't started this chapter yet. It's a great time to begin!</p>`
           }
@@ -1596,7 +1662,7 @@ export const sendBulkChapterRemindersHandler = async (
 export const sendInProgressRemindersHandler = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<any> => {
   try {
     const { chapterId } = req.params;
@@ -1639,7 +1705,7 @@ export const sendInProgressRemindersHandler = async (
       .join(", ");
     const emailPromises = students.map(async (student) => {
       const progress = chapter.studentProgress?.find(
-        (p) => p.studentId.toString() === student._id.toString()
+        (p) => p.studentId.toString() === student._id.toString(),
       );
       const emailSubject = `Don't Give Up! Complete Chapter ${chapter.chapterNumber} - ${chapter.title}`;
       const emailBody = `
@@ -1654,7 +1720,7 @@ export const sendInProgressRemindersHandler = async (
             <p style="color: #6B7280;">${chapter.description || ""}</p>
             <p><strong>Content Includes:</strong> ${contentTypeSummary}</p>
             <p><strong>Started on:</strong> ${new Date(
-              progress?.startedAt!
+              progress?.startedAt!,
             ).toLocaleDateString()}</p>
           </div>
           <p style="font-size: 18px; color: #1F2937;">Don't let your progress go to waste! 💪</p>
@@ -1718,7 +1784,7 @@ export const sendInProgressRemindersHandler = async (
 export const gradeWiseChapterCountHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { gradeId } = req.params;

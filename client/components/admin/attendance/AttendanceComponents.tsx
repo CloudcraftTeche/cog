@@ -1,19 +1,48 @@
+
 "use client";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Filter , BarChart3, Calendar, FileSpreadsheet} from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-interface StatsCardsProps {
-  stats: {
-    totalStudents: number;
-    totalTeachers: number;
-    todayAttendance: {
-      present: number;
-      absent: number;
-      late: number;
-      excused: number;
-      total: number;
-    };
-  } | null;
+import { AttendanceHeatmapProps, AttendancePieChartProps, AttendanceTableProps, AttendanceTrendChartProps, ExportSectionProps, NavigationProps, StatsCardsProps, StatsSectionProps } from "@/types/admin/attendance.types";
+
+
+export function Navigation({ selectedView, onViewChange }: NavigationProps) {
+  const tabs = [
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "heatmap", label: "Heatmap", icon: Calendar },
+    { id: "records", label: "Records", icon: FileSpreadsheet },
+  ];
+
+  return (
+    <nav className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between py-4">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Attendance Management
+          </h1>
+          <div className="flex space-x-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onViewChange(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    selectedView === tab.id
+                      ? "bg-purple-100 text-purple-700 shadow-sm"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Icon size={18} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
 }
 export function StatsCards({ stats }: StatsCardsProps) {
   if (!stats) return null;
@@ -46,14 +75,6 @@ export function StatsCards({ stats }: StatsCardsProps) {
       </div>
     </div>
   );
-}
-interface AttendancePieChartProps {
-  data: {
-    present: number;
-    absent: number;
-    late: number;
-    excused: number;
-  };
 }
 export function AttendancePieChart({ data }: AttendancePieChartProps) {
   const pieData = [
@@ -97,16 +118,6 @@ export function AttendancePieChart({ data }: AttendancePieChartProps) {
       )}
     </div>
   );
-}
-interface HeatmapData {
-  _id: string;
-  present: number;
-  absent: number;
-  late: number;
-  excused: number;
-}
-interface AttendanceTrendChartProps {
-  data: HeatmapData[];
 }
 export function AttendanceTrendChart({ data }: AttendanceTrendChartProps) {
   return (
@@ -169,16 +180,7 @@ export function AttendanceTrendChart({ data }: AttendanceTrendChartProps) {
     </div>
   );
 }
-interface HeatmapData {
-  _id: string;
-  present: number;
-  absent: number;
-  late: number;
-  excused: number;
-}
-interface AttendanceHeatmapProps {
-  data: HeatmapData[];
-}
+
 export function AttendanceHeatmap({ data }: AttendanceHeatmapProps) {
   return (
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg">
@@ -216,9 +218,7 @@ export function AttendanceHeatmap({ data }: AttendanceHeatmapProps) {
     </div>
   );
 }
-interface ExportSectionProps {
-  onExport: (status: string, startDate?: string, endDate?: string) => Promise<void>;
-}
+
 export function ExportSection({ onExport }: ExportSectionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -338,30 +338,7 @@ export function ExportSection({ onExport }: ExportSectionProps) {
     </div>
   );
 }
-interface AttendanceRecord {
-  _id: string;
-  studentId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  teacherId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  gradeId?: {
-    _id: string;
-    grade: string;
-  };
-  date: string;
-  status: "present" | "absent" | "late" | "excused";
-  remarks?: string;
-}
-interface AttendanceTableProps {
-  records: AttendanceRecord[];
-  title?: string;
-}
+
 export function AttendanceTable({ records, title = "Recent Attendance Records" }: AttendanceTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -509,6 +486,71 @@ export function AttendanceTable({ records, title = "Recent Attendance Records" }
           </div>
         </div>
       )}
+    </div>
+  );
+}
+export function StatsSection({ stats, isLoading }: StatsSectionProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="bg-white p-6 rounded-3xl shadow-lg animate-pulse"
+          >
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  const attendanceRate =
+    stats.todayAttendance.total > 0
+      ? (
+          ((stats.todayAttendance.present + stats.todayAttendance.late) /
+            stats.todayAttendance.total) *
+          100
+        ).toFixed(1)
+      : "0";
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-gradient-to-br from-purple-500 to-purple-700 text-white p-6 rounded-3xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-2 opacity-90">
+          Total Students
+        </h3>
+        <p className="text-4xl font-bold">{stats.totalStudents}</p>
+      </div>
+
+      <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-3xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-2 opacity-90">
+          Total Teachers
+        </h3>
+        <p className="text-4xl font-bold">{stats.totalTeachers}</p>
+      </div>
+
+      <div className="bg-gradient-to-br from-green-500 to-green-700 text-white p-6 rounded-3xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-2 opacity-90">Present Today</h3>
+        <p className="text-4xl font-bold">{stats.todayAttendance.present}</p>
+        <p className="text-sm opacity-90 mt-1">
+          +{stats.todayAttendance.late} late
+        </p>
+      </div>
+
+      <div className="bg-gradient-to-br from-orange-500 to-orange-700 text-white p-6 rounded-3xl shadow-lg">
+        <h3 className="text-lg font-semibold mb-2 opacity-90">
+          Attendance Rate
+        </h3>
+        <p className="text-4xl font-bold">{attendanceRate}%</p>
+        <p className="text-sm opacity-90 mt-1">
+          {stats.todayAttendance.absent} absent, {stats.todayAttendance.excused}{" "}
+          excused
+        </p>
+      </div>
     </div>
   );
 }

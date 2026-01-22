@@ -1,204 +1,104 @@
 "use client";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
-  adminTeacherAttendanceService,
+  useTeachers,
+  useTeacherAttendanceStats,
+  useTeacherAttendanceHeatmap,
+  useTodayTeacherAttendance,
+  useTeacherAttendanceByDate,
+  useMarkTeacherAttendance,
+  useExportTeacherAttendance,
+} from "@/hooks/admin/useTeacherAttendance";
+import {
   AttendanceStatus,
-  ITeacher,
-  ITeacherAttendance,
-} from "@/utils/adminAttendance.service";
-import { useState, useEffect } from "react";
-const format = (date: Date, formatStr: string): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  if (formatStr === "yyyy-MM-dd") {
-    return `${year}-${month}-${day}`;
-  }
-  if (formatStr === "dd-MM-yyyy") {
-    return `${day}-${month}-${year}`;
-  }
-  return date.toDateString();
-};
+} from "@/types/admin/teacher-attendance.types";
+import {
+  formatDate,
+  convertTeacherAttendanceToCSV,
+  downloadCSV,
+} from "@/utils/admin/teacher-attendance.utils";
+import { toast } from "sonner";
 type ViewType = "attendance" | "today" | "stats" | "history";
 export default function AdminTeacherAttendanceDashboard() {
-  const [teachers, setTeachers] = useState<ITeacher[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<
-    ITeacherAttendance[]
-  >([]);
   const [selectedView, setSelectedView] = useState<ViewType>("attendance");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [loading, setLoading] = useState(false);
-  const [markingAttendance, setMarkingAttendance] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    totalTeachers: 0,
-    todayAttendance: {
-      present: 0,
-      absent: 0,
-      late: 0,
-      excused: 0,
-      total: 0,
-    },
-  });
-  const [heatmapData, setHeatmapData] = useState<
-    Array<{
-      _id: string;
-      present: number;
-      absent: number;
-      late: number;
-      excused: number;
-    }>
-  >([]);
-  useEffect(() => {
-    fetchTeachers();
-    fetchStats();
-    fetchHeatmapData();
-  }, []);
-  useEffect(() => {
-    fetchAttendanceByDate();
-  }, [selectedDate]);
-  useEffect(() => {
-    if (selectedView === "today") {
-      fetchTodayAttendance();
-    }
-  }, [selectedView]);
-  const fetchTeachers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await adminTeacherAttendanceService.getAllTeachers();
-      setTeachers(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch teachers");
-      console.error("Error fetching teachers:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const fetchAttendanceByDate = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data =
-        await adminTeacherAttendanceService.getAttendanceByDate(selectedDate);
-      setAttendanceRecords(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch attendance");
-      console.error("Error fetching attendance:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const fetchTodayAttendance = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await adminTeacherAttendanceService.getTodayAttendance();
-      setAttendanceRecords(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch today's attendance");
-      console.error("Error fetching today's attendance:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const fetchStats = async () => {
-    try {
-      const data = await adminTeacherAttendanceService.getAttendanceStats();
-      setStats(data);
-    } catch (err: any) {
-      console.error("Error fetching stats:", err);
-    }
-  };
-  const fetchHeatmapData = async () => {
-    try {
-      const data = await adminTeacherAttendanceService.getAttendanceHeatmap();
-      setHeatmapData(data);
-    } catch (err: any) {
-      console.error("Error fetching heatmap data:", err);
-    }
-  };
+  const { data: teachers = [], isLoading: teachersLoading } = useTeachers();
+  const {
+    data: stats,
+    isLoading: statsLoading,
+  } = useTeacherAttendanceStats();
+  const {
+    data: heatmapData = [],
+    isLoading: heatmapLoading,
+  } = useTeacherAttendanceHeatmap();
+  const {
+    data: todayRecords = [],
+    isLoading: todayLoading,
+  } = useTodayTeacherAttendance();
+  const {
+    data: dateRecords = [],
+    isLoading: dateLoading,
+  } = useTeacherAttendanceByDate(selectedDate);
+  const markAttendanceMutation = useMarkTeacherAttendance();
+  const exportMutation = useExportTeacherAttendance();
+  const attendanceRecords =
+    selectedView === "today" ? todayRecords : dateRecords;
+  const isLoading = teachersLoading || statsLoading || heatmapLoading;
   const markAttendance = async (
     teacherId: string,
     status: AttendanceStatus
   ) => {
-    try {
-      setMarkingAttendance(true);
-      setError(null);
-      const teacher = teachers.find((t) => t._id === teacherId);
-      const gradeId =
-        teacher && typeof teacher.gradeId === "object"
-          ? teacher.gradeId._id
-          : undefined;
-      await adminTeacherAttendanceService.createOrUpdateAttendance({
-        teacherId,
-        status,
-        gradeId,
-        date: selectedDate,
-      });
-      await fetchAttendanceByDate();
-      await fetchStats();
-    } catch (err: any) {
-      setError(err.message || "Failed to mark attendance");
-      console.error("Error marking attendance:", err);
-    } finally {
-      setMarkingAttendance(false);
-    }
+    const teacher = teachers.find((t) => t._id === teacherId);
+    const gradeId =
+      teacher && typeof teacher.gradeId === "object"
+        ? teacher.gradeId._id
+        : undefined;
+    await markAttendanceMutation.mutateAsync({
+      teacherId,
+      status,
+      gradeId,
+      date: selectedDate,
+    });
   };
   const getAttendanceStatus = (teacherId: string): AttendanceStatus | null => {
     const attendance = attendanceRecords.find(
       (a) =>
         a.studentId._id === teacherId &&
-        format(new Date(a.date), "yyyy-MM-dd") ===
-          format(selectedDate, "yyyy-MM-dd")
+        formatDate(new Date(a.date), "yyyy-MM-dd") ===
+          formatDate(selectedDate, "yyyy-MM-dd")
     );
     return attendance ? attendance.status : null;
   };
   const exportTodayAttendance = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const data = await adminTeacherAttendanceService.exportAttendance(
-        undefined,
-        new Date(new Date().setHours(0, 0, 0, 0)),
-        new Date(new Date().setHours(23, 59, 59, 999))
-      );
+      const data = await exportMutation.mutateAsync({
+        startDate: new Date(new Date().setHours(0, 0, 0, 0)),
+        endDate: new Date(new Date().setHours(23, 59, 59, 999)),
+      });
       if (data.length === 0) {
-        alert("No attendance records to export");
+        toast.error("No attendance records to export");
         return;
       }
-      const csvData = convertAttendanceToCSV(data);
+      const csvData = convertTeacherAttendanceToCSV(data);
       downloadCSV(
         csvData,
-        `teacher-attendance-${format(new Date(), "yyyy-MM-dd")}.csv`
+        `teacher-attendance-${formatDate(new Date(), "yyyy-MM-dd")}.csv`
       );
-    } catch (err: any) {
-      setError(err.message || "Failed to export attendance");
-      console.error("Error exporting attendance:", err);
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to export attendance");
     }
   };
-  const convertAttendanceToCSV = (data: ITeacherAttendance[]) => {
-    const header = "Teacher Name,Email,Grade,Status,Date,Time\n";
-    const rows = data
-      .map((item) => {
-        const date = format(new Date(item.date), "dd-MM-yyyy");
-        const time = new Date(item.createdAt).toLocaleTimeString();
-        const gradeName = item.gradeId ? item.gradeId.grade : "N/A";
-        return `"${item.studentId.name}","${item.studentId.email}","${gradeName}","${item.status}","${date}","${time}"`;
-      })
-      .join("\n");
-    return header + rows;
-  };
-  const downloadCSV = (csvData: string, filename: string) => {
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading teacher attendance...</p>
+        </div>
+      </div>
+    );
+  }
   const statusButtons: {
     status: AttendanceStatus;
     label: string;
@@ -230,21 +130,9 @@ export default function AdminTeacherAttendanceDashboard() {
       colors: "bg-blue-100 text-blue-700 hover:bg-blue-200",
     },
   ];
-  const todayRecords = attendanceRecords.filter(
-    (r) =>
-      format(new Date(r.date), "yyyy-MM-dd") ===
-      format(new Date(), "yyyy-MM-dd")
-  );
-  const presentCount = todayRecords.filter(
-    (a) => a.status === "present"
-  ).length;
-  const absentCount = todayRecords.filter((a) => a.status === "absent").length;
-  const lateCount = todayRecords.filter((a) => a.status === "late").length;
-  const excusedCount = todayRecords.filter(
-    (a) => a.status === "excused"
-  ).length;
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      {}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -277,11 +165,7 @@ export default function AdminTeacherAttendanceDashboard() {
         </div>
       </nav>
       <div className="max-w-7xl mx-auto p-6">
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
+        {}
         {selectedView === "attendance" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -298,16 +182,16 @@ export default function AdminTeacherAttendanceDashboard() {
                 <input
                   id="attendance-date"
                   type="date"
-                  value={format(selectedDate, "yyyy-MM-dd")}
+                  value={formatDate(selectedDate, "yyyy-MM-dd")}
                   onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                  max={format(new Date(), "yyyy-MM-dd")}
+                  max={formatDate(new Date(), "yyyy-MM-dd")}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
-            {loading ? (
+            {dateLoading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <Loader2 className="inline-block h-12 w-12 animate-spin text-blue-600" />
                 <p className="mt-4 text-gray-600">Loading teachers...</p>
               </div>
             ) : (
@@ -339,24 +223,20 @@ export default function AdminTeacherAttendanceDashboard() {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          {statusButtons.map(
-                            ({ status, label, icon, colors }) => (
-                              <button
-                                key={status}
-                                onClick={() =>
-                                  markAttendance(teacher._id, status)
-                                }
-                                disabled={markingAttendance}
-                                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                                  currentStatus === status
-                                    ? `${status === "present" ? "bg-green-500" : status === "late" ? "bg-yellow-500" : status === "absent" ? "bg-red-500" : "bg-blue-500"} text-white shadow-lg scale-105`
-                                    : colors
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                              >
-                                {icon} {label}
-                              </button>
-                            )
-                          )}
+                          {statusButtons.map(({ status, label, icon, colors }) => (
+                            <button
+                              key={status}
+                              onClick={() => markAttendance(teacher._id, status)}
+                              disabled={markAttendanceMutation.isPending}
+                              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                                currentStatus === status
+                                  ? `${status === "present" ? "bg-green-500" : status === "late" ? "bg-yellow-500" : status === "absent" ? "bg-red-500" : "bg-blue-500"} text-white shadow-lg scale-105`
+                                  : colors
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {icon} {label}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -366,45 +246,48 @@ export default function AdminTeacherAttendanceDashboard() {
             )}
           </div>
         )}
+        {}
         {selectedView === "today" && (
           <div className="space-y-8">
+            {}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Total Teachers</h3>
-                <p className="text-3xl font-bold">{stats.totalTeachers}</p>
+                <p className="text-3xl font-bold">{stats?.totalTeachers || 0}</p>
               </div>
               <div className="bg-gradient-to-br from-green-500 to-green-700 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Present</h3>
                 <p className="text-3xl font-bold">
-                  {stats.todayAttendance.present}
+                  {stats?.todayAttendance.present || 0}
                 </p>
               </div>
               <div className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Late</h3>
                 <p className="text-3xl font-bold">
-                  {stats.todayAttendance.late}
+                  {stats?.todayAttendance.late || 0}
                 </p>
               </div>
               <div className="bg-gradient-to-br from-red-500 to-red-700 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Absent</h3>
                 <p className="text-3xl font-bold">
-                  {stats.todayAttendance.absent}
+                  {stats?.todayAttendance.absent || 0}
                 </p>
               </div>
               <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Excused</h3>
                 <p className="text-3xl font-bold">
-                  {stats.todayAttendance.excused}
+                  {stats?.todayAttendance.excused || 0}
                 </p>
               </div>
             </div>
+            {}
             <div className="flex justify-between items-center">
               <h3 className="text-2xl font-bold text-gray-800">
                 Today's Attendance Records
               </h3>
               <button
                 onClick={exportTodayAttendance}
-                disabled={loading}
+                disabled={exportMutation.isPending}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg
@@ -420,13 +303,15 @@ export default function AdminTeacherAttendanceDashboard() {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                Export Today's Attendance
+                {exportMutation.isPending
+                  ? "Exporting..."
+                  : "Export Today's Attendance"}
               </button>
             </div>
             <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg overflow-x-auto">
-              {loading ? (
+              {todayLoading ? (
                 <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <Loader2 className="inline-block h-12 w-12 animate-spin text-blue-600" />
                 </div>
               ) : todayRecords.length > 0 ? (
                 <table className="min-w-full">
@@ -500,11 +385,13 @@ export default function AdminTeacherAttendanceDashboard() {
             </div>
           </div>
         )}
+        {}
         {selectedView === "stats" && (
           <div className="space-y-8">
             <h2 className="text-3xl font-bold text-gray-800">
               Teacher Attendance Statistics
             </h2>
+            {}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gradient-to-br from-purple-500 to-purple-700 text-white p-8 rounded-3xl shadow-lg">
                 <div className="flex items-center justify-between">
@@ -512,7 +399,9 @@ export default function AdminTeacherAttendanceDashboard() {
                     <h3 className="text-lg font-semibold mb-2">
                       Total Teachers
                     </h3>
-                    <p className="text-4xl font-bold">{stats.totalTeachers}</p>
+                    <p className="text-4xl font-bold">
+                      {stats?.totalTeachers || 0}
+                    </p>
                   </div>
                   <span className="text-5xl opacity-80">👥</span>
                 </div>
@@ -524,13 +413,14 @@ export default function AdminTeacherAttendanceDashboard() {
                       Today's Attendance
                     </h3>
                     <p className="text-4xl font-bold">
-                      {stats.todayAttendance.total}
+                      {stats?.todayAttendance.total || 0}
                     </p>
                   </div>
                   <span className="text-5xl opacity-80">📋</span>
                 </div>
               </div>
             </div>
+            {}
             {heatmapData.length > 0 && (
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg">
                 <h3 className="text-2xl font-bold mb-6 text-gray-800">
@@ -623,6 +513,7 @@ export default function AdminTeacherAttendanceDashboard() {
             )}
           </div>
         )}
+        {}
         {selectedView === "history" && (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-800">

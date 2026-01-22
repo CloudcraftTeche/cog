@@ -51,7 +51,7 @@ TeacherSchema.pre(
         "../../config/cloudinary"
       );
       if (this.profilePicturePublicId) {
-        await deleteFromCloudinary(this.profilePicturePublicId).catch((err) =>
+        await deleteFromCloudinary(this.profilePicturePublicId, "raw").catch((err) =>
           console.error("Failed to delete profile picture:", err)
         );
       }

@@ -84,7 +84,6 @@ export default function TeacherChapterSubmissionsPage() {
       }
       const chapterData = data.data;
       setChapter(chapterData);
-
       const studentSubmissions: StudentSubmission[] = [];
       if (
         chapterData.studentProgress &&

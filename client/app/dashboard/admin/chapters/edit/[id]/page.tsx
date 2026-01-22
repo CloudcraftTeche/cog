@@ -1,309 +1,56 @@
+// app/dashboard/admin/chapters/edit/[id]/page.tsx
 "use client";
-import { useState, useEffect, type FormEvent } from "react";
+
+import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs } from "@/components/ui/tabs";
 import { Save } from "lucide-react";
-import api from "@/lib/api";
-import { toast } from "sonner";
-import EditQuestionsSection, {
-  EditQuestion,
-} from "@/components/admin/chapters/EditQuestionsSection";
+import Link from "next/link";
+import { useGrades } from "@/hooks/admin/useChapter";
+import { useEditChapter } from "@/hooks/admin/useEditChapter";
+import EditQuestionsSection from "@/components/admin/chapters/EditQuestionsSection";
 import EditContentSection from "@/components/admin/chapters/EditContentSection";
-
-interface Grade {
-  _id: string;
-  grade: string;
-  units?: Array<{
-    _id: string;
-    name: string;
-    description?: string;
-    orderIndex: number;
-  }>;
-}
-
-interface Unit {
-  _id: string;
-  name: string;
-  description?: string;
-  orderIndex: number;
-}
-
-interface ContentItem {
-  type: "video" | "text" | "pdf" | "mixed";
-  order: number;
-  title?: string;
-  textContent?: string;
-  videoUrl?: string;
-  url?: string;
-  publicId?: string | null;
-  file?: File;
-}
+import { LoadingState } from "@/components/shared/LoadingComponent";
 
 export default function EditChapterPage() {
-  const router = useRouter();
   const { id } = useParams() as { id: string };
-  const [loading, setLoading] = useState(false);
-  const [fetchLoading, setFetchLoading] = useState(true);
-  
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedGradeId, setSelectedGradeId] = useState("");
-  const [selectedUnitId, setSelectedUnitId] = useState("");
-  const [chapterNumber, setChapterNumber] = useState(1);
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  
-  const [contentItems, setContentItems] = useState<ContentItem[]>([
-    { type: "video", order: 0, title: "" }
-  ]);
-  
-  const [questions, setQuestions] = useState<EditQuestion[]>([
-    {
-      id: "1",
-      questionText: "",
-      options: ["", "", "", ""],
-      correctAnswer: "",
-    },
-  ]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const { data: grades = [], isLoading: gradesLoading } = useGrades();
+
+  const {
+    formState,
+    errors,
+    isLoading,
+    fetchLoading,
+    updateField,
+    updateContentItems,
+    updateQuestions,
+    handleSubmit,
+  } = useEditChapter(id);
+
+  // Get units for selected grade
+  const units =
+    formState.selectedGradeId
+      ? grades.find((g) => g._id === formState.selectedGradeId)?.units || []
+      : [];
+
+  // Validate selected unit when grade or units change
   useEffect(() => {
-    if (!selectedGradeId || grades.length === 0) {
-      setUnits([]);
-      return;
-    }
-    const selectedGrade = grades.find((g) => g._id === selectedGradeId);
-    if (selectedGrade?.units) {
-      const sortedUnits = [...selectedGrade.units].sort(
-        (a, b) => a.orderIndex - b.orderIndex
-      );
-      setUnits(sortedUnits);
-    } else {
-      setUnits([]);
-    }
-  }, [selectedGradeId, grades]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchData = async () => {
-      try {
-        setFetchLoading(true);
-        const gradesRes = await api.get("/grades/all");
-        const gradesData = gradesRes.data.data || [];
-        const sortedGrades = gradesData.sort((a: Grade, b: Grade) => {
-          const gradeA = parseInt(a.grade.replace(/\D/g, "")) || 0;
-          const gradeB = parseInt(b.grade.replace(/\D/g, "")) || 0;
-          return gradeA - gradeB;
-        });
-        setGrades(sortedGrades);
-
-        const { data } = await api.get(`/chapters/${id}`);
-        const chapter = data.data;
-
-        setTitle(chapter.title || "");
-        setDescription(chapter.description || "");
-
-        const gradeId = chapter.gradeId?._id || chapter.gradeId || "";
-        setSelectedGradeId(gradeId);
-        setSelectedUnitId(chapter.unitId?._id || chapter.unitId || "");
-        setChapterNumber(chapter.chapterNumber || 1);
-
-        if (chapter.contentItems && chapter.contentItems.length > 0) {
-          const formattedContent = chapter.contentItems.map((item: any, index: number) => ({
-            type: item.type,
-            order: item.order !== undefined ? item.order : index,
-            title: item.title || "",
-            textContent: item.textContent || "",
-            videoUrl: item.type === "video" ? (item.url || "") : "",
-            url: item.url || "",
-            publicId: item.publicId || null,
-          }));
-          setContentItems(formattedContent);
-        }
-
-        if (chapter.questions && chapter.questions.length > 0) {
-          setQuestions(
-            chapter.questions.map((q: any, index: number) => ({
-              id: q._id || q.id || index.toString(),
-              questionText: q.questionText || "",
-              options: Array.isArray(q.options) ? q.options : ["", "", "", ""],
-              correctAnswer: q.correctAnswer || "",
-            }))
-          );
-        }
-      } catch (error: any) {
-        console.error(error);
-        toast.error(
-          error.response?.data?.message || "Failed to fetch chapter data"
-        );
-      } finally {
-        setFetchLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id]);
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!title.trim()) {
-      newErrors.title = "Title is required";
-    } else if (title.length > 200) {
-      newErrors.title = "Title must be less than 200 characters";
-    }
-
-    if (!description.trim()) {
-      newErrors.description = "Description is required";
-    }
-
-    if (!selectedGradeId) {
-      newErrors.gradeId = "Grade is required";
-    }
-
-    if (!selectedUnitId) {
-      newErrors.unitId = "Unit is required";
-    }
-
-    if (chapterNumber < 1) {
-      newErrors.chapterNumber = "Chapter number must be at least 1";
-    }
-
-    if (contentItems.length === 0) {
-      newErrors.contentItems = "At least one content item is required";
-    } else {
-      for (let i = 0; i < contentItems.length; i++) {
-        const item = contentItems[i];
-        
-        // For mixed type, at least one of video or text should be provided
-        if (item.type === "mixed") {
-          const hasVideo = (item.videoUrl?.trim() || item.url?.trim() || item.file);
-          const hasText = item.textContent?.trim();
-          if (!hasVideo && !hasText) {
-            newErrors[`content_${i}`] = "Provide at least video or text content";
-            break;
-          }
-        }
-        
-        // No validation for individual types since all are optional
+    if (formState.selectedGradeId && formState.selectedUnitId && units.length > 0) {
+      const isUnitInGrade = units.some((u) => u._id === formState.selectedUnitId);
+      if (!isUnitInGrade) {
+        updateField("selectedUnitId", "");
       }
     }
+  }, [formState.selectedGradeId, units, formState.selectedUnitId, updateField]);
 
-    if (questions.length === 0) {
-      newErrors.questions = "At least one question is required";
-    } else {
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        if (!q.questionText.trim()) {
-          newErrors.questions = `Question ${i + 1}: Question text is required`;
-          break;
-        }
-        const filledOptions = q.options.filter((opt) => opt && opt.trim());
-        if (q.options.length !== 4) {
-          newErrors.questions = `Question ${i + 1}: Must have exactly 4 options`;
-          break;
-        }
-        if (filledOptions.length < 2) {
-          newErrors.questions = `Question ${i + 1}: At least 2 options must be filled`;
-          break;
-        }
-        if (!q.correctAnswer || !q.correctAnswer.trim()) {
-          newErrors.questions = `Question ${i + 1}: Please select a correct answer`;
-          break;
-        }
-        if (!q.options.includes(q.correctAnswer)) {
-          newErrors.questions = `Question ${i + 1}: Correct answer must be one of the options`;
-          break;
-        }
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error("Validation Error", {
-        description: "Please fix the errors in the form before submitting",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      
-      formData.append("title", title.trim());
-      formData.append("description", description.trim());
-      formData.append("unitId", selectedUnitId);
-      formData.append("chapterNumber", chapterNumber.toString());
-
-      const contentItemsData = contentItems.map((item, index) => ({
-        type: item.type,
-        order: index,
-        title: item.title || "",
-        ...(item.type === "text" && { textContent: item.textContent }),
-        ...(item.type === "video" && item.videoUrl && { videoUrl: item.videoUrl }),
-      }));
-      
-      formData.append("contentItems", JSON.stringify(contentItemsData));
-      
-      contentItems.forEach((item, index) => {
-        if (item.file) {
-          formData.append(`content_${index}`, item.file);
-        }
-      });
-
-      const formattedQuestions = questions.map((q) => ({
-        questionText: q.questionText.trim(),
-        options: q.options.filter((opt) => opt && opt.trim()),
-        correctAnswer: q.correctAnswer.trim(),
-      }));
-      
-      formData.append("questions", JSON.stringify(formattedQuestions));
-
-      await api.put(`/chapters/${selectedGradeId}/chapters/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      toast.success("Chapter updated successfully", {
-        description: "The chapter has been updated with your changes",
-      });
-      router.push("/dashboard/admin/chapters");
-    } catch (error: any) {
-      console.error(error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to update chapter";
-      toast.error("Update Failed", {
-        description: errorMessage,
-      });
-    } finally {
-      setLoading(false);
-    }
+    handleSubmit();
   };
 
-  if (fetchLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
-        <div className="container mx-auto px-4 py-8">
-          <Card className="border-0 shadow-lg rounded-3xl">
-            <CardContent className="p-12">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                <p className="ml-4 text-lg text-gray-600">
-                  Loading chapter details...
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+  if (fetchLoading || gradesLoading) {
+    return <LoadingState text="chapter details" />;
   }
 
   return (
@@ -316,61 +63,63 @@ export default function EditChapterPage() {
           </p>
         </div>
 
-       
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <EditContentSection
-              title={title}
-              setTitle={setTitle}
-              description={description}
-              setDescription={setDescription}
-              selectedGradeId={selectedGradeId}
-              setSelectedGradeId={setSelectedGradeId}
-              selectedUnitId={selectedUnitId}
-              setSelectedUnitId={setSelectedUnitId}
-              chapterNumber={chapterNumber}
-              setChapterNumber={setChapterNumber}
-              grades={grades}
-              units={units}
-              contentItems={contentItems}
-              setContentItems={setContentItems}
-              errors={errors}
-            />
+        <form onSubmit={handleFormSubmit} className="space-y-8">
+          <EditContentSection
+            title={formState.title}
+            setTitle={(value) => updateField("title", value)}
+            description={formState.description}
+            setDescription={(value) => updateField("description", value)}
+            selectedGradeId={formState.selectedGradeId}
+            setSelectedGradeId={(value) => updateField("selectedGradeId", value)}
+            selectedUnitId={formState.selectedUnitId}
+            setSelectedUnitId={(value) => updateField("selectedUnitId", value)}
+            chapterNumber={formState.chapterNumber}
+            setChapterNumber={(value) => updateField("chapterNumber", value)}
+            grades={grades}
+            units={units}
+            contentItems={formState.contentItems}
+            setContentItems={updateContentItems}
+            errors={errors}
+          />
 
-            <EditQuestionsSection
-              questions={questions}
-              setQuestions={setQuestions}
-              errors={errors}
-            />
+          <EditQuestionsSection
+            questions={formState.questions}
+            setQuestions={(value) => {
+              const newQuestions = typeof value === 'function' ? value(formState.questions) : value;
+              updateQuestions(newQuestions);
+            }}
+            errors={errors}
+          />
 
-            <div className="flex justify-end gap-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={loading}
-                className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:bg-gray-50 rounded-xl px-8 py-3 font-semibold transition-all duration-300"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-xl px-8 py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5 mr-2" />
-                    Update Chapter
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
+          <div className="flex justify-end gap-6">
+            <Button
+              type="button"
+              variant="outline"
+              asChild
+              disabled={isLoading}
+              className="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:bg-gray-50 rounded-xl px-8 py-3 font-semibold transition-all duration-300"
+            >
+              <Link href="/dashboard/admin/chapters">Cancel</Link>
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-xl px-8 py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5 mr-2" />
+                  Update Chapter
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

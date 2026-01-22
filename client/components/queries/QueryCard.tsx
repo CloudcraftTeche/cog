@@ -1,6 +1,5 @@
 import React from "react";
 import { Clock, User, Tag, AlertTriangle, ArrowRight } from "lucide-react";
-import { Query } from "@/types/query.types";
 import {
   getStatusColor,
   getPriorityColor,
@@ -8,17 +7,11 @@ import {
   formatStatusLabel,
   truncateText,
 } from "@/utils/query.utils";
-interface QueryCardProps {
-  query: Query;
-  onSelect: (query: Query) => void;
-  onStatusUpdate?: (queryId: string, status: string) => void;
-  actions?: React.ReactNode;
-  accentColor?: string;
-}
+import { QueryCardProps } from "@/types/admin/query.types";
+
 const QueryCard: React.FC<QueryCardProps> = ({
   query,
   onSelect,
-  onStatusUpdate,
   actions,
   accentColor = "blue",
 }) => {

@@ -1,55 +1,57 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Plus, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Plus, Users, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TeacherListHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddNew: () => void;
+  totalTeachers?: number;
 }
 
-export function TeacherListHeader({ searchQuery, onSearchChange, onAddNew }: TeacherListHeaderProps) {
+export function TeacherListHeader({
+  searchQuery,
+  onSearchChange,
+  onAddNew,
+  totalTeachers = 0,
+}: TeacherListHeaderProps) {
   return (
-    <>
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 p-8 text-white shadow-2xl">
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">
-                  Teachers
-                </h1>
-                <p className="text-purple-100 text-lg">Manage your teaching staff</p>
-              </div>
-            </div>
+    <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-3xl shadow-2xl p-8 text-white">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+            <Users className="h-8 w-8" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold">Teachers</h1>
+            <p className="text-purple-100 text-lg mt-1">
+              Manage your teaching staff ({totalTeachers} total)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-300" />
+            <Input
+              type="text"
+              placeholder="Search teachers..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-11 pr-4 py-3 bg-white/10 border-2 border-white/20 text-white placeholder:text-purple-200 rounded-xl focus:bg-white/20 focus:border-white/40 backdrop-blur-sm w-full sm:w-64"
+            />
           </div>
           <Button
-            className="bg-gradient-to-r from-orange-400 via-pink-500 to-red-500 hover:from-orange-500 hover:via-pink-600 hover:to-red-600 border-0 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-white font-semibold px-8 py-3 rounded-2xl"
             onClick={onAddNew}
+            className="bg-white text-purple-600 hover:bg-purple-50 rounded-xl px-6 py-3 font-bold shadow-lg hover:shadow-xl transition-all duration-300"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Add New Teacher
+            Add Teacher
           </Button>
         </div>
       </div>
-
-      <div className="max-w-md mx-auto">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-400" />
-          <Input
-            placeholder="Search by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-12 pr-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-400 focus:ring-4 focus:ring-purple-100 bg-white/80 backdrop-blur-sm shadow-lg text-gray-700 placeholder:text-purple-300"
-          />
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

@@ -1,118 +1,43 @@
+// app/dashboard/admin/teachers/add/page.tsx
 "use client";
-import { useEffect, useState } from "react";
+
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Plus } from "lucide-react";
-import { toast } from "sonner";
-import api from "@/lib/api";
-import { FormErrors, Grade, TeacherFormData, validateProfilePicture, validateTeacherForm } from "@/lib/teacherValidation";
+import { useGrades } from "@/hooks/admin/useTeachers";
+import { useCreateTeacherForm } from "@/hooks/admin/use-teacher-form";
 import { TeacherProfileSidebar } from "@/components/admin/teachers/TeacherProfileSidebar";
+import { PersonalInfoSection } from "@/components/admin/teachers/PersonalInfoSection";
 import { ProfessionalInfoSection } from "@/components/admin/teachers/ProfessionalInfoSection";
 import { AddressInfoSection } from "@/components/admin/teachers/AddressInfoSection";
-import { PersonalInfoSection } from "@/components/admin/teachers/PersonalInfoSection";
+import { getGradeName } from "@/utils/admin/teacher.utils";
+import { LoadingState } from "@/components/shared/LoadingComponent";
+
 export default function AddTeacherPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [formData, setFormData] = useState<TeacherFormData>({
-    name: "",
-    email: "",
-    phone: "",
-    gender: "",
-    dateOfBirth: "",
-    gradeId: "", 
-    qualifications: "",
-    specializations: "",
-    address: {
-      street: "",
-      city: "",
-      state: "",
-      country: "India",
-      postalCode: "",
-    },
-  });
-  useEffect(() => {
-    const fetchGrades = async () => {
-      try {
-        const res = await api.get("/grades/all");
-        setGrades(res.data.data || []);
-      } catch (error) {
-        toast.error("Failed to fetch grades");
-      }
-    };
-    fetchGrades();
-  }, []);
-   const getGradeName = (gradeId: string): string => {
-    const grade = grades.find(g => g._id === gradeId);
-    return grade?.grade || "";
+  const { data: grades = [], isLoading: gradesLoading } = useGrades();
+
+  const {
+    formData,
+    errors,
+    profilePicture,
+    previewUrl,
+    isLoading,
+    updateField,
+    handleFileChange,
+    handleSubmit,
+  } = useCreateTeacherForm();
+
+  if (gradesLoading) {
+    return <LoadingState text="form..." />;
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    handleFileChange(file);
   };
-  const updateField = (field: string, value: string) => {
-    setFormData((prev) => {
-      if (field.includes(".")) {
-        const [parent, child] = field.split(".");
-        return {
-          ...prev,
-          [parent]: {
-            ...(prev[parent as keyof TeacherFormData] as any),
-            [child]: value,
-          },
-        };
-      }
-      return { ...prev, [field]: value };
-    });
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const error = validateProfilePicture(file);
-    if (error) {
-      toast.error(error);
-      return;
-    }
-    setProfilePicture(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setPreviewUrl(e.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-  const handleSubmit = async () => {
-    const validationErrors = validateTeacherForm(formData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      toast.error("Please correct the errors in the form");
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const formDataObj = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "address") {
-          Object.entries(value).forEach(([k, v]) => 
-            formDataObj.append(`address[${k}]`, String(v))
-          );
-        } else {
-          formDataObj.append(key, value);
-        }
-      });
-      if (profilePicture) {
-        formDataObj.append("profilePicture", profilePicture);
-      }
-      await api.post("/teachers", formDataObj, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success("Teacher created successfully");
-      router.push("/dashboard/admin/teachers");
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Failed to create teacher";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
       <div className="space-y-8 px-4 sm:px-6 lg:px-8 py-8">
@@ -122,7 +47,7 @@ export default function AddTeacherPage() {
               name={formData.name}
               email={formData.email}
               phone={formData.phone}
-              grade={getGradeName(formData.gradeId)}
+              grade={getGradeName(formData.gradeId, grades)}
               qualifications={formData.qualifications}
               city={formData.address.city}
               state={formData.address.state}
@@ -130,23 +55,23 @@ export default function AddTeacherPage() {
               headerGradient="from-blue-500 to-purple-600"
             />
           </div>
+
           <div className="lg:col-span-2 space-y-8">
-            {}
             <PersonalInfoSection
               formData={formData}
               errors={errors}
               profilePicture={profilePicture}
               onFieldChange={updateField}
-              onFileChange={handleFileChange}
+              onFileChange={handleFileInputChange}
             />
-            {}
+
             <ProfessionalInfoSection
               formData={formData}
               errors={errors}
               grades={grades}
               onFieldChange={updateField}
             />
-            {}
+
             <AddressInfoSection
               address={formData.address}
               errors={errors}
@@ -154,7 +79,9 @@ export default function AddTeacherPage() {
             />
           </div>
         </div>
+
         <Separator className="my-8 border-purple-200" />
+
         <div className="flex justify-end space-x-6">
           <Button
             variant="outline"

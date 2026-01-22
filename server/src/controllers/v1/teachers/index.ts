@@ -34,7 +34,8 @@ export const createNewTeacher = async (
     if (req.file) {
       const result: any = await uploadToCloudinary(
         req.file.buffer,
-        "teacher/profiles"
+        "teacher/profiles",
+        "image"
       );
       profilePictureUrl = result.secure_url;
       profilePicturePublicId = result.public_id;
@@ -89,7 +90,8 @@ export const updateTeacherDetails = async (
       }
       const result: any = await uploadToCloudinary(
         req.file.buffer,
-        "teacher/profiles"
+        "teacher/profiles",
+        "image"
       );
       updates.profilePictureUrl = result.secure_url;
       updates.profilePicturePublicId = result.public_id;

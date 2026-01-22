@@ -1,5 +1,7 @@
+// app/dashboard/admin/assignments/create/page.tsx
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,20 +19,18 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
-import {
-  IAssignmentForm,
-  IGrade,
-  validateAssignmentForm,
-} from "@/lib/assignmentValidation";
+import { IAssignmentForm } from "@/types/admin/assignment.types";
+import { validateAssignmentForm } from "@/lib/admin/utils/assignment.validation";
 import { QuestionForm } from "@/components/admin/assignments/QuestionForm";
 import GradeSelection from "@/components/admin/assignments/GradeSelection";
-const MAX_FILE_SIZE_MB = 25;
+import { useAssignments, useCreateAssignment } from "@/hooks/admin/useAssignments";
+import { MAX_FILE_SIZE_MB } from "@/types/admin/assignment.types";
+
 export default function AdminCreateAssignment() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [gradesLoading, setGradesLoading] = useState(true);
-  const [grades, setGrades] = useState<IGrade[]>([]);
+  const { grades, gradesLoading } = useAssignments();
+  const { createForSingleGrade, createForMultipleGrades, isCreating } = useCreateAssignment();
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<IAssignmentForm>({
     title: "",
@@ -52,23 +52,10 @@ export default function AdminCreateAssignment() {
       },
     ],
   });
-  useEffect(() => {
-    const fetchGrades = async () => {
-      try {
-        setGradesLoading(true);
-        const response = await api.get("/grades/all");
-        setGrades(response.data.data || []);
-      } catch (error: any) {
-        console.error("Error fetching grades:", error);
-        toast.error(error.response?.data?.message || "Failed to fetch grades");
-      } finally {
-        setGradesLoading(false);
-      }
-    };
-    fetchGrades();
-  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const validationErrors = validateAssignmentForm(formData);
     if (validationErrors.length > 0) {
       const errorObj: Record<string, string> = {};
@@ -79,8 +66,9 @@ export default function AdminCreateAssignment() {
       toast.error("Please fix the form errors");
       return;
     }
+
     setErrors({});
-    setLoading(true);
+
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
@@ -96,10 +84,12 @@ export default function AdminCreateAssignment() {
         "passingMarks",
         formData.passingMarks?.toString() || "40"
       );
+
       const validQuestions = formData.questions.filter(
         (q) => q.questionText?.trim() !== ""
       );
       formDataToSend.append("questions", JSON.stringify(validQuestions));
+
       if (formData.contentType === "video" && formData.videoFile) {
         formDataToSend.append("file", formData.videoFile);
       } else if (formData.contentType === "pdf" && formData.pdfFile) {
@@ -107,46 +97,24 @@ export default function AdminCreateAssignment() {
       } else if (formData.contentType === "text") {
         formDataToSend.append("textContent", formData.textContent || "");
       }
+
       if (formData.gradeIds.length === 1) {
-        await api.post(
-          `/assignments/grade/${formData.gradeIds[0]}`,
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        await createForSingleGrade({
+          gradeId: formData.gradeIds[0],
+          formData: formDataToSend,
+        });
       } else {
         const multiFormData = new FormData();
         multiFormData.append("gradeIds", JSON.stringify(formData.gradeIds));
-        multiFormData.append("title", formData.title);
-        multiFormData.append("description", formData.description);
-        multiFormData.append("contentType", formData.contentType);
-        multiFormData.append("startDate", formData.startDate);
-        multiFormData.append("endDate", formData.endDate);
-        multiFormData.append(
-          "totalMarks",
-          formData.totalMarks?.toString() || "100"
-        );
-        multiFormData.append(
-          "passingMarks",
-          formData.passingMarks?.toString() || "40"
-        );
-        multiFormData.append("questions", JSON.stringify(validQuestions));
-        if (formData.contentType === "video" && formData.videoFile) {
-          multiFormData.append("file", formData.videoFile);
-        } else if (formData.contentType === "pdf" && formData.pdfFile) {
-          multiFormData.append("file", formData.pdfFile);
-        } else if (formData.contentType === "text") {
-          multiFormData.append("textContent", formData.textContent || "");
+        
+        // Copy all other fields
+        for (const [key, value] of formDataToSend.entries()) {
+          multiFormData.append(key, value);
         }
-        await api.post("/assignments/multiple", multiFormData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+
+        await createForMultipleGrades(multiFormData);
       }
+
       toast.success(
         `Assignment created for ${formData.gradeIds.length} grade${
           formData.gradeIds.length > 1 ? "s" : ""
@@ -158,10 +126,9 @@ export default function AdminCreateAssignment() {
       toast.error(
         error.response?.data?.message || "Failed to create assignment"
       );
-    } finally {
-      setLoading(false);
     }
   };
+
   const toggleGrade = (gradeId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -170,10 +137,11 @@ export default function AdminCreateAssignment() {
         : [...prev.gradeIds, gradeId],
     }));
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {}
+        {/* Header */}
         <div className="mb-8">
           <Button
             variant="ghost"
@@ -183,6 +151,7 @@ export default function AdminCreateAssignment() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Assignments
           </Button>
+
           <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 rounded-3xl shadow-2xl">
             <div className="max-w-5xl mx-auto px-6 text-center">
               <div className="flex items-center justify-center mb-4">
@@ -195,11 +164,12 @@ export default function AdminCreateAssignment() {
             </div>
           </div>
         </div>
+
         <form
           onSubmit={handleSubmit}
           className="max-w-5xl mx-auto space-y-8 pb-8"
         >
-          {}
+          {/* Assignment Details Card */}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
             <CardHeader className="bg-gradient-to-br from-blue-50 to-indigo-50 pb-4">
@@ -211,7 +181,7 @@ export default function AdminCreateAssignment() {
               </div>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
-              {}
+              {/* Title and Content Type */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label
@@ -234,6 +204,7 @@ export default function AdminCreateAssignment() {
                     <p className="text-xs text-red-600">{errors.title}</p>
                   )}
                 </div>
+
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold flex items-center gap-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full" />
@@ -271,6 +242,8 @@ export default function AdminCreateAssignment() {
                   </Tabs>
                 </div>
               </div>
+
+              {/* Description */}
               <div className="space-y-2">
                 <Label
                   htmlFor="description"
@@ -293,7 +266,8 @@ export default function AdminCreateAssignment() {
                   <p className="text-xs text-red-600">{errors.description}</p>
                 )}
               </div>
-              {}
+
+              {/* Grade Selection */}
               {gradesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -306,7 +280,8 @@ export default function AdminCreateAssignment() {
                   error={errors.gradeIds}
                 />
               )}
-              {}
+
+              {/* Dates and Marks */}
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate" className="text-sm font-semibold">
@@ -325,6 +300,7 @@ export default function AdminCreateAssignment() {
                     <p className="text-xs text-red-600">{errors.startDate}</p>
                   )}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="endDate" className="text-sm font-semibold">
                     End Date *
@@ -342,6 +318,7 @@ export default function AdminCreateAssignment() {
                     <p className="text-xs text-red-600">{errors.endDate}</p>
                   )}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="totalMarks" className="text-sm font-semibold">
                     Total Marks
@@ -359,6 +336,7 @@ export default function AdminCreateAssignment() {
                     }
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label
                     htmlFor="passingMarks"
@@ -382,7 +360,8 @@ export default function AdminCreateAssignment() {
               </div>
             </CardContent>
           </Card>
-          {}
+
+          {/* Content Upload Card */}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-500" />
             <CardHeader className="bg-gradient-to-br from-purple-50 to-pink-50">
@@ -417,6 +396,7 @@ export default function AdminCreateAssignment() {
                   )}
                 </div>
               )}
+
               {formData.contentType === "text" && (
                 <div className="space-y-2">
                   <Label htmlFor="textContent">Text Content *</Label>
@@ -435,6 +415,7 @@ export default function AdminCreateAssignment() {
                   )}
                 </div>
               )}
+
               {formData.contentType === "pdf" && (
                 <div className="space-y-2">
                   <Label htmlFor="pdfFile">
@@ -465,7 +446,8 @@ export default function AdminCreateAssignment() {
               )}
             </CardContent>
           </Card>
-          {}
+
+          {/* Questions Card */}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-orange-500 to-red-500" />
             <CardHeader className="bg-gradient-to-br from-orange-50 to-red-50">
@@ -481,22 +463,23 @@ export default function AdminCreateAssignment() {
               />
             </CardContent>
           </Card>
-          {}
+
+          {/* Actions */}
           <div className="flex justify-end gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              disabled={loading}
+              disabled={isCreating}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isCreating}
               className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 px-8"
             >
-              {loading ? (
+              {isCreating ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
                   Creating...

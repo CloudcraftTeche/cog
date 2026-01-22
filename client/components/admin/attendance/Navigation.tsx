@@ -10,7 +10,7 @@ export function Navigation({ selectedView, onViewChange }: NavigationProps) {
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "heatmap", label: "Heatmap", icon: Calendar },
-    { id: "records", label: "Records", icon: FileSpreadsheet }
+    { id: "records", label: "Records", icon: FileSpreadsheet },
   ];
 
   return (

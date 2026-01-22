@@ -1,12 +1,7 @@
 import React from 'react';
 import { Filter, X } from 'lucide-react';
-import { Filters } from '@/types/query.types';
+import { FilterBarProps } from '@/types/admin/query.types';
 
-interface FilterBarProps {
-  filters: Filters;
-  onFilterChange: (filters: Filters) => void;
-  accentColor?: string;
-}
 
 const FilterBar: React.FC<FilterBarProps> = ({ 
   filters, 

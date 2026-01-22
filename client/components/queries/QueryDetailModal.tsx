@@ -1,14 +1,8 @@
 import React, { useState } from "react";
 import { X, Send, AlertTriangle } from "lucide-react";
-import { Query } from "@/types/query.types";
 import { formatDateTime, formatStatusLabel } from "@/utils/query.utils";
-interface QueryDetailModalProps {
-  query: Query;
-  onClose: () => void;
-  onAddResponse?: (queryId: string, content: string) => Promise<void>;
-  canRespond?: boolean;
-  accentColor?: string;
-}
+import { QueryDetailModalProps } from "@/types/admin/query.types";
+
 const QueryDetailModal: React.FC<QueryDetailModalProps> = ({
   query,
   onClose,

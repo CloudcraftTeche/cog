@@ -1,12 +1,7 @@
 import React, { useState } from "react";
 import { X, ArrowUpCircle, AlertTriangle } from "lucide-react";
-import { Query, User } from "@/types/query.types";
-interface EscalateModalProps {
-  query: Query;
-  superAdmins: User[];
-  onClose: () => void;
-  onEscalate: (to: string, reason: string) => Promise<void>;
-}
+import { EscalateModalProps } from "@/types/admin/query.types";
+
 const EscalateModal: React.FC<EscalateModalProps> = ({
   query,
   superAdmins,

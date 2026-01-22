@@ -15,6 +15,15 @@ export interface IStudentSubmission {
   filePublicId?: string;
   submittedAt: Date;
 }
+
+export interface IQuizAnswer {
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  selectedAnswer: string | null;
+  isCorrect: boolean;
+}
+
 export interface IChapter {
   _id: Types.ObjectId;
   title: string;
@@ -34,6 +43,7 @@ export interface IChapter {
     completedAt?: Date;
     score?: number;
     submissions?: IStudentSubmission[];
+    quizAnswers?: IQuizAnswer[];
   }[];
   createdAt: Date;
   updatedAt: Date;
@@ -80,7 +90,7 @@ const ContentItemSchema = new Schema<IContentItem>(
       min: 0,
     },
   },
-  { _id: true }
+  { _id: true },
 );
 const StudentSubmissionSchema = new Schema<IStudentSubmission>(
   {
@@ -113,7 +123,33 @@ const StudentSubmissionSchema = new Schema<IStudentSubmission>(
       required: true,
     },
   },
-  { _id: true }
+  { _id: true },
+);
+
+const QuizAnswerSchema = new Schema<IQuizAnswer>(
+  {
+    questionText: {
+      type: String,
+      required: true,
+    },
+    options: {
+      type: [String],
+      required: true,
+    },
+    correctAnswer: {
+      type: String,
+      required: true,
+    },
+    selectedAnswer: {
+      type: String,
+      default: null,
+    },
+    isCorrect: {
+      type: Boolean,
+      required: true,
+    },
+  },
+  { _id: false },
 );
 const StudentProgressSchema = new Schema(
   {
@@ -136,12 +172,16 @@ const StudentProgressSchema = new Schema(
       min: 0,
       max: 100,
     },
+    quizAnswers: {
+      type: [QuizAnswerSchema],
+      default: [],
+    },
     submissions: {
       type: [StudentSubmissionSchema],
       default: [],
     },
   },
-  { _id: false, timestamps: true }
+  { _id: false, timestamps: true },
 );
 const ChapterSchema = new Schema<IChapter>(
   {
@@ -194,7 +234,7 @@ const ChapterSchema = new Schema<IChapter>(
               Array.isArray(q.options) &&
               q.options.length === 4 &&
               q.correctAnswer &&
-              q.options.includes(q.correctAnswer)
+              q.options.includes(q.correctAnswer),
           );
         },
         message: "Questions must be valid if provided",
@@ -230,11 +270,11 @@ const ChapterSchema = new Schema<IChapter>(
       },
     },
     toObject: { virtuals: true },
-  }
+  },
 );
 ChapterSchema.index(
   { gradeId: 1, unitId: 1, chapterNumber: 1 },
-  { unique: true }
+  { unique: true },
 );
 ChapterSchema.index({
   gradeId: 1,
@@ -261,7 +301,7 @@ ChapterSchema.pre(
         if (item.publicId && (item.type === "video" || item.type === "pdf")) {
           const resourceType = item.type === "video" ? "video" : "raw";
           await deleteFromCloudinary(item.publicId, resourceType).catch((err) =>
-            console.error("Failed to delete content item file:", err)
+            console.error("Failed to delete content item file:", err),
           );
         }
       }
@@ -277,9 +317,9 @@ ChapterSchema.pre(
                   submission.type === "video" ? "video" : "raw";
                 await deleteFromCloudinary(
                   submission.filePublicId,
-                  resourceType
+                  resourceType,
                 ).catch((err) =>
-                  console.error("Failed to delete submission file:", err)
+                  console.error("Failed to delete submission file:", err),
                 );
               }
             }
@@ -291,7 +331,7 @@ ChapterSchema.pre(
       console.error("Error in Chapter cascading delete:", error);
       next(error);
     }
-  }
+  },
 );
 ChapterSchema.pre("findOneAndDelete", async function (next) {
   try {

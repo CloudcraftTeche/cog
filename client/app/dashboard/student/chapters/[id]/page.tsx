@@ -136,13 +136,7 @@ export default function ChapterDetailPage() {
     setSubmitted(false);
     setQuizScore(0);
   };
-  const getAnswersArray = () => {
-    if (!chapter?.questions) return [];
-    return chapter.questions.map((q, i) => ({
-      questionText: q.questionText,
-      selectedAnswer: selectedAnswers[i] || "",
-    }));
-  };
+
   const currentScore = submitted
     ? quizScore > 0
       ? quizScore
