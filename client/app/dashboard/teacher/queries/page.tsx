@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Send, TrendingUp, Clock, User, ArrowUpCircle, X, Filter, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
 import api from '@/lib/api';
-import type { Query, QueryFilters, QueryStatistics, User as UserType, ApiResponse, PaginatedResponse } from '@/types/query.types';
+import type { Query, QueryFilters, QueryStatistics, User as UserType, ApiResponse, PaginatedResponse } from '@/types/admin/query.types';
 
 const TeacherQueryPage: React.FC = () => {
   const [queries, setQueries] = useState<Query[]>([]);

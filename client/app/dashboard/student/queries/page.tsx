@@ -14,13 +14,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import api from "@/lib/api";
-import type {
-  Query,
-  QueryFilters,
-  Recipients,
-  CreateQueryData,
-  ApiResponse,
-} from "@/types/query.types";
+import { ApiResponse, CreateQueryData, Query, QueryFilters, Recipients } from "@/types/query.types";
+
 const StudentQueryPage: React.FC = () => {
   const [queries, setQueries] = useState<Query[]>([]);
   const [recipients, setRecipients] = useState<Recipients>({

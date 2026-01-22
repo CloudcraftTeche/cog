@@ -11,7 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 import api from "@/lib/api";
-import { Query, Statistics, Filters, User } from "@/types/query.types";
+import { Query, Statistics, Filters, User } from "@/types/admin/query.types";
 import StatCard from "@/components/queries/StatCard";
 import FilterBar from "@/components/queries/FilterBar";
 import QueryCard from "@/components/queries/QueryCard";
