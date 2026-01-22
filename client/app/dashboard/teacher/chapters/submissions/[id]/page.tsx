@@ -16,10 +16,18 @@ import {
   User,
   BookOpen,
   ChevronLeft,
+  CheckCircle2,
+  XCircle,
+  FileDown,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { TeacherChapterService } from "@/components/teacher/chapter/chapterApiAndTypes";
+import api from "@/lib/api";
+interface QuizAnswer {
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  selectedAnswer: string | null;
+  isCorrect: boolean;
+}
 interface Submission {
   type: "text" | "video" | "pdf";
   content?: string;
@@ -45,6 +53,7 @@ interface StudentSubmission {
   completedAt?: Date;
   startedAt?: Date;
   submissions: Submission[];
+  quizAnswers?: QuizAnswer[];
 }
 interface ChapterData {
   _id: string;
@@ -60,26 +69,22 @@ interface ChapterData {
 export default function TeacherChapterSubmissionsPage() {
   const router = useRouter();
   const params = useParams();
-  const { user } = useAuth();
   const chapterId = params?.id as string;
   const [chapter, setChapter] = useState<ChapterData | null>(null);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
-    if (!chapterId || !user?.id) return;
+    if (!chapterId) return;
     try {
       setLoading(true);
-      const teacherGrade = await TeacherChapterService.getTeacherGrade(user.id);
-      const chapterData: any =
-        await TeacherChapterService.getChapterById(chapterId);
-      if (chapterData.gradeId._id !== teacherGrade._id) {
-        toast.error("Unauthorized", {
-          description: "You can only view submissions from your assigned grade",
-        });
-        router.push("/dashboard/teacher/chapters");
-        return;
+      const response = await api.get(`/chapters/${chapterId}`);
+      const data = await response.data;
+      if (!response) {
+        throw new Error(data.message || "Failed to fetch chapter");
       }
+      const chapterData = data.data;
       setChapter(chapterData);
+
       const studentSubmissions: StudentSubmission[] = [];
       if (
         chapterData.studentProgress &&
@@ -87,9 +92,8 @@ export default function TeacherChapterSubmissionsPage() {
       ) {
         for (const progress of chapterData.studentProgress) {
           if (
-            progress.studentId.gradeId?._id === teacherGrade._id &&
-            progress.submissions &&
-            progress.submissions.length > 0
+            (progress.submissions && progress.submissions.length > 0) ||
+            (progress.quizAnswers && progress.quizAnswers.length > 0)
           ) {
             studentSubmissions.push({
               studentId: progress.studentId,
@@ -97,7 +101,8 @@ export default function TeacherChapterSubmissionsPage() {
               score: progress.score,
               completedAt: progress.completedAt,
               startedAt: progress.startedAt,
-              submissions: progress.submissions,
+              submissions: progress.submissions || [],
+              quizAnswers: progress.quizAnswers || [],
             });
           }
         }
@@ -105,15 +110,39 @@ export default function TeacherChapterSubmissionsPage() {
       setSubmissions(studentSubmissions);
     } catch (error: any) {
       console.error("Fetch error:", error);
-      toast.error(error.message || "Failed to fetch submissions");
+      alert(error.message || "Failed to fetch submissions");
       router.push("/dashboard/teacher/chapters");
     } finally {
       setLoading(false);
     }
-  }, [chapterId, user?.id, router]);
+  }, [chapterId, router]);
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  const handleDownload = async (
+    fileUrl: string,
+    type: string,
+    studentName: string,
+  ) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const extension = type === "pdf" ? "pdf" : "mp4";
+      const fileName = `${studentName}_submission_${Date.now()}.${extension}`;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      alert("Download started");
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download file");
+    }
+  };
   const getSubmissionIcon = (type: string) => {
     switch (type) {
       case "video":
@@ -175,7 +204,6 @@ export default function TeacherChapterSubmissionsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30">
       <div className="container mx-auto px-4 py-8">
-        {}
         <div className="mb-8">
           <Button
             variant="ghost"
@@ -210,7 +238,6 @@ export default function TeacherChapterSubmissionsPage() {
             </div>
           </div>
         </div>
-        {}
         {submissions.length === 0 ? (
           <Card className="shadow-xl rounded-3xl border-0">
             <CardContent className="p-12 text-center">
@@ -269,11 +296,7 @@ export default function TeacherChapterSubmissionsPage() {
                         </div>
                       )}
                       <Badge
-                        className={`mt-1 ${
-                          studentSubmission.status === "completed"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
+                        className={`mt-1 ${studentSubmission.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
                       >
                         {studentSubmission.status}
                       </Badge>
@@ -282,6 +305,73 @@ export default function TeacherChapterSubmissionsPage() {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-4">
+                    {studentSubmission.quizAnswers &&
+                      studentSubmission.quizAnswers.length > 0 && (
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-200">
+                          <h4 className="font-semibold text-gray-900 text-lg mb-4 flex items-center gap-2">
+                            <FileCheck className="h-5 w-5 text-indigo-600" />
+                            Quiz Responses
+                          </h4>
+                          <div className="space-y-4">
+                            {studentSubmission.quizAnswers.map(
+                              (answer, qIndex) => (
+                                <div
+                                  key={qIndex}
+                                  className={`bg-white rounded-xl p-4 border-2 ${answer.isCorrect ? "border-green-200" : "border-red-200"}`}
+                                >
+                                  <div className="flex items-start justify-between mb-2">
+                                    <p className="font-medium text-gray-900 flex-1">
+                                      {qIndex + 1}. {answer.questionText}
+                                    </p>
+                                    {answer.isCorrect ? (
+                                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 ml-2" />
+                                    ) : (
+                                      <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 ml-2" />
+                                    )}
+                                  </div>
+                                  <div className="space-y-2 mt-3">
+                                    {answer.options.map((option, optIndex) => (
+                                      <div
+                                        key={optIndex}
+                                        className={`p-2 rounded-lg text-sm ${
+                                          option === answer.correctAnswer &&
+                                          option === answer.selectedAnswer
+                                            ? "bg-green-100 text-green-800 font-medium"
+                                            : option === answer.correctAnswer
+                                              ? "bg-green-50 text-green-700 border border-green-200"
+                                              : option === answer.selectedAnswer
+                                                ? "bg-red-100 text-red-800 font-medium"
+                                                : "bg-gray-50 text-gray-600"
+                                        }`}
+                                      >
+                                        {option}
+                                        {option === answer.correctAnswer &&
+                                          option === answer.selectedAnswer && (
+                                            <span className="ml-2">
+                                              ✓ Correct
+                                            </span>
+                                          )}
+                                        {option === answer.correctAnswer &&
+                                          option !== answer.selectedAnswer && (
+                                            <span className="ml-2">
+                                              ✓ Correct Answer
+                                            </span>
+                                          )}
+                                        {option === answer.selectedAnswer &&
+                                          option !== answer.correctAnswer && (
+                                            <span className="ml-2">
+                                              ✗ Selected
+                                            </span>
+                                          )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
                     {studentSubmission.submissions.map(
                       (submission, subIndex) => (
                         <div
@@ -291,9 +381,7 @@ export default function TeacherChapterSubmissionsPage() {
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-r ${getSubmissionColor(
-                                  submission.type
-                                )}`}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-r ${getSubmissionColor(submission.type)}`}
                               >
                                 {getSubmissionIcon(submission.type)}
                               </div>
@@ -304,7 +392,7 @@ export default function TeacherChapterSubmissionsPage() {
                                 <p className="text-sm text-gray-600 flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
                                   {new Date(
-                                    submission.submittedAt
+                                    submission.submittedAt,
                                   ).toLocaleString()}
                                 </p>
                               </div>
@@ -317,9 +405,46 @@ export default function TeacherChapterSubmissionsPage() {
                               </p>
                             </div>
                           )}
-                          {(submission.type === "video" ||
-                            submission.type === "pdf") &&
+                          {submission.type === "video" &&
                             submission.fileUrl && (
+                              <div className="flex flex-col gap-2 h-[80vh]">
+                                <video
+                                  className="w-full rounded-xl bg-black h-full"
+                                  controls
+                                  crossOrigin="anonymous"
+                                >
+                                  <source
+                                    src={submission.fileUrl}
+                                    type="video/mp4"
+                                  />
+                                  Your browser does not support the video tag.
+                                </video>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDownload(
+                                        submission.fileUrl!,
+                                        submission.type,
+                                        studentSubmission.studentId.name,
+                                      )
+                                    }
+                                    className="bg-white hover:bg-gray-50 border-gray-300 flex-1"
+                                  >
+                                    <FileDown className="h-4 w-4 mr-2" />
+                                    Download
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          {submission.type === "pdf" && submission.fileUrl && (
+                            <div className="flex flex-col gap-2">
+                              <iframe
+                                src={submission.fileUrl}
+                                className="w-full h-96 rounded-xl border border-gray-300"
+                                title="PDF Submission"
+                              />
                               <div className="flex gap-2">
                                 <Button
                                   variant="outline"
@@ -327,32 +452,31 @@ export default function TeacherChapterSubmissionsPage() {
                                   onClick={() =>
                                     window.open(submission.fileUrl, "_blank")
                                   }
-                                  className="bg-white hover:bg-gray-50 border-gray-300"
+                                  className="bg-white hover:bg-gray-50 border-gray-300 flex-1"
                                 >
                                   <ExternalLink className="h-4 w-4 mr-2" />
-                                  View{" "}
-                                  {submission.type === "video"
-                                    ? "Video"
-                                    : "PDF"}
+                                  View PDF
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
-                                    const link = document.createElement("a");
-                                    link.href = submission.fileUrl!;
-                                    link.download = `submission-${submission.type}`;
-                                    link.click();
-                                  }}
-                                  className="bg-white hover:bg-gray-50 border-gray-300"
+                                  onClick={() =>
+                                    handleDownload(
+                                      submission.fileUrl!,
+                                      submission.type,
+                                      studentSubmission.studentId.name,
+                                    )
+                                  }
+                                  className="bg-white hover:bg-gray-50 border-gray-300 flex-1"
                                 >
-                                  <Download className="h-4 w-4 mr-2" />
+                                  <FileDown className="h-4 w-4 mr-2" />
                                   Download
                                 </Button>
                               </div>
-                            )}
+                            </div>
+                          )}
                         </div>
-                      )
+                      ),
                     )}
                   </div>
                 </CardContent>
