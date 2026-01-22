@@ -101,6 +101,8 @@ export const useChapterScores = (id: string) => {
           questionsCount: chapterData.questions?.length || 0,
           createdAt: chapterData.createdAt,
           updatedAt: chapterData.updatedAt,
+          questions: false,
+          unitId: ""
         },
         completedStudents: completedData.data || [],
         pendingStudents: pendingData.data || [],
