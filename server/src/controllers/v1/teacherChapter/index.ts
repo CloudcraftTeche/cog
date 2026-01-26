@@ -142,6 +142,7 @@ export const getTeacherChaptersHandler = async (
   next: NextFunction
 ): Promise<any> => {
   try {
+    const gradeId=req.params.gradeId;
     const { search = "", unitId, chapterNumber } = req.query;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -149,12 +150,6 @@ export const getTeacherChaptersHandler = async (
     const userId = req.userId;
     const teacher = await Teacher.findById(userId).select("gradeId role");
     const admin = await User.findById(userId).select("role");
-    let gradeId: string | null | undefined = null;
-    if (teacher) {
-      if (!teacher.gradeId)
-        throw new ApiError(400, "Teacher has no assigned grade");
-      gradeId = teacher.gradeId.toString();
-    }
     const filter: any = {};
     if (admin) {
     } else if (gradeId) {
