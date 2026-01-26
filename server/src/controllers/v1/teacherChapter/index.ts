@@ -142,20 +142,25 @@ export const getTeacherChaptersHandler = async (
   next: NextFunction
 ): Promise<any> => {
   try {
-    const gradeId=req.params.gradeId;
+    const gradeId = req.params.gradeId;
     const { search = "", unitId, chapterNumber } = req.query;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
     const userId = req.userId;
-    const teacher = await Teacher.findById(userId).select("gradeId role");
     const admin = await User.findById(userId).select("role");
+    const isAdmin = admin && (admin.role === "admin" || admin.role === "superAdmin");
     const filter: any = {};
-    if (admin) {
-    } else if (gradeId) {
-      filter.gradeId = gradeId;
+    if (isAdmin) {
+      if (gradeId) {
+        filter.gradeId = gradeId;
+      }
     } else {
-      throw new ApiError(403, "Unauthorized access");
+      const teacher = await Teacher.findById(userId).select("gradeId role");
+      if (!teacher) {
+        throw new ApiError(403, "Unauthorized access");
+      }
+      filter.gradeId = teacher.gradeId;
     }
     if (search) filter.title = { $regex: new RegExp(search as string, "i") };
     if (unitId) filter.unitId = unitId;
@@ -189,10 +194,11 @@ export const getTeacherChaptersHandler = async (
           unit: "Unknown",
           unitName: "Unknown",
         }));
-    if (teacher) {
+    if (!isAdmin) {
+      const teacher = await Teacher.findById(userId).select("gradeId");
       const teacherObjectId = new mongoose.Types.ObjectId(userId);
       const allChapters = await TeacherChapter.find({
-        gradeId: teacher.gradeId,
+        gradeId: teacher!.gradeId,
       })
         .sort({ unitId: 1, chapterNumber: 1 })
         .select("_id unitId teacherProgress")
