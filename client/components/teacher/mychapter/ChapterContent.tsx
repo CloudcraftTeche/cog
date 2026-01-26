@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { TeacherChapter } from "@/utils/teacherChapter.service";
 interface ChapterContentProps {
   chapter: TeacherChapter;
@@ -31,7 +37,11 @@ export default function ChapterContent({ chapter }: ChapterContentProps) {
                 allowFullScreen
               />
             ) : (
-              <video src={chapter.videoUrl} controls className="w-full h-full" />
+              <video
+                src={chapter.videoUrl}
+                controls
+                className="w-full h-full"
+              />
             )}
           </div>
         )}
@@ -39,7 +49,8 @@ export default function ChapterContent({ chapter }: ChapterContentProps) {
           <div className="p-4 sm:p-6 md:p-8">
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 sm:p-6">
               <div
-                className="prose prose-gray max-w-none text-gray-700 leading-relaxed prose-sm sm:prose-base"
+                className="text-gray-700 leading-relaxed text-sm sm:text-base"
+                style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}
                 dangerouslySetInnerHTML={{ __html: chapter.textContent }}
               />
             </div>
