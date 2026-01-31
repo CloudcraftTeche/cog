@@ -10,7 +10,7 @@ import ChapterHeader from "@/components/teacher/mychapter/ChapterHeader";
 import ChapterContent from "@/components/teacher/mychapter/ChapterContent";
 import QuizSection from "@/components/teacher/mychapter/QuizSection";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -31,6 +31,7 @@ export default function ChapterDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quizScore, setQuizScore] = useState<number>(0);
+  const [loadingNextChapter, setLoadingNextChapter] = useState(false);
   useEffect(() => {
     if (!user?.id || !id) return;
     const fetchChapter = async () => {
@@ -110,16 +111,17 @@ export default function ChapterDetailPage() {
   };
   const handleNextChapter = async () => {
     if (!user?.id || !chapter) return;
+    setLoadingNextChapter(true);
     try {
       const response = await chapterService.getChapters({
         unitId: chapter.unitId,
       });
       if (response.data && response.data.length > 0) {
         const sortedChapters = response.data.sort(
-          (a, b) => a.chapterNumber - b.chapterNumber
+          (a, b) => a.chapterNumber - b.chapterNumber,
         );
         const currentIndex = sortedChapters.findIndex(
-          (ch) => ch._id === chapter._id
+          (ch) => ch._id === chapter._id,
         );
         if (currentIndex !== -1 && currentIndex < sortedChapters.length - 1) {
           const nextChapter = sortedChapters[currentIndex + 1];
@@ -132,7 +134,8 @@ export default function ChapterDetailPage() {
         router.push(`/dashboard/teacher/my-chapters`);
       }
     } catch (err) {
-      router.push(`/dashboard/teacher/my-chapters`);
+      toast.error("Unable to load next chapter. Please try again.");
+      setLoadingNextChapter(false);
     }
   };
   const handleRetake = () => {
@@ -158,6 +161,16 @@ export default function ChapterDetailPage() {
   const hasQuestions = chapter.questions && chapter.questions.length > 0;
   return (
     <div className="min-h-screen bg-white">
+      {loadingNextChapter && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
+            <p className="text-lg font-semibold text-gray-800">
+              Loading next chapter...
+            </p>
+          </div>
+        </div>
+      )}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full animate-float" />
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed" />
@@ -187,16 +200,35 @@ export default function ChapterDetailPage() {
                   disabled={submitting}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                 >
-                  {submitting ? "Completing..." : "Complete Chapter"}
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Completing...
+                    </>
+                  ) : (
+                    <>
+                      Complete Chapter
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </>
+                  )}
                 </Button>
               ) : (
                 <Button
                   onClick={handleNextChapter}
-                  className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  disabled={loadingNextChapter}
+                  className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  Next Chapter
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                  {loadingNextChapter ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Next Chapter
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </>
+                  )}
                 </Button>
               )}
             </div>
