@@ -1,7 +1,7 @@
 // components/queries/CreateQueryModal.tsx
 import React from 'react';
 import { X, Send, Paperclip } from 'lucide-react';
-import type { CreateQueryData, Recipients } from '@/types/query.types';
+import { CreateQueryData, Recipients } from '@/types/student/query.types';
 
 interface CreateQueryModalProps {
   isOpen: boolean;
