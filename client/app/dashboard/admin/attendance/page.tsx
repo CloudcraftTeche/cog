@@ -1,12 +1,8 @@
-// app/admin/attendance/page.tsx
 "use client";
-
 import { useState } from "react";
 import { Toaster } from "sonner";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
-
-// TanStack Query Hooks
 import {
   useAttendanceStats,
   useAttendanceHeatmap,
@@ -14,14 +10,10 @@ import {
   useExportAttendance,
   useRefreshAttendance,
 } from "@/hooks/admin/useAttendance";
-
-// Validators
 import {
   validateAttendanceStatus,
   validateDateRange,
 } from "@/lib/admin/validators/attendance.validators";
-
-// Utils
 import {
   convertAttendanceToCSV,
   downloadCSV,
@@ -29,58 +21,47 @@ import {
 } from "@/utils/admin/export.utils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
 import ErrorState from "@/components/teacher/mychapter/ErrorState";
-import { AttendanceHeatmap, AttendancePieChart, AttendanceTable, AttendanceTrendChart, ExportSection, Navigation, StatsSection } from "@/components/admin/attendance/AttendanceComponents";
-
-
-
-
-
+import {
+  AttendanceHeatmap,
+  AttendancePieChart,
+  AttendanceTable,
+  AttendanceTrendChart,
+  ExportSection,
+  Navigation,
+  StatsSection,
+} from "@/components/admin/attendance/AttendanceComponents";
 export default function AdminAttendancePage() {
-  // ===== QUERIES =====
   const {
     data: stats,
     isLoading: statsLoading,
     error: statsError,
   } = useAttendanceStats();
-
   const {
     data: heatmapData = [],
     isLoading: heatmapLoading,
     error: heatmapError,
   } = useAttendanceHeatmap();
-
   const {
     data: recentRecords = [],
     isLoading: recordsLoading,
     error: recordsError,
   } = useAttendanceRecords(50);
-
-  // ===== MUTATIONS =====
   const exportMutation = useExportAttendance();
   const refreshMutation = useRefreshAttendance();
-
-  // ===== LOCAL STATE =====
   const [selectedView, setSelectedView] = useState("overview");
-
-  // ===== DERIVED STATE =====
   const isLoading = statsLoading && heatmapLoading && recordsLoading;
   const error =
     statsError?.message || heatmapError?.message || recordsError?.message;
-
-  // ===== HANDLERS =====
   const handleExport = async (
     status: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ) => {
-    // Validate status
     const statusError = validateAttendanceStatus(status);
     if (statusError) {
       toast.error(statusError.message);
       return;
     }
-
-    // Validate date range if provided
     if (startDate && endDate) {
       const dateError = validateDateRange(startDate, endDate);
       if (dateError) {
@@ -88,51 +69,37 @@ export default function AdminAttendancePage() {
         return;
       }
     }
-
     try {
       const data = await exportMutation.mutateAsync({
         status,
         startDate,
         endDate,
       });
-
       if (!data || data.length === 0) {
         toast.error("No data available for export");
         return;
       }
-
       const csvData = convertAttendanceToCSV(data);
       const filename = generateExportFilename(status);
       downloadCSV(csvData, filename);
-
       toast.success(`Exported ${data.length} records successfully`);
     } catch (error: any) {
-      // Error already handled in mutation
       console.error("Export error:", error);
     }
   };
-
   const handleRefresh = () => {
     refreshMutation.mutate();
   };
-
-  // ===== LOADING STATE =====
   if (isLoading) {
-    return <LoadingState text="Attendance"  />;
+    return <LoadingState text="Attendance" />;
   }
-
-  // ===== ERROR STATE =====
   if (error) {
-    return <ErrorState message={error}  />;
+    return <ErrorState message={error} />;
   }
-
-  // ===== MAIN RENDER =====
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
       <Toaster position="top-right" />
-
       <Navigation selectedView={selectedView} onViewChange={setSelectedView} />
-
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {selectedView === "overview" && (
           <>
@@ -149,9 +116,7 @@ export default function AdminAttendancePage() {
                 Refresh
               </button>
             </div>
-
             <StatsSection stats={stats ?? null} isLoading={statsLoading} />
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <AttendancePieChart
                 data={
@@ -165,11 +130,9 @@ export default function AdminAttendancePage() {
               />
               <AttendanceTrendChart data={heatmapData} />
             </div>
-
             <ExportSection onExport={handleExport} />
           </>
         )}
-
         {selectedView === "heatmap" && (
           <>
             <AttendanceHeatmap data={heatmapData} />
@@ -198,7 +161,6 @@ export default function AdminAttendancePage() {
             </div>
           </>
         )}
-
         {selectedView === "records" && (
           <AttendanceTable records={recentRecords} />
         )}

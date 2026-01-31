@@ -1,6 +1,4 @@
-// app/dashboard/admin/chapters/upload/page.tsx
 "use client";
-
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,11 +11,9 @@ import QuestionsSection from "@/components/admin/chapters/QuestionsSection";
 import BasicInfoSection from "@/components/admin/chapters/BasicInfoSection";
 import ContentUploadSection from "@/components/admin/chapters/ContentUploadSection";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-
 export default function SuperAdminUploadChapter() {
   const router = useRouter();
   const { data: grades = [], isLoading: gradesLoading } = useGrades();
-
   const {
     formState,
     errors,
@@ -28,14 +24,10 @@ export default function SuperAdminUploadChapter() {
     updateQuestions,
     handleSubmit,
   } = useUploadChapter();
-
-  // Get units for selected grade
   const units =
     formState.selectedGrades.length > 0
       ? grades.find((g) => g._id === formState.selectedGrades[0])?.units || []
       : [];
-
-  // Reset selected unit when grades change
   useEffect(() => {
     if (formState.selectedGrades.length === 0) {
       updateField("selectedUnit", "");
@@ -46,7 +38,6 @@ export default function SuperAdminUploadChapter() {
         const sortedUnits = [...selectedGrade.units].sort(
           (a, b) => a.orderIndex - b.orderIndex,
         );
-        // Reset if current unit not in new grade's units
         if (
           formState.selectedUnit &&
           !sortedUnits.some((u) => u._id === formState.selectedUnit)
@@ -56,16 +47,13 @@ export default function SuperAdminUploadChapter() {
       }
     }
   }, [formState.selectedGrades, grades, formState.selectedUnit, updateField]);
-
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSubmit();
   };
-
   if (gradesLoading) {
     return <LoadingState text="form" />;
   }
-
   return (
     <div className="p-6 relative">
       <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 mb-8 rounded-3xl">
@@ -79,7 +67,6 @@ export default function SuperAdminUploadChapter() {
           </p>
         </div>
       </div>
-
       <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pb-8">
         {isSuccess && (
           <Alert className="mb-8 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg rounded-2xl">
@@ -90,7 +77,6 @@ export default function SuperAdminUploadChapter() {
             </AlertDescription>
           </Alert>
         )}
-
         <form onSubmit={handleFormSubmit} className="space-y-8">
           <BasicInfoSection
             title={formState.title}
@@ -107,13 +93,11 @@ export default function SuperAdminUploadChapter() {
             units={units}
             errors={errors}
           />
-
           <ContentUploadSection
             contentItems={formState.contentItems}
             setContentItems={updateContentItems}
             errors={errors}
           />
-
           <QuestionsSection
             questions={formState.questions}
             setQuestions={(value) => {
@@ -125,7 +109,6 @@ export default function SuperAdminUploadChapter() {
             }}
             errors={errors}
           />
-
           <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
             <Button
               type="button"

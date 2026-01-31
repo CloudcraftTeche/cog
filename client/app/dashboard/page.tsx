@@ -1,7 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth/useAuth";import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import SuperAdminDashboard from "@/components/admin-dashboard";

@@ -15,8 +15,7 @@ import { IUser, IMessage, IGrade } from "@/types/chat.types";
 import { ConnectionStatus } from "@/components/shared/ConnectionStatus";
 import { MessageBubble } from "@/components/shared/MessageBubble";
 import { MessageInput } from "@/components/shared/MessageInput";
-import { useAuth } from "@/hooks/useAuth";
-const StudentChatPanel: React.FC = () => {
+import { useAuth } from "@/hooks/auth/useAuth";const StudentChatPanel: React.FC = () => {
   const [activeChat, setActiveChat] = useState<IUser | null>(null);
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [teachers, setTeachers] = useState<IUser[]>([]);

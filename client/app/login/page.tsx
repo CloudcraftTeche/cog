@@ -2,8 +2,7 @@
 
 import { GraduationCap } from "lucide-react";
 import LoginForm from "@/components/auth/login-form";
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth/useAuth";import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
 

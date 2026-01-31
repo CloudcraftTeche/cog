@@ -1,36 +1,61 @@
 "use client";
 import { useState } from "react";
 import { Toaster } from "sonner";
-import api from "@/lib/api";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
-import { useAttendanceData } from "@/hooks/useAttendanceData";
+import {
+  useAttendanceStats,
+  useAttendanceHeatmap,
+  useAttendanceRecords,
+  useExportAttendance,
+  useRefreshAttendance,
+} from "@/hooks/admin/useAttendance";
 import {
   validateAttendanceStatus,
   validateDateRange,
-} from "@/lib/attendanceValidators";
+} from "@/lib/admin/validators/attendance.validators";
 import {
   convertAttendanceToCSV,
   downloadCSV,
   generateExportFilename,
-} from "@/utils/exportUtils";
-import { Navigation } from "@/components/admin/attendance/Navigation";
+} from "@/utils/admin/export.utils";
+import { LoadingState } from "@/components/shared/LoadingComponent";
+import ErrorState from "@/components/teacher/mychapter/ErrorState";
 import {
   AttendanceHeatmap,
   AttendancePieChart,
   AttendanceTable,
   AttendanceTrendChart,
   ExportSection,
-  StatsCards,
+  Navigation,
+  StatsSection,
 } from "@/components/admin/attendance/AttendanceComponents";
 export default function SuperAdminAttendancePage() {
-  const { stats, heatmapData, recentRecords, isLoading, error, refreshData } =
-    useAttendanceData();
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError,
+  } = useAttendanceStats();
+  const {
+    data: heatmapData = [],
+    isLoading: heatmapLoading,
+    error: heatmapError,
+  } = useAttendanceHeatmap();
+  const {
+    data: recentRecords = [],
+    isLoading: recordsLoading,
+    error: recordsError,
+  } = useAttendanceRecords(50);
+  const exportMutation = useExportAttendance();
+  const refreshMutation = useRefreshAttendance();
   const [selectedView, setSelectedView] = useState("overview");
+  const isLoading = statsLoading && heatmapLoading && recordsLoading;
+  const error =
+    statsError?.message || heatmapError?.message || recordsError?.message;
   const handleExport = async (
     status: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ) => {
     const statusError = validateAttendanceStatus(status);
     if (statusError) {
@@ -45,55 +70,31 @@ export default function SuperAdminAttendancePage() {
       }
     }
     try {
-      let url = `/attendance/export?status=${status}`;
-      if (startDate && endDate) {
-        url += `&startDate=${startDate}&endDate=${endDate}`;
-      }
-      const response = await api.get(url);
-      if (!response.data || response.data.length === 0) {
+      const data = await exportMutation.mutateAsync({
+        status,
+        startDate,
+        endDate,
+      });
+      if (!data || data.length === 0) {
         toast.error("No data available for export");
         return;
       }
-      const csvData = convertAttendanceToCSV(response.data);
+      const csvData = convertAttendanceToCSV(data);
       const filename = generateExportFilename(status);
       downloadCSV(csvData, filename);
-      toast.success(`Exported ${response.data.length} records successfully`);
+      toast.success(`Exported ${data.length} records successfully`);
     } catch (error: any) {
       console.error("Export error:", error);
-      toast.error(error.response?.data?.error || "Failed to export data");
     }
   };
+  const handleRefresh = () => {
+    refreshMutation.mutate();
+  };
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <RefreshCw
-              className="animate-spin mx-auto mb-4 text-purple-600"
-              size={48}
-            />
-            <p className="text-gray-600">Loading attendance data...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState text="Attendance" />;
   }
   if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center bg-white p-8 rounded-3xl shadow-lg">
-            <p className="text-red-600 mb-4">{error}</p>
-            <button
-              onClick={refreshData}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState message={error} />;
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
@@ -104,14 +105,18 @@ export default function SuperAdminAttendancePage() {
           <>
             <div className="flex justify-end">
               <button
-                onClick={refreshData}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                onClick={handleRefresh}
+                disabled={refreshMutation.isPending}
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
               >
-                <RefreshCw size={18} />
+                <RefreshCw
+                  size={18}
+                  className={refreshMutation.isPending ? "animate-spin" : ""}
+                />
                 Refresh
               </button>
             </div>
-            <StatsCards stats={stats} />
+            <StatsSection stats={stats ?? null} isLoading={statsLoading} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <AttendancePieChart
                 data={

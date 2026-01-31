@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,17 +21,20 @@ import {
 import { toast } from "sonner";
 import { IQuestion } from "@/types/admin/assignment.types";
 import { QuestionForm } from "@/components/admin/assignments/QuestionForm";
-import { useAssignment, useUpdateAssignment } from "@/hooks/admin/useAssignments";
-import { MAX_FILE_SIZE_MB, MAX_FILE_SIZE_BYTES } from "@/types/admin/assignment.types";
-
+import {
+  useAssignment,
+  useUpdateAssignment,
+} from "@/hooks/admin/useAssignments";
+import {
+  MAX_FILE_SIZE_MB,
+  MAX_FILE_SIZE_BYTES,
+} from "@/types/admin/assignment.types";
 export default function AdminEditAssignment() {
   const router = useRouter();
   const params = useParams();
   const assignmentId = params.id as string;
-
   const { assignment, loading: initialLoading } = useAssignment(assignmentId);
   const { updateAssignment, isUpdating } = useUpdateAssignment(assignmentId);
-
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -48,8 +50,6 @@ export default function AdminEditAssignment() {
     questions: [] as IQuestion[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Populate form when assignment loads
   useEffect(() => {
     if (assignment) {
       setFormData({
@@ -74,14 +74,11 @@ export default function AdminEditAssignment() {
       });
     }
   }, [assignment]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSuccess(false);
     setErrors({});
-
     try {
-      // Validate file sizes
       if (
         formData.contentType === "video" &&
         formData.videoFile &&
@@ -90,7 +87,6 @@ export default function AdminEditAssignment() {
         toast.error(`Video file exceeds ${MAX_FILE_SIZE_MB}MB`);
         return;
       }
-
       if (
         formData.contentType === "pdf" &&
         formData.pdfFile &&
@@ -99,21 +95,17 @@ export default function AdminEditAssignment() {
         toast.error(`PDF file exceeds ${MAX_FILE_SIZE_MB}MB`);
         return;
       }
-
       if (formData.contentType === "text" && !formData.textContent.trim()) {
         toast.error("Text content cannot be empty");
         return;
       }
-
       const validQuestions = formData.questions.filter(
-        (q) => q.questionText.trim() !== ""
+        (q) => q.questionText.trim() !== "",
       );
-
       if (validQuestions.length === 0) {
         toast.error("Please add at least one valid question");
         return;
       }
-
       const updateFormData = new FormData();
       updateFormData.append("title", formData.title);
       updateFormData.append("contentType", formData.contentType);
@@ -123,24 +115,18 @@ export default function AdminEditAssignment() {
       updateFormData.append("totalMarks", formData.totalMarks.toString());
       updateFormData.append("passingMarks", formData.passingMarks.toString());
       updateFormData.append("questions", JSON.stringify(validQuestions));
-
       if (formData.contentType === "video" && formData.videoFile) {
         updateFormData.append("file", formData.videoFile);
       }
-
       if (formData.contentType === "pdf" && formData.pdfFile) {
         updateFormData.append("file", formData.pdfFile);
       }
-
       if (formData.contentType === "text") {
         updateFormData.append("textContent", formData.textContent);
       }
-
       await updateAssignment(updateFormData);
-
       setSuccess(true);
       toast.success("Assignment updated successfully!");
-
       setTimeout(() => {
         router.push("/dashboard/admin/assignments");
       }, 1500);
@@ -149,7 +135,6 @@ export default function AdminEditAssignment() {
       toast.error(err.response?.data?.message || "Failed to update assignment");
     }
   };
-
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
@@ -173,7 +158,6 @@ export default function AdminEditAssignment() {
       </div>
     );
   }
-
   if (!assignment) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
@@ -189,7 +173,6 @@ export default function AdminEditAssignment() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -202,7 +185,6 @@ export default function AdminEditAssignment() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Assignments
           </Button>
-
           <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 rounded-3xl shadow-2xl">
             <div className="max-w-5xl mx-auto px-6 text-center">
               <div className="flex items-center justify-center mb-4">
@@ -215,7 +197,6 @@ export default function AdminEditAssignment() {
             </div>
           </div>
         </div>
-
         {success && (
           <Alert className="mb-8 border-green-200 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -224,12 +205,11 @@ export default function AdminEditAssignment() {
             </AlertDescription>
           </Alert>
         )}
-
         <form
           onSubmit={handleSubmit}
           className="max-w-5xl mx-auto space-y-8 pb-8"
         >
-          {/* Assignment Details */}
+          {}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
             <CardHeader className="bg-gradient-to-br from-blue-50 to-indigo-50 pb-4">
@@ -241,7 +221,7 @@ export default function AdminEditAssignment() {
               </div>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
-              {/* Title and Content Type */}
+              {}
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label
@@ -262,7 +242,6 @@ export default function AdminEditAssignment() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold flex items-center gap-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full" />
@@ -300,8 +279,7 @@ export default function AdminEditAssignment() {
                   </Tabs>
                 </div>
               </div>
-
-              {/* Description */}
+              {}
               <div className="space-y-2">
                 <Label
                   htmlFor="description"
@@ -321,8 +299,7 @@ export default function AdminEditAssignment() {
                   required
                 />
               </div>
-
-              {/* Dates and Marks */}
+              {}
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate" className="text-sm font-semibold">
@@ -338,7 +315,6 @@ export default function AdminEditAssignment() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="endDate" className="text-sm font-semibold">
                     End Date *
@@ -353,7 +329,6 @@ export default function AdminEditAssignment() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="totalMarks" className="text-sm font-semibold">
                     Total Marks
@@ -371,7 +346,6 @@ export default function AdminEditAssignment() {
                     }
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label
                     htmlFor="passingMarks"
@@ -395,8 +369,7 @@ export default function AdminEditAssignment() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Content Upload */}
+          {}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-500" />
             <CardHeader className="bg-gradient-to-br from-purple-50 to-pink-50">
@@ -431,7 +404,6 @@ export default function AdminEditAssignment() {
                   </p>
                 </div>
               )}
-
               {formData.contentType === "text" && (
                 <div className="space-y-2">
                   <Label htmlFor="textContent">Text Content *</Label>
@@ -447,7 +419,6 @@ export default function AdminEditAssignment() {
                   />
                 </div>
               )}
-
               {formData.contentType === "pdf" && (
                 <div className="space-y-2">
                   <Label htmlFor="pdfFile">
@@ -478,8 +449,7 @@ export default function AdminEditAssignment() {
               )}
             </CardContent>
           </Card>
-
-          {/* Questions */}
+          {}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-orange-500 to-red-500" />
             <CardHeader className="bg-gradient-to-br from-orange-50 to-red-50">
@@ -495,8 +465,7 @@ export default function AdminEditAssignment() {
               />
             </CardContent>
           </Card>
-
-          {/* Actions */}
+          {}
           <div className="flex justify-end gap-4 pb-8">
             <Button
               type="button"

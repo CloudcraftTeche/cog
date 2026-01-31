@@ -1,6 +1,4 @@
-// app/admin/grade-completion/page.tsx
 "use client";
-
 import { useState } from "react";
 import {
   Download,
@@ -15,42 +13,28 @@ import {
   ClipboardCheck,
   Calendar,
 } from "lucide-react";
-
-// TanStack Query Hooks
 import {
   useGradeCompletionReport,
   useExportGradeReport,
 } from "@/hooks/admin/useGradeReports";
-
-// Types & Utils
 import { GradeWithStats } from "@/types/admin/grade.types";
 import {
   getCompletionColor,
   getCompletionStatus,
   getGradeGradient,
 } from "@/utils/admin/grade.utils";
-
-// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 export default function GradeCompletionReport() {
-  // ===== LOCAL STATE =====
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // ===== QUERIES =====
   const {
     data: reportData,
     isLoading,
     error,
   } = useGradeCompletionReport(currentPage, itemsPerPage, searchQuery);
-
-  // ===== MUTATIONS =====
   const exportMutation = useExportGradeReport();
-
-  // ===== DERIVED STATE =====
   const grades = reportData?.data || [];
   const pagination = reportData?.pagination || {
     total: 0,
@@ -58,28 +42,21 @@ export default function GradeCompletionReport() {
     currentPage: 1,
     limit: itemsPerPage,
   };
-
-  // ===== HANDLERS =====
   const handleExportSingle = async (grade: GradeWithStats) => {
     await exportMutation.mutateAsync(grade);
   };
-
   const handleExportAll = async () => {
     await exportMutation.mutateAsync(undefined);
   };
-
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
   };
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setCurrentPage(newPage);
     }
   };
-
-  // ===== LOADING STATE =====
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -90,8 +67,6 @@ export default function GradeCompletionReport() {
       </div>
     );
   }
-
-  // ===== ERROR STATE =====
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -102,10 +77,9 @@ export default function GradeCompletionReport() {
       </div>
     );
   }
-
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
+      {}
       <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 mb-8 rounded-3xl shadow-2xl">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
@@ -117,9 +91,8 @@ export default function GradeCompletionReport() {
           </p>
         </div>
       </div>
-
       <div className="container mx-auto px-4 md:px-6 pb-8">
-        {/* Search & Export */}
+        {}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
           <div className="relative w-full md:max-w-md">
             <Input
@@ -131,7 +104,6 @@ export default function GradeCompletionReport() {
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           </div>
-
           <Button
             onClick={handleExportAll}
             disabled={exportMutation.isPending || grades.length === 0}
@@ -150,8 +122,7 @@ export default function GradeCompletionReport() {
             )}
           </Button>
         </div>
-
-        {/* Grades List */}
+        {}
         {grades.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
             <GraduationCap className="h-16 w-16 text-slate-300 mx-auto mb-4" />
@@ -165,9 +136,10 @@ export default function GradeCompletionReport() {
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {grades.map((grade: GradeWithStats, index: number) => {
-              const status = getCompletionStatus(grade.averageChapterCompletion);
+              const status = getCompletionStatus(
+                grade.averageChapterCompletion,
+              );
               const gradient = getGradeGradient(index);
-
               return (
                 <div
                   key={grade._id}
@@ -175,7 +147,7 @@ export default function GradeCompletionReport() {
                 >
                   <div className={`h-2 bg-gradient-to-r ${gradient}`} />
                   <div className="p-6">
-                    {/* Header */}
+                    {}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center">
                         <div
@@ -205,8 +177,7 @@ export default function GradeCompletionReport() {
                         Export
                       </Button>
                     </div>
-
-                    {/* Teachers */}
+                    {}
                     <div className="mb-6 p-3 bg-slate-50 rounded-xl">
                       <p className="text-sm font-medium text-slate-600 mb-1">
                         Teachers:
@@ -217,8 +188,7 @@ export default function GradeCompletionReport() {
                           : "No teachers assigned"}
                       </p>
                     </div>
-
-                    {/* Quick Stats */}
+                    {}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="p-4 bg-blue-50 rounded-xl">
                         <div className="flex items-center mb-2">
@@ -231,7 +201,6 @@ export default function GradeCompletionReport() {
                           {grade.totalStudents}
                         </p>
                       </div>
-
                       <div className="p-4 bg-purple-50 rounded-xl">
                         <div className="flex items-center mb-2">
                           <BookOpen className="h-5 w-5 text-purple-600 mr-2" />
@@ -243,7 +212,6 @@ export default function GradeCompletionReport() {
                           {grade.totalChapters}
                         </p>
                       </div>
-
                       <div className="p-4 bg-orange-50 rounded-xl">
                         <div className="flex items-center mb-2">
                           <ClipboardCheck className="h-5 w-5 text-orange-600 mr-2" />
@@ -255,7 +223,6 @@ export default function GradeCompletionReport() {
                           {grade.totalAssignments}
                         </p>
                       </div>
-
                       <div className="p-4 bg-teal-50 rounded-xl">
                         <div className="flex items-center mb-2">
                           <Calendar className="h-5 w-5 text-teal-600 mr-2" />
@@ -268,8 +235,7 @@ export default function GradeCompletionReport() {
                         </p>
                       </div>
                     </div>
-
-                    {/* Chapter Progress */}
+                    {}
                     <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
                       <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center">
                         <BookOpen className="h-5 w-5 mr-2" />
@@ -295,7 +261,6 @@ export default function GradeCompletionReport() {
                           </p>
                         </div>
                       </div>
-
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-medium text-slate-700">
                           Average Completion
@@ -304,7 +269,6 @@ export default function GradeCompletionReport() {
                           {grade.averageChapterCompletion}%
                         </span>
                       </div>
-
                       <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                         <div
                           className={`h-full bg-gradient-to-r ${getCompletionColor(grade.averageChapterCompletion)} transition-all duration-500 rounded-full`}
@@ -317,8 +281,7 @@ export default function GradeCompletionReport() {
                         {status.text}
                       </p>
                     </div>
-
-                    {/* Assignment Stats */}
+                    {}
                     <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
                       <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center">
                         <ClipboardCheck className="h-5 w-5 mr-2" />
@@ -351,8 +314,7 @@ export default function GradeCompletionReport() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Attendance Overview */}
+                    {}
                     <div className="mb-4 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl">
                       <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center">
                         <Calendar className="h-5 w-5 mr-2" />
@@ -385,8 +347,7 @@ export default function GradeCompletionReport() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Footer */}
+                    {}
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -398,7 +359,8 @@ export default function GradeCompletionReport() {
                         {grade.isActive ? "Active" : "Inactive"}
                       </span>
                       <span className="text-xs text-slate-500">
-                        Updated: {new Date(grade.updatedAt).toLocaleDateString()}
+                        Updated:{" "}
+                        {new Date(grade.updatedAt).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -407,8 +369,7 @@ export default function GradeCompletionReport() {
             })}
           </div>
         )}
-
-        {/* Pagination */}
+        {}
         {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between mt-8 bg-white p-4 rounded-xl shadow-lg">
             <div className="text-sm text-slate-600">
@@ -425,7 +386,6 @@ export default function GradeCompletionReport() {
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
-
               <div className="flex items-center gap-1">
                 {Array.from(
                   { length: Math.min(5, pagination.totalPages) },
@@ -444,7 +404,9 @@ export default function GradeCompletionReport() {
                       <Button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        variant={currentPage === pageNum ? "default" : "outline"}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
                         size="sm"
                         className={`w-10 h-10 ${
                           currentPage === pageNum
@@ -455,10 +417,9 @@ export default function GradeCompletionReport() {
                         {pageNum}
                       </Button>
                     );
-                  }
+                  },
                 )}
               </div>
-
               <Button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === pagination.totalPages}

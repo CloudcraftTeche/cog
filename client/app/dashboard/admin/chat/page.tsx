@@ -16,8 +16,7 @@ import { IUser, IGrade, IMessage } from "@/types/chat.types";
 import { ConnectionStatus } from "@/components/shared/ConnectionStatus";
 import { MessageBubble } from "@/components/shared/MessageBubble";
 import { MessageInput } from "@/components/shared/MessageInput";
-import { useAuth } from "@/hooks/useAuth";
-const AdminChatPanel: React.FC = () => {
+import { useAuth } from "@/hooks/auth/useAuth";const AdminChatPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"grade" | "direct">("grade");
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [grades, setGrades] = useState<IGrade[]>([]);

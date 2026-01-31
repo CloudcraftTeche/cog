@@ -1,6 +1,12 @@
 "use client";
 import React, { useState } from "react";
-import { MessageSquare, TrendingUp, CheckCircle, UserPlus, ArrowUpCircle } from "lucide-react";
+import {
+  MessageSquare,
+  TrendingUp,
+  CheckCircle,
+  UserPlus,
+  ArrowUpCircle,
+} from "lucide-react";
 import {
   useQueries,
   useQueryStatistics,
@@ -33,10 +39,7 @@ const AdminQueryPage: React.FC = () => {
     isLoading: queriesLoading,
     error: queriesError,
   } = useQueries(filters, page);
-  const {
-    data: statistics,
-    isLoading: statsLoading,
-  } = useQueryStatistics();
+  const { data: statistics, isLoading: statsLoading } = useQueryStatistics();
   const { data: teachers = [] } = useTeachers();
   const { data: superAdmins = [] } = useSuperAdmins();
   const addResponseMutation = useAddResponse();

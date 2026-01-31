@@ -17,8 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import {
+import { useAuth } from "@/hooks/auth/useAuth";import {
   TeacherChapter,
   TeacherChapterService,
   TeacherGrade,

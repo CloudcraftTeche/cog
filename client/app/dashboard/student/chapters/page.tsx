@@ -1,69 +1,45 @@
+// app/dashboard/student/chapters/page.tsx
 "use client";
-import { useEffect, useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Search,
   Sparkles,
-  FileText,
   ChevronDown,
   ChevronRight,
   BookOpen,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { Chapter, chapterService } from "@/utils/studentChapter.service";
-import LoadingState from "@/components/student/chapter/LoadingState";
-import ErrorState from "@/components/student/chapter/ErrorState";
-import ChapterCardItem from "@/components/student/chapter/ChapterCardItem";
+import { useChaptersList } from "@/hooks/student/useChapters";
+import { ChapterCard } from "@/components/student/chapter/ChapterCard";
+import { LoadingSpinner, ErrorDisplay } from "@/components/shared/LoadingSpinner";
+import { groupChaptersByUnit, getUnitColor } from "@/utils/student/chapterUtils";
+import { LoadingState } from "@/components/shared/LoadingComponent";
+
 const ITEMS_PER_PAGE = 100;
-const unitColors = [
-  "from-purple-400 to-pink-400",
-  "from-blue-400 to-cyan-400",
-  "from-green-400 to-emerald-400",
-  "from-orange-400 to-red-400",
-  "from-rose-400 to-pink-400",
-  "from-indigo-400 to-purple-400",
-  "from-violet-400 to-fuchsia-400",
-  "from-teal-400 to-emerald-400",
-];
-interface UnitGroup {
-  unitId: string;
-  unitName: string;
-  unitDescription?: string;
-  grade: string;
-  chapters: Chapter[];
-}
+
 export default function StudentChaptersPage() {
-  const { user } = useAuth();
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
-  const fetchChapters = async () => {
-    if (!user?.id) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const params: any = {
-        page: 1,
-        limit: ITEMS_PER_PAGE,
-      };
-      if (searchTerm) params.search = searchTerm;
-      const response = await chapterService.getChapters(params);
-      setChapters(response.data || []);
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to fetch chapters";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    fetchChapters();
-  }, [user?.id, searchTerm]);
+
+  const {
+    data: chaptersData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useChaptersList({
+    page: 1,
+    limit: ITEMS_PER_PAGE,
+    search: searchTerm || undefined,
+  });
+
+  const chapters = chaptersData?.chapters ?? [];
+
+  const groupedByUnit = useMemo(
+    () => groupChaptersByUnit(chapters),
+    [chapters]
+  );
+
   const toggleUnit = (unitId: string) => {
     const newExpanded = new Set(expandedUnits);
     if (newExpanded.has(unitId)) {
@@ -73,40 +49,16 @@ export default function StudentChaptersPage() {
     }
     setExpandedUnits(newExpanded);
   };
-  const filteredChapters = searchTerm
-    ? chapters.filter(
-        (ch) =>
-          ch.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ch.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : chapters;
-  const groupedByUnit: UnitGroup[] = (() => {
-    const unitMap = new Map<string, UnitGroup>();
-    filteredChapters.forEach((chapter) => {
-      const unitId = chapter.unitId;
-      if (!unitId) return;
-      if (!unitMap.has(unitId)) {
-        unitMap.set(unitId, {
-          unitId: unitId,
-          unitName: chapter.unitName || "Unnamed Unit",
-          unitDescription: chapter.unitDescription,
-          grade: chapter.gradeId?.grade || "N/A",
-          chapters: [],
-        });
-      }
-      unitMap.get(unitId)!.chapters.push(chapter);
-    });
-    unitMap.forEach((unitGroup) => {
-      unitGroup.chapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
-    });
-    return Array.from(unitMap.values());
-  })();
-  if (loading) {
-    return <LoadingState message="Loading chapters..." />;
+
+  if (isLoading) {
+    return <LoadingState text="chapters..." />;
   }
-  if (error) {
-    return <ErrorState message={error} />;
+
+  if (isError) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to fetch chapters";
+    return <ErrorDisplay error={errorMessage} onRetry={() => refetch()} />;
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -114,7 +66,9 @@ export default function StudentChaptersPage() {
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed blur-xl" />
         <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full animate-float blur-xl" />
       </div>
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
+        {/* Header */}
         <div className="mb-6 sm:mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white shadow-2xl">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-2">
@@ -129,6 +83,8 @@ export default function StudentChaptersPage() {
             </p>
           </div>
         </div>
+
+        {/* Search */}
         <div className="max-w-xl mx-auto mb-6 sm:mb-8">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5 group-hover:text-purple-500 transition-colors" />
@@ -140,11 +96,13 @@ export default function StudentChaptersPage() {
             />
           </div>
         </div>
+
+        {/* Units List */}
         <div className="space-y-4 sm:space-y-6">
           {groupedByUnit.length === 0 ? (
             <div className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50 rounded-2xl sm:rounded-3xl overflow-hidden p-8 sm:p-12 text-center">
               <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 rounded-full flex items-center justify-center shadow-2xl">
-                <FileText className="h-12 w-12 sm:h-16 sm:w-16 text-white" />
+                <Sparkles className="h-12 w-12 sm:h-16 sm:w-16 text-white" />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
                 No chapters found
@@ -158,7 +116,8 @@ export default function StudentChaptersPage() {
           ) : (
             groupedByUnit.map((unitGroup, index) => {
               const isExpanded = expandedUnits.has(unitGroup.unitId);
-              const colorClass = unitColors[index % unitColors.length];
+              const colorClass = getUnitColor(index);
+
               return (
                 <div key={unitGroup.unitId} className="group">
                   <div
@@ -211,10 +170,11 @@ export default function StudentChaptersPage() {
                       </div>
                     </div>
                   </div>
+
                   {isExpanded && (
                     <div className="ml-2 sm:ml-4 mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
                       {unitGroup.chapters.map((chapter, chapterIndex) => (
-                        <ChapterCardItem
+                        <ChapterCard
                           key={chapter._id}
                           chapter={chapter}
                           index={chapterIndex}
@@ -228,24 +188,15 @@ export default function StudentChaptersPage() {
           )}
         </div>
       </div>
+
       <style jsx global>{`
         @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
         }
         @keyframes float-delayed {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-15px);
-          }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
         }
         .animate-float {
           animation: float 6s ease-in-out infinite;

@@ -1,6 +1,4 @@
-// app/dashboard/admin/chapters/scores/[id]/page.tsx
 "use client";
-
 import { useRouter, useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Clock, ChevronLeft } from "lucide-react";
@@ -12,24 +10,22 @@ import StatisticsCards from "@/components/admin/chapters/StatisticsCards";
 import CompletedStudentsTab from "@/components/admin/chapters/CompletedStudentsTab";
 import PendingStudentsTab from "@/components/admin/chapters/PendingStudentsTab";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-import { ChapterHeader, ErrorDisplay } from "@/components/admin/chapters/SharedComponents";
-
+import {
+  ChapterHeader,
+  ErrorDisplay,
+} from "@/components/admin/chapters/SharedComponents";
 export default function ChapterScoresPage() {
   const router = useRouter();
   const params = useParams();
   const chapterId = params?.id as string;
-
   const { data: scoreData, isLoading, error } = useChapterScores(chapterId);
   const sendReminderMutation = useSendReminder(chapterId);
-
   const handleSendChapterReminder = (studentId: string) => {
     sendReminderMutation.mutate(studentId);
   };
-
   if (isLoading) {
     return <LoadingState text="score data" />;
   }
-
   if (error || !scoreData) {
     return (
       <ErrorDisplay
@@ -39,14 +35,12 @@ export default function ChapterScoresPage() {
       />
     );
   }
-
   const { totalStudents, completionRate, passRate } = calculateStatistics(
     scoreData.completedStudents.length,
     scoreData.pendingStudents.length,
     scoreData.completedStudents,
-    scoreData.chapter.questionsCount
+    scoreData.chapter.questionsCount,
   );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
       <div className="container mx-auto px-4 py-8">
@@ -58,7 +52,6 @@ export default function ChapterScoresPage() {
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back to Chapters
         </Button>
-
         <ChapterHeader
           title={scoreData.chapter.title}
           description={scoreData.chapter.description}
@@ -68,7 +61,6 @@ export default function ChapterScoresPage() {
           contentItems={scoreData.chapter.contentItems}
           submissionsCount={scoreData.completedStudents.length}
         />
-
         <ExportButtons
           chapterTitle={scoreData.chapter.title}
           questionsCount={scoreData.chapter.questionsCount}
@@ -82,14 +74,12 @@ export default function ChapterScoresPage() {
             passRate,
           }}
         />
-
         <StatisticsCards
           totalStudents={totalStudents}
           completionRate={completionRate}
           averageScore={scoreData.statistics.averageScore}
           passRate={passRate}
         />
-
         <Tabs defaultValue="completed" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-14 bg-white rounded-2xl shadow-lg border-0 p-2">
             <TabsTrigger
@@ -107,7 +97,6 @@ export default function ChapterScoresPage() {
               Pending ({scoreData.pendingStudents.length})
             </TabsTrigger>
           </TabsList>
-
           <TabsContent value="completed" className="mt-6">
             <CompletedStudentsTab
               students={scoreData.completedStudents}
@@ -115,7 +104,6 @@ export default function ChapterScoresPage() {
               highestScore={scoreData.statistics.highestScore}
             />
           </TabsContent>
-
           <TabsContent value="pending" className="mt-6">
             <PendingStudentsTab
               students={scoreData.pendingStudents}

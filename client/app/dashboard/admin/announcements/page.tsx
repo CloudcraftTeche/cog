@@ -1,17 +1,17 @@
 "use client";
-
 import { useState, useMemo } from "react";
 import { IAnnouncement } from "@/types/admin/announcement.types";
 import { toast } from "sonner";
 import { AnnouncementHeader } from "@/components/admin/announcemnets/AnnouncementHeader";
-import { NoAnnouncementsState, NoSearchResultsState } from "@/components/admin/announcemnets/AnnouncementEmptyStates";
+import {
+  NoAnnouncementsState,
+  NoSearchResultsState,
+} from "@/components/admin/announcemnets/AnnouncementEmptyStates";
 import { AnnouncementFormModal } from "@/components/admin/announcemnets/AnnouncementFormModal";
 import { AnnouncementLoading } from "@/components/admin/announcemnets/AnnouncementLoading";
 import { AnnouncementCard } from "@/components/admin/announcemnets/AnnouncementCard";
 import { DeleteConfirmationDialog } from "@/components/admin/announcemnets/DeleteConfirmationDialog";
 import { useAnnouncements } from "@/hooks/admin/useAnnouncements";
-
-
 export default function AdminAnnouncements() {
   const {
     announcements,
@@ -22,7 +22,6 @@ export default function AdminAnnouncements() {
     deleteAnnouncement,
     togglePin,
   } = useAnnouncements();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -31,32 +30,27 @@ export default function AdminAnnouncements() {
   const [announcementToDelete, setAnnouncementToDelete] = useState<
     string | null
   >(null);
-
   const filteredAnnouncements = useMemo(() => {
     if (!searchTerm.trim()) return announcements;
     const search = searchTerm.toLowerCase();
     return announcements.filter(
       (announcement) =>
         announcement.title.toLowerCase().includes(search) ||
-        announcement.content.toLowerCase().includes(search)
+        announcement.content.toLowerCase().includes(search),
     );
   }, [announcements, searchTerm]);
-
   const handleCreateClick = () => {
     setSelectedAnnouncement(null);
     setIsFormModalOpen(true);
   };
-
   const handleEditClick = (announcement: IAnnouncement) => {
     setSelectedAnnouncement(announcement);
     setIsFormModalOpen(true);
   };
-
   const handleDeleteClick = (id: string) => {
     setAnnouncementToDelete(id);
     setIsDeleteDialogOpen(true);
   };
-
   const handleFormSubmit = async (formData: FormData) => {
     try {
       if (selectedAnnouncement) {
@@ -74,7 +68,6 @@ export default function AdminAnnouncements() {
       toast.error(error.message || "Failed to save announcement");
     }
   };
-
   const handleDeleteConfirm = async () => {
     if (!announcementToDelete) return;
     try {
@@ -86,20 +79,18 @@ export default function AdminAnnouncements() {
       toast.error(error.message || "Failed to delete announcement");
     }
   };
-
   const handleTogglePin = async (id: string, isPinned: boolean) => {
     try {
       await togglePin({ id, isPinned });
       toast.success(
         isPinned
           ? "Announcement pinned successfully"
-          : "Announcement unpinned successfully"
+          : "Announcement unpinned successfully",
       );
     } catch (error: any) {
       toast.error(error.message || "Failed to update pin status");
     }
   };
-
   if (announcements.length === 0 && !loading && searchTerm.trim() === "") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -121,7 +112,6 @@ export default function AdminAnnouncements() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
@@ -130,7 +120,6 @@ export default function AdminAnnouncements() {
           onSearchChange={setSearchTerm}
           onCreateClick={handleCreateClick}
         />
-
         {loading ? (
           <AnnouncementLoading />
         ) : (
@@ -153,7 +142,6 @@ export default function AdminAnnouncements() {
           </>
         )}
       </div>
-
       <AnnouncementFormModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
@@ -161,7 +149,6 @@ export default function AdminAnnouncements() {
         announcement={selectedAnnouncement}
         grades={grades}
       />
-
       <DeleteConfirmationDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}

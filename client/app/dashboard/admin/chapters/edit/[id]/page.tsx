@@ -1,8 +1,6 @@
-// app/dashboard/admin/chapters/edit/[id]/page.tsx
 "use client";
-
 import { useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import Link from "next/link";
@@ -11,12 +9,9 @@ import { useEditChapter } from "@/hooks/admin/useEditChapter";
 import EditQuestionsSection from "@/components/admin/chapters/EditQuestionsSection";
 import EditContentSection from "@/components/admin/chapters/EditContentSection";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-
 export default function EditChapterPage() {
   const { id } = useParams() as { id: string };
-
   const { data: grades = [], isLoading: gradesLoading } = useGrades();
-
   const {
     formState,
     errors,
@@ -27,32 +22,30 @@ export default function EditChapterPage() {
     updateQuestions,
     handleSubmit,
   } = useEditChapter(id);
-
-  // Get units for selected grade
-  const units =
-    formState.selectedGradeId
-      ? grades.find((g) => g._id === formState.selectedGradeId)?.units || []
-      : [];
-
-  // Validate selected unit when grade or units change
+  const units = formState.selectedGradeId
+    ? grades.find((g) => g._id === formState.selectedGradeId)?.units || []
+    : [];
   useEffect(() => {
-    if (formState.selectedGradeId && formState.selectedUnitId && units.length > 0) {
-      const isUnitInGrade = units.some((u) => u._id === formState.selectedUnitId);
+    if (
+      formState.selectedGradeId &&
+      formState.selectedUnitId &&
+      units.length > 0
+    ) {
+      const isUnitInGrade = units.some(
+        (u) => u._id === formState.selectedUnitId,
+      );
       if (!isUnitInGrade) {
         updateField("selectedUnitId", "");
       }
     }
   }, [formState.selectedGradeId, units, formState.selectedUnitId, updateField]);
-
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSubmit();
   };
-
   if (fetchLoading || gradesLoading) {
     return <LoadingState text="chapter details" />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 p-4">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8">
@@ -62,7 +55,6 @@ export default function EditChapterPage() {
             Update chapter content and assessment questions
           </p>
         </div>
-
         <form onSubmit={handleFormSubmit} className="space-y-8">
           <EditContentSection
             title={formState.title}
@@ -70,7 +62,9 @@ export default function EditChapterPage() {
             description={formState.description}
             setDescription={(value) => updateField("description", value)}
             selectedGradeId={formState.selectedGradeId}
-            setSelectedGradeId={(value) => updateField("selectedGradeId", value)}
+            setSelectedGradeId={(value) =>
+              updateField("selectedGradeId", value)
+            }
             selectedUnitId={formState.selectedUnitId}
             setSelectedUnitId={(value) => updateField("selectedUnitId", value)}
             chapterNumber={formState.chapterNumber}
@@ -81,16 +75,17 @@ export default function EditChapterPage() {
             setContentItems={updateContentItems}
             errors={errors}
           />
-
           <EditQuestionsSection
             questions={formState.questions}
             setQuestions={(value) => {
-              const newQuestions = typeof value === 'function' ? value(formState.questions) : value;
+              const newQuestions =
+                typeof value === "function"
+                  ? value(formState.questions)
+                  : value;
               updateQuestions(newQuestions);
             }}
             errors={errors}
           />
-
           <div className="flex justify-end gap-6">
             <Button
               type="button"

@@ -1,10 +1,7 @@
+// components/student/assignments/AssignmentCard.tsx
 "use client";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,80 +22,64 @@ import {
   Edit,
 } from "lucide-react";
 import Link from "next/link";
-import { IAssignment } from "@/types/assignment.types";
+import {
+  getAssignmentStatus,
+  getTimeRemaining,
+  getTimeProgress,
+  formatDate,
+  getGradeName,
+} from "@/utils/student/assignment-utils";
+import { IAssignment, UserRole } from "@/types/student/assignment.types";
+
 interface AssignmentCardProps {
   assignment: IAssignment;
-  userRole?: "student" | "teacher" | "admin";
+  userRole?: UserRole;
   isSubmitted?: boolean;
 }
+
+const contentTypeConfig = {
+  video: {
+    icon: Video,
+    label: "Video",
+    gradient: "from-primary to-info",
+    bg: "bg-primary/10",
+    text: "text-primary",
+    border: "border-primary/20",
+    iconBg: "bg-gradient-to-br from-primary to-info",
+  },
+  text: {
+    icon: FileText,
+    label: "Text",
+    gradient: "from-success to-primary",
+    bg: "bg-success/10",
+    text: "text-success",
+    border: "border-success/20",
+    iconBg: "bg-gradient-to-br from-success to-primary",
+  },
+  pdf: {
+    icon: File,
+    label: "PDF",
+    gradient: "from-destructive to-warning",
+    bg: "bg-destructive/10",
+    text: "text-destructive",
+    border: "border-destructive/20",
+    iconBg: "bg-gradient-to-br from-destructive to-warning",
+  },
+} as const;
+
 export function AssignmentCard({
   assignment,
   userRole = "student",
   isSubmitted = false,
 }: AssignmentCardProps) {
-  const now = new Date();
-  const startDate = new Date(assignment.startDate);
-  const endDate = new Date(assignment.endDate);
-  const isUpcoming = now < startDate;
-  const isActive =
-    now >= startDate && now <= endDate && assignment.status === "active";
-  const isEnded = now > endDate || assignment.status === "ended";
-  const isLocked = assignment.status === "locked";
-  const getTimeRemaining = () => {
-    if (isEnded) return "Ended";
-    if (isUpcoming) return `Starts ${formatDate(startDate)}`;
-    const diff = endDate.getTime() - now.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (days > 0) return `${days}d ${hours}h left`;
-    if (hours > 0) return `${hours}h left`;
-    return "Due soon!";
-  };
-  const getTimeProgress = () => {
-    if (isUpcoming) return 0;
-    if (isEnded) return 100;
-    const total = endDate.getTime() - startDate.getTime();
-    const elapsed = now.getTime() - startDate.getTime();
-    return Math.min(100, Math.max(0, (elapsed / total) * 100));
-  };
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-  const contentTypeConfig = {
-    video: {
-      icon: Video,
-      label: "Video",
-      gradient: "from-primary to-info",
-      bg: "bg-primary/10",
-      text: "text-primary",
-      border: "border-primary/20",
-      iconBg: "bg-gradient-to-br from-primary to-info",
-    },
-    text: {
-      icon: FileText,
-      label: "Text",
-      gradient: "from-success to-primary",
-      bg: "bg-success/10",
-      text: "text-success",
-      border: "border-success/20",
-      iconBg: "bg-gradient-to-br from-success to-primary",
-    },
-    pdf: {
-      icon: File,
-      label: "PDF",
-      gradient: "from-destructive to-warning",
-      bg: "bg-destructive/10",
-      text: "text-destructive",
-      border: "border-destructive/20",
-      iconBg: "bg-gradient-to-br from-destructive to-warning",
-    },
-  }[assignment.contentType];
-  const ContentTypeIcon = contentTypeConfig.icon;
+  const { isUpcoming, isActive, isEnded, isLocked } = getAssignmentStatus(assignment);
+  const timeRemaining = getTimeRemaining(assignment);
+  const timeProgress = getTimeProgress(assignment);
+  const gradeName = getGradeName(assignment.gradeId);
+
+  const config = contentTypeConfig[assignment.contentType];
+  const ContentTypeIcon = config.icon;
+
   const getStatusBadge = () => {
     if (isSubmitted && userRole === "student") {
       return (
@@ -110,10 +91,7 @@ export function AssignmentCard({
     }
     if (isLocked) {
       return (
-        <Badge
-          variant="secondary"
-          className="bg-muted/80 text-muted-foreground border-0"
-        >
+        <Badge variant="secondary" className="bg-muted/80 text-muted-foreground border-0">
           <Lock className="w-3.5 h-3.5 mr-1.5" />
           Locked
         </Badge>
@@ -158,8 +136,7 @@ export function AssignmentCard({
       </Badge>
     );
   };
-  const gradeName =
-    typeof assignment.gradeId === "object" ? assignment.gradeId.grade : "";
+
   const getButtonContent = () => {
     if (isSubmitted && userRole === "student") {
       if (isActive) {
@@ -181,10 +158,12 @@ export function AssignmentCard({
       icon: <Play className="w-4 h-4 mr-1.5 sm:mr-2" />,
       text: "Start",
       shortText: "Go",
-      gradient: contentTypeConfig.gradient,
+      gradient: config.gradient,
     };
   };
+
   const buttonContent = getButtonContent();
+
   return (
     <Card
       className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-gradient-to-br from-card via-card to-muted/30 border-border/50 ${
@@ -195,25 +174,21 @@ export function AssignmentCard({
     >
       <div
         className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${
-          isSubmitted && userRole === "student"
-            ? "from-success to-primary"
-            : contentTypeConfig.gradient
+          isSubmitted && userRole === "student" ? "from-success to-primary" : config.gradient
         }`}
       />
       <div
         className={`absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br ${
-          isSubmitted && userRole === "student"
-            ? "from-success to-primary"
-            : contentTypeConfig.gradient
+          isSubmitted && userRole === "student" ? "from-success to-primary" : config.gradient
         } opacity-10 blur-2xl group-hover:opacity-20 transition-opacity duration-500`}
       />
-      {}
+
       {isSubmitted && userRole === "student" && (
         <div className="absolute top-4 right-4 p-2 rounded-full bg-success/20 backdrop-blur-sm">
           <CheckCircle2 className="w-6 h-6 text-success" />
         </div>
       )}
-      {}
+
       <div className="absolute top-1.5 left-0 w-full h-0.5 bg-muted/50">
         <div
           className={`h-full transition-all duration-300 rounded-full ${
@@ -221,15 +196,16 @@ export function AssignmentCard({
               ? "bg-gradient-to-r from-success to-primary"
               : isEnded
                 ? "bg-destructive"
-                : isActive && getTimeProgress() > 75
+                : isActive && timeProgress > 75
                   ? "bg-gradient-to-r from-warning to-destructive"
-                  : `bg-gradient-to-r ${contentTypeConfig.gradient}`
+                  : `bg-gradient-to-r ${config.gradient}`
           }`}
           style={{
-            width: `${isSubmitted && userRole === "student" ? 100 : getTimeProgress()}%`,
+            width: `${isSubmitted && userRole === "student" ? 100 : timeProgress}%`,
           }}
         />
       </div>
+
       <CardHeader className="pt-8 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -237,7 +213,7 @@ export function AssignmentCard({
               className={`p-3 rounded-2xl ${
                 isSubmitted && userRole === "student"
                   ? "bg-gradient-to-br from-success to-primary"
-                  : contentTypeConfig.iconBg
+                  : config.iconBg
               } text-white shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-300`}
             >
               <ContentTypeIcon className="w-6 h-6" />
@@ -251,10 +227,10 @@ export function AssignmentCard({
                   className={`font-semibold px-2.5 py-1 rounded-full ${
                     isSubmitted && userRole === "student"
                       ? "bg-success/10 text-success"
-                      : `${contentTypeConfig.bg} ${contentTypeConfig.text}`
+                      : `${config.bg} ${config.text}`
                   }`}
                 >
-                  {contentTypeConfig.label}
+                  {config.label}
                 </span>
                 {gradeName && (
                   <span className="text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
@@ -267,6 +243,7 @@ export function AssignmentCard({
           <div className="shrink-0">{getStatusBadge()}</div>
         </div>
       </CardHeader>
+
       <CardContent className="pb-4">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {assignment.description}
@@ -280,25 +257,22 @@ export function AssignmentCard({
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span className="font-medium">Due {formatDate(endDate)}</span>
+            <span className="font-medium">Due {formatDate(assignment.endDate)}</span>
           </div>
           {assignment.questions.length > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success">
               <BookOpen className="w-3.5 h-3.5" />
+              <span className="font-medium">{assignment.questions.length} questions</span>
+            </div>
+          )}
+          {(userRole === "teacher" || userRole === "admin") && assignment.submittedStudents && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-info/10 text-info">
+              <Users className="w-3.5 h-3.5" />
               <span className="font-medium">
-                {assignment.questions.length} questions
+                {assignment.submittedStudents.length} submitted
               </span>
             </div>
           )}
-          {(userRole === "teacher" || userRole === "admin") &&
-            assignment.submittedStudents && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-info/10 text-info">
-                <Users className="w-3.5 h-3.5" />
-                <span className="font-medium">
-                  {assignment.submittedStudents.length} submitted
-                </span>
-              </div>
-            )}
           {assignment.totalMarks && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/10 text-warning-foreground">
               <span className="font-bold">{assignment.totalMarks} pts</span>
@@ -306,6 +280,7 @@ export function AssignmentCard({
           )}
         </div>
       </CardContent>
+
       <CardFooter className="pt-4 border-t border-border/50">
         <div className="flex items-center justify-between w-full gap-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -315,7 +290,7 @@ export function AssignmentCard({
                   ? "bg-success/10"
                   : isEnded
                     ? "bg-destructive/10"
-                    : isActive && getTimeProgress() > 75
+                    : isActive && timeProgress > 75
                       ? "bg-warning/10"
                       : "bg-muted"
               }`}
@@ -327,7 +302,7 @@ export function AssignmentCard({
                   className={`w-4 h-4 ${
                     isEnded
                       ? "text-destructive"
-                      : isActive && getTimeProgress() > 75
+                      : isActive && timeProgress > 75
                         ? "text-warning"
                         : "text-muted-foreground"
                   }`}
@@ -340,14 +315,12 @@ export function AssignmentCard({
                   ? "text-success"
                   : isEnded
                     ? "text-destructive"
-                    : isActive && getTimeProgress() > 75
+                    : isActive && timeProgress > 75
                       ? "text-warning"
                       : "text-muted-foreground"
               }`}
             >
-              {isSubmitted && userRole === "student"
-                ? "Completed"
-                : getTimeRemaining()}
+              {isSubmitted && userRole === "student" ? "Completed" : timeRemaining}
             </span>
           </div>
           <Button

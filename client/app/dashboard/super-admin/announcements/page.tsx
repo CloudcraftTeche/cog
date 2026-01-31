@@ -1,7 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { useAnnouncements } from "@/hooks/useAnnouncements";
-import { IAnnouncement } from "@/utils/announcement.utils";
+import { IAnnouncement } from "@/types/admin/announcement.types";
 import { toast } from "sonner";
 import { AnnouncementHeader } from "@/components/admin/announcemnets/AnnouncementHeader";
 import {
@@ -12,6 +11,7 @@ import { AnnouncementFormModal } from "@/components/admin/announcemnets/Announce
 import { AnnouncementLoading } from "@/components/admin/announcemnets/AnnouncementLoading";
 import { AnnouncementCard } from "@/components/admin/announcemnets/AnnouncementCard";
 import { DeleteConfirmationDialog } from "@/components/admin/announcemnets/DeleteConfirmationDialog";
+import { useAnnouncements } from "@/hooks/admin/useAnnouncements";
 export default function SuperAdminAnnouncements() {
   const {
     announcements,
@@ -36,7 +36,7 @@ export default function SuperAdminAnnouncements() {
     return announcements.filter(
       (announcement) =>
         announcement.title.toLowerCase().includes(search) ||
-        announcement.content.toLowerCase().includes(search)
+        announcement.content.toLowerCase().includes(search),
     );
   }, [announcements, searchTerm]);
   const handleCreateClick = () => {
@@ -54,38 +54,41 @@ export default function SuperAdminAnnouncements() {
   const handleFormSubmit = async (formData: FormData) => {
     try {
       if (selectedAnnouncement) {
-        await updateAnnouncement(selectedAnnouncement._id, formData);
-        toast("Announcement updated successfully");
+        await updateAnnouncement({
+          id: selectedAnnouncement._id,
+          formData,
+        });
+        toast.success("Announcement updated successfully");
       } else {
         await createAnnouncement(formData);
-        toast("Announcement created successfully");
+        toast.success("Announcement created successfully");
       }
       setIsFormModalOpen(false);
     } catch (error: any) {
-      toast("Failed to save announcement");
+      toast.error(error.message || "Failed to save announcement");
     }
   };
   const handleDeleteConfirm = async () => {
     if (!announcementToDelete) return;
     try {
       await deleteAnnouncement(announcementToDelete);
-      toast("Announcement deleted successfully");
+      toast.success("Announcement deleted successfully");
       setIsDeleteDialogOpen(false);
       setAnnouncementToDelete(null);
     } catch (error: any) {
-      toast(error.message || "Failed to delete announcement");
+      toast.error(error.message || "Failed to delete announcement");
     }
   };
   const handleTogglePin = async (id: string, isPinned: boolean) => {
     try {
-      await togglePin(id, isPinned);
-      toast(
+      await togglePin({ id, isPinned });
+      toast.success(
         isPinned
           ? "Announcement pinned successfully"
-          : "Announcement unpinned successfully"
+          : "Announcement unpinned successfully",
       );
     } catch (error: any) {
-      toast(error.message || "Failed to update pin status");
+      toast.error(error.message || "Failed to update pin status");
     }
   };
   if (announcements.length === 0 && !loading && searchTerm.trim() === "") {

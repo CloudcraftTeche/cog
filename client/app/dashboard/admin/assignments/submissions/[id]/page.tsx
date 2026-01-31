@@ -1,5 +1,4 @@
 "use client";
-
 import { useParams } from "next/navigation";
 import { useSubmissions } from "@/hooks/admin/useSubmissions";
 import {
@@ -10,11 +9,9 @@ import {
   SubmissionCard,
   SubmissionHeader,
 } from "@/components/admin/assignments/SubmissionsComponents";
-
 export default function AdminSubmissionsPage() {
   const params = useParams();
   const assignmentId = params.id as string;
-
   const {
     submissions,
     loading,
@@ -25,11 +22,9 @@ export default function AdminSubmissionsPage() {
     setCurrentPage,
     gradeSubmission,
   } = useSubmissions({ assignmentId, limit: 10 });
-
   if (submissions.length === 0 && !loading && searchTerm.trim() === "") {
     return <NoSubmissionsState />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
@@ -37,7 +32,6 @@ export default function AdminSubmissionsPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
-
         {loading ? (
           <LoadingState />
         ) : submissions.length > 0 ? (
@@ -51,7 +45,6 @@ export default function AdminSubmissionsPage() {
                 />
               ))}
             </div>
-
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}

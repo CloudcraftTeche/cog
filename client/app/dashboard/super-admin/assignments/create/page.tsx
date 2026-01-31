@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,20 +17,20 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
-import {
-  IAssignmentForm,
-  IGrade,
-  validateAssignmentForm,
-} from "@/lib/assignmentValidation";
+import { IAssignmentForm } from "@/types/admin/assignment.types";
+import { validateAssignmentForm } from "@/lib/admin/utils/assignment.validation";
 import { QuestionForm } from "@/components/admin/assignments/QuestionForm";
 import GradeSelection from "@/components/admin/assignments/GradeSelection";
-const MAX_FILE_SIZE_MB = 25;
+import {
+  useAssignments,
+  useCreateAssignment,
+} from "@/hooks/admin/useAssignments";
+import { MAX_FILE_SIZE_MB } from "@/types/admin/assignment.types";
 export default function SuperAdminCreateAssignment() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [gradesLoading, setGradesLoading] = useState(true);
-  const [grades, setGrades] = useState<IGrade[]>([]);
+  const { grades, gradesLoading } = useAssignments();
+  const { createForSingleGrade, createForMultipleGrades, isCreating } =
+    useCreateAssignment();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<IAssignmentForm>({
     title: "",
@@ -52,21 +52,6 @@ export default function SuperAdminCreateAssignment() {
       },
     ],
   });
-  useEffect(() => {
-    const fetchGrades = async () => {
-      try {
-        setGradesLoading(true);
-        const response = await api.get("/grades/all");
-        setGrades(response.data.data || []);
-      } catch (error: any) {
-        console.error("Error fetching grades:", error);
-        toast.error(error.response?.data?.message || "Failed to fetch grades");
-      } finally {
-        setGradesLoading(false);
-      }
-    };
-    fetchGrades();
-  }, []);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validateAssignmentForm(formData);
@@ -80,7 +65,6 @@ export default function SuperAdminCreateAssignment() {
       return;
     }
     setErrors({});
-    setLoading(true);
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
@@ -90,14 +74,14 @@ export default function SuperAdminCreateAssignment() {
       formDataToSend.append("endDate", formData.endDate);
       formDataToSend.append(
         "totalMarks",
-        formData.totalMarks?.toString() || "100"
+        formData.totalMarks?.toString() || "100",
       );
       formDataToSend.append(
         "passingMarks",
-        formData.passingMarks?.toString() || "40"
+        formData.passingMarks?.toString() || "40",
       );
       const validQuestions = formData.questions.filter(
-        (q) => q.questionText?.trim() !== ""
+        (q) => q.questionText?.trim() !== "",
       );
       formDataToSend.append("questions", JSON.stringify(validQuestions));
       if (formData.contentType === "video" && formData.videoFile) {
@@ -108,58 +92,29 @@ export default function SuperAdminCreateAssignment() {
         formDataToSend.append("textContent", formData.textContent || "");
       }
       if (formData.gradeIds.length === 1) {
-        await api.post(
-          `/assignments/grade/${formData.gradeIds[0]}`,
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        await createForSingleGrade({
+          gradeId: formData.gradeIds[0],
+          formData: formDataToSend,
+        });
       } else {
         const multiFormData = new FormData();
         multiFormData.append("gradeIds", JSON.stringify(formData.gradeIds));
-        multiFormData.append("title", formData.title);
-        multiFormData.append("description", formData.description);
-        multiFormData.append("contentType", formData.contentType);
-        multiFormData.append("startDate", formData.startDate);
-        multiFormData.append("endDate", formData.endDate);
-        multiFormData.append(
-          "totalMarks",
-          formData.totalMarks?.toString() || "100"
-        );
-        multiFormData.append(
-          "passingMarks",
-          formData.passingMarks?.toString() || "40"
-        );
-        multiFormData.append("questions", JSON.stringify(validQuestions));
-        if (formData.contentType === "video" && formData.videoFile) {
-          multiFormData.append("file", formData.videoFile);
-        } else if (formData.contentType === "pdf" && formData.pdfFile) {
-          multiFormData.append("file", formData.pdfFile);
-        } else if (formData.contentType === "text") {
-          multiFormData.append("textContent", formData.textContent || "");
+        for (const [key, value] of formDataToSend.entries()) {
+          multiFormData.append(key, value);
         }
-        await api.post("/assignments/multiple", multiFormData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await createForMultipleGrades(multiFormData);
       }
       toast.success(
         `Assignment created for ${formData.gradeIds.length} grade${
           formData.gradeIds.length > 1 ? "s" : ""
-        }`
+        }`,
       );
       router.push("/dashboard/super-admin/assignments");
     } catch (error: any) {
       console.error("Error creating assignment:", error);
       toast.error(
-        error.response?.data?.message || "Failed to create assignment"
+        error.response?.data?.message || "Failed to create assignment",
       );
-    } finally {
-      setLoading(false);
     }
   };
   const toggleGrade = (gradeId: string) => {
@@ -271,6 +226,7 @@ export default function SuperAdminCreateAssignment() {
                   </Tabs>
                 </div>
               </div>
+              {}
               <div className="space-y-2">
                 <Label
                   htmlFor="description"
@@ -487,16 +443,16 @@ export default function SuperAdminCreateAssignment() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              disabled={loading}
+              disabled={isCreating}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isCreating}
               className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 px-8"
             >
-              {loading ? (
+              {isCreating ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
                   Creating...

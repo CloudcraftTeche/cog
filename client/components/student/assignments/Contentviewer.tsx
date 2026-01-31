@@ -1,3 +1,4 @@
+// components/student/assignments/ContentViewer.tsx
 "use client";
 
 import { useState } from "react";
@@ -11,18 +12,19 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { IAssignment } from "@/types/assignment.types";
+import { IAssignment } from "@/types/student/assignment.types";
 
 interface ContentViewerProps {
   assignment: IAssignment;
 }
 
+type ViewerType = "google" | "office" | "direct";
+
 export function ContentViewer({ assignment }: ContentViewerProps) {
   const [pdfError, setPdfError] = useState(false);
-  const [viewerType, setViewerType] = useState<"google" | "office" | "direct">(
-    "google"
-  );
+  const [viewerType, setViewerType] = useState<ViewerType>("google");
 
+  // Video Content
   if (assignment.contentType === "video" && assignment.videoUrl) {
     return (
       <div className="space-y-3">
@@ -44,13 +46,13 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     );
   }
 
+  // PDF Content
   if (assignment.contentType === "pdf" && assignment.pdfUrl) {
     const pdfUrl = assignment.pdfUrl;
-
     const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
     const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(pdfUrl)}`;
 
-    const getViewerUrl = () => {
+    const getViewerUrl = (): string => {
       switch (viewerType) {
         case "google":
           return googleDocsUrl;
@@ -64,7 +66,6 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     };
 
     const handleError = () => {
-      // Try next viewer type
       if (viewerType === "google") {
         setViewerType("office");
         setPdfError(false);
@@ -161,6 +162,7 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     );
   }
 
+  // Text Content
   if (assignment.contentType === "text" && assignment.textContent) {
     return (
       <div className="space-y-3">
@@ -177,6 +179,7 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     );
   }
 
+  // No Content
   return (
     <div className="flex items-center justify-center p-8 rounded-xl bg-muted/30 border border-dashed border-border">
       <p className="text-muted-foreground">No content available</p>

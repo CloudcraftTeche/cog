@@ -35,11 +35,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { IAssignment, ISubmission } from "@/types/assignment.types";
 import { SubmissionContent, SubmissionForm } from "./SubmissionForm";
 import { ContentViewer } from "./Contentviewer";
 import { QuestionForm } from "./QuestionForm";
 import { useRouter } from "next/navigation";
+import { IAssignment, ISubmission } from "@/types/student/assignment.types";
 
 interface AssignmentDetailProps {
   assignment: IAssignment;

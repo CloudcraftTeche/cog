@@ -1,111 +1,130 @@
+// components/announcements/AnnouncementCard.tsx
+"use client";
 
-"use client"
- interface Announcement {
-  _id: string;
-  title: string;
-  content: string;
-  type: "text" | "image" | "video";
-  mediaUrl?: string;
-  accentColor: string;
-  isPinned: boolean;
-  targetAudience: "all" | "specific";
-  targetGrades: Array<{ _id: string; grade: string }>;
-  createdBy?: { _id: string; name: string };
-  createdAt: string;
-  updatedAt: string;
-}
- const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
-};
-import { Pin, Calendar, Users, Image, Video, FileText} from 'lucide-react';
- const AnnouncementCard = ({ announcement, onClick }: { 
-  announcement: Announcement; 
+import { useMemo } from "react";
+import {
+  Pin,
+  Calendar,
+  Users,
+  Image,
+  Video,
+  FileText,
+} from "lucide-react";
+import { Announcement } from "@/types/teacher/announcement";
+import { formatDate, getTargetGradesText } from "@/utils/teacher/announcement";
+
+interface AnnouncementCardProps {
+  announcement: Announcement | null;
   onClick: () => void;
-}) => {
-  const getTypeIcon = () => {
-    switch (announcement.type) {
-      case 'image': return <Image className="w-4 h-4" />;
-      case 'video': return <Video className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+}
+
+export const AnnouncementCard = ({
+  announcement,
+  onClick,
+}: AnnouncementCardProps) => {
+  const typeIcon = useMemo(() => {
+    switch (announcement?.type) {
+      case "image":
+        return <Image className="w-4 h-4" />;
+      case "video":
+        return <Video className="w-4 h-4" />;
+      default:
+        return <FileText className="w-4 h-4" />;
     }
-  };
+  }, [announcement?.type]);
+
+  if (!announcement) {
+    return <div className="bg-white rounded-2xl shadow-lg p-6 h-64" />;
+  }
+
+  const hasImage =
+    announcement.mediaUrl && announcement.type === "image";
+  const gradesText = getTargetGradesText(announcement);
+
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-1 border-2 border-gray-100"
-      style={{ borderLeftWidth: '6px', borderLeftColor: announcement.accentColor }}
+      className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-1 border-2 border-gray-100 group"
+      style={{
+        borderLeftWidth: "6px",
+        borderLeftColor: announcement.accentColor || "#10b981",
+      }}
     >
-      {announcement.mediaUrl && announcement.type === 'image' && (
+      {hasImage && (
         <div className="relative h-48 overflow-hidden">
-          <img 
-            src={announcement.mediaUrl} 
-            alt={announcement.title}
-            className="w-full h-full object-cover"
+          <img
+            src={announcement.mediaUrl || ""}
+            alt={announcement.title || "Announcement"}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          {announcement.isPinned && (
+            <div className="absolute top-3 right-3 p-2 bg-amber-500 rounded-lg shadow-lg">
+              <Pin className="w-4 h-4 text-white fill-current" />
+            </div>
+          )}
         </div>
       )}
+
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div 
-              className="p-2 rounded-lg"
-              style={{ backgroundColor: `${announcement.accentColor}15` }}
+            <div
+              className="p-2 rounded-lg transition-all"
+              style={{
+                backgroundColor: `${announcement.accentColor || "#10b981"}20`,
+              }}
             >
-              <div style={{ color: announcement.accentColor }}>
-                {getTypeIcon()}
+              <div style={{ color: announcement.accentColor || "#10b981" }}>
+                {typeIcon}
               </div>
             </div>
-            {announcement.isPinned && (
-              <div className="flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+            {announcement.isPinned && announcement.type !== "image" && (
+              <div className="flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold shadow-sm">
                 <Pin className="w-3 h-3 fill-current" />
                 Pinned
               </div>
             )}
           </div>
         </div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
-          {announcement.title}
+
+        <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-emerald-600 transition-colors">
+          {announcement.title || "Untitled"}
         </h3>
-        <p className="text-gray-600 mb-4 line-clamp-3">
-          {announcement.content}
+
+        <p className="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">
+          {announcement.content || "No content"}
         </p>
-        <div className="flex items-center justify-between text-sm">
+
+        <div className="flex items-center justify-between text-sm pt-4 border-t border-gray-100">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 text-gray-500">
               <Calendar className="w-4 h-4" />
-              {formatDate(announcement.createdAt)}
+              <span className="text-xs">
+                {formatDate(announcement.createdAt)}
+              </span>
             </div>
-            {announcement.targetAudience === 'specific' && announcement.targetGrades.length > 0 && (
-              <div className="flex items-center gap-1 text-gray-500">
-                <Users className="w-4 h-4" />
-                {announcement.targetGrades.map(g => g.grade).join(', ')}
-              </div>
-            )}
-            {announcement.targetAudience === 'all' && (
-              <div className="flex items-center gap-1 text-purple-600 font-medium">
-                <Users className="w-4 h-4" />
-                All Grades
-              </div>
-            )}
+
+            <div
+              className={`flex items-center gap-1 font-medium ${
+                announcement.targetAudience === "all"
+                  ? "text-purple-600"
+                  : "text-emerald-600"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span className="text-xs">{gradesText}</span>
+            </div>
           </div>
+
+          {announcement.createdBy?.name && (
+            <span className="text-xs text-gray-400 italic">
+              by {announcement.createdBy.name}
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
 };
-export default AnnouncementCard;

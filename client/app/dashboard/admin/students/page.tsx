@@ -1,6 +1,4 @@
-// app/dashboard/admin/students/page.tsx
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -21,8 +19,6 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
-
-// TanStack Query Hooks
 import {
   useStudents,
   useGrades,
@@ -30,26 +26,19 @@ import {
   useBulkStudentsWithProgress,
   useStudentProgress,
 } from "@/hooks/admin/useStudents";
-
-// Types
 import { Student } from "@/types/admin/student.types";
-
-// Utils
 import {
   getInitials,
-  formatDate,
   getCardGradient,
   prepareExcelData,
   exportStudentsToExcel,
 } from "@/utils/admin/student.utils";
-import { DeleteConfirmDialog, StudentProgressModal } from "@/components/admin/students/StudentProgressModal";
-
-// Components
-
+import {
+  DeleteConfirmDialog,
+  StudentProgressModal,
+} from "@/components/admin/students/StudentProgressModal";
 export default function StudentsPage() {
   const router = useRouter();
-
-  // ===== LOCAL STATE =====
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("");
@@ -68,10 +57,7 @@ export default function StudentsPage() {
     open: false,
     student: null,
   });
-
   const limit = 6;
-
-  // ===== QUERIES =====
   const {
     data: studentsData,
     isLoading,
@@ -82,14 +68,9 @@ export default function StudentsPage() {
     limit,
     grade: selectedGrade || undefined,
   });
-
   const { data: grades = [] } = useGrades();
-
-  const {
-    data: studentProgress,
-    isLoading: loadingProgress,
-  } = useStudentProgress(progressDialog.student?._id || null);
-
+  const { data: studentProgress, isLoading: loadingProgress } =
+    useStudentProgress(progressDialog.student?._id || null);
   const { refetch: fetchBulkData, isFetching: exportingExcel } =
     useBulkStudentsWithProgress({
       query,
@@ -97,43 +78,31 @@ export default function StudentsPage() {
       limit: 100,
       grade: selectedGrade || undefined,
     });
-
-  // ===== MUTATIONS =====
   const deleteMutation = useDeleteStudent();
-
-  // ===== DERIVED STATE =====
   const studentsList = studentsData?.data || [];
   const totalStudents = studentsData?.total || 0;
   const totalPages = studentsData?.totalPages || 1;
-
-  // ===== HANDLERS =====
   const handleDeleteStudent = async () => {
     if (!deleteDialog.studentId) return;
     await deleteMutation.mutateAsync(deleteDialog.studentId);
     setDeleteDialog({ open: false, studentId: null });
   };
-
   const handleViewProgress = (student: Student) => {
     setProgressDialog({ open: true, student });
   };
-
   const handleExportToExcel = async () => {
     try {
       toast.info("Preparing Excel export...");
-
       const result = await fetchBulkData();
       const studentsWithProgress = result.data || [];
-
       if (studentsWithProgress.length === 0) {
         toast.error("No students to export");
         return;
       }
-
       const { summary, detailed } = prepareExcelData(
         studentsWithProgress,
-        grades
+        grades,
       );
-
       exportStudentsToExcel(summary, detailed);
       toast.success("Excel file exported successfully!");
     } catch (error: any) {
@@ -141,8 +110,6 @@ export default function StudentsPage() {
       console.error("Export error:", error);
     }
   };
-
-  // ===== LOADING STATE =====
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
@@ -155,8 +122,6 @@ export default function StudentsPage() {
       </div>
     );
   }
-
-  // ===== ERROR STATE =====
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
@@ -172,11 +137,10 @@ export default function StudentsPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 p-8 text-white shadow-xl">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -214,8 +178,7 @@ export default function StudentsPage() {
             </div>
           </div>
         </div>
-
-        {/* Filters */}
+        {}
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 shadow-lg">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1">
@@ -258,8 +221,7 @@ export default function StudentsPage() {
             </div>
           </div>
         </div>
-
-        {/* Students Grid */}
+        {}
         {studentsList.length === 0 ? (
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl p-16 text-center shadow-lg border border-gray-200">
             <div className="max-w-md mx-auto">
@@ -279,10 +241,8 @@ export default function StudentsPage() {
                   key={student._id}
                   className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden border border-gray-100"
                 >
-                  {/* Card Header */}
-                  <div
-                    className={`h-24 bg-gradient-to-r ${gradient} relative`}
-                  >
+                  {}
+                  <div className={`h-24 bg-gradient-to-r ${gradient} relative`}>
                     <div className="absolute -bottom-10 left-6">
                       <div className="h-20 w-20 rounded-2xl bg-white p-1 shadow-xl">
                         {student.profilePictureUrl ? (
@@ -300,14 +260,13 @@ export default function StudentsPage() {
                         )}
                       </div>
                     </div>
-
-                    {/* Dropdown Menu */}
+                    {}
                     <div className="absolute top-4 right-4 dropdown-container">
                       <button
                         className="h-9 w-9 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 flex items-center justify-center transition-all"
                         onClick={() =>
                           setDropdownOpen(
-                            dropdownOpen === student._id ? null : student._id
+                            dropdownOpen === student._id ? null : student._id,
                           )
                         }
                       >
@@ -329,7 +288,7 @@ export default function StudentsPage() {
                             className="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center text-gray-700 transition-colors"
                             onClick={() => {
                               router.push(
-                                `/dashboard/admin/students/edit/${student._id}`
+                                `/dashboard/admin/students/edit/${student._id}`,
                               );
                               setDropdownOpen(null);
                             }}
@@ -354,8 +313,7 @@ export default function StudentsPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Card Body */}
+                  {}
                   <div className="pt-14 px-6 pb-6">
                     <div className="mb-4">
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -367,7 +325,6 @@ export default function StudentsPage() {
                         </span>
                       )}
                     </div>
-
                     <div className="space-y-3 mb-5">
                       <div className="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
                         <Mail className="h-4 w-4 mr-3 text-blue-500 flex-shrink-0" />
@@ -390,7 +347,6 @@ export default function StudentsPage() {
                         </div>
                       )}
                     </div>
-
                     <div className="flex gap-2">
                       <button
                         className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700 font-medium rounded-xl transition-all flex items-center justify-center shadow-sm"
@@ -403,7 +359,7 @@ export default function StudentsPage() {
                         className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg"
                         onClick={() =>
                           router.push(
-                            `/dashboard/admin/students/edit/${student._id}`
+                            `/dashboard/admin/students/edit/${student._id}`,
                           )
                         }
                       >
@@ -416,8 +372,7 @@ export default function StudentsPage() {
             })}
           </div>
         )}
-
-        {/* Pagination */}
+        {}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 pt-6">
             <button
@@ -442,15 +397,13 @@ export default function StudentsPage() {
           </div>
         )}
       </div>
-
-      {/* Modals */}
+      {}
       <DeleteConfirmDialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, studentId: null })}
         onConfirm={handleDeleteStudent}
         isDeleting={deleteMutation.isPending}
       />
-
       {progressDialog.student && (
         <StudentProgressModal
           open={progressDialog.open}

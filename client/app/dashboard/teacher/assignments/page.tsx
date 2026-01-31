@@ -15,8 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
-import {
+import { useAuth } from "@/hooks/auth/useAuth";import {
   Select,
   SelectContent,
   SelectItem,

@@ -10,9 +10,7 @@ import {
   useMarkTeacherAttendance,
   useExportTeacherAttendance,
 } from "@/hooks/admin/useTeacherAttendance";
-import {
-  AttendanceStatus,
-} from "@/types/admin/teacher-attendance.types";
+import { AttendanceStatus } from "@/types/admin/teacher-attendance.types";
 import {
   formatDate,
   convertTeacherAttendanceToCSV,
@@ -24,22 +22,13 @@ export default function AdminTeacherAttendanceDashboard() {
   const [selectedView, setSelectedView] = useState<ViewType>("attendance");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { data: teachers = [], isLoading: teachersLoading } = useTeachers();
-  const {
-    data: stats,
-    isLoading: statsLoading,
-  } = useTeacherAttendanceStats();
-  const {
-    data: heatmapData = [],
-    isLoading: heatmapLoading,
-  } = useTeacherAttendanceHeatmap();
-  const {
-    data: todayRecords = [],
-    isLoading: todayLoading,
-  } = useTodayTeacherAttendance();
-  const {
-    data: dateRecords = [],
-    isLoading: dateLoading,
-  } = useTeacherAttendanceByDate(selectedDate);
+  const { data: stats, isLoading: statsLoading } = useTeacherAttendanceStats();
+  const { data: heatmapData = [], isLoading: heatmapLoading } =
+    useTeacherAttendanceHeatmap();
+  const { data: todayRecords = [], isLoading: todayLoading } =
+    useTodayTeacherAttendance();
+  const { data: dateRecords = [], isLoading: dateLoading } =
+    useTeacherAttendanceByDate(selectedDate);
   const markAttendanceMutation = useMarkTeacherAttendance();
   const exportMutation = useExportTeacherAttendance();
   const attendanceRecords =
@@ -47,7 +36,7 @@ export default function AdminTeacherAttendanceDashboard() {
   const isLoading = teachersLoading || statsLoading || heatmapLoading;
   const markAttendance = async (
     teacherId: string,
-    status: AttendanceStatus
+    status: AttendanceStatus,
   ) => {
     const teacher = teachers.find((t) => t._id === teacherId);
     const gradeId =
@@ -66,7 +55,7 @@ export default function AdminTeacherAttendanceDashboard() {
       (a) =>
         a.studentId._id === teacherId &&
         formatDate(new Date(a.date), "yyyy-MM-dd") ===
-          formatDate(selectedDate, "yyyy-MM-dd")
+          formatDate(selectedDate, "yyyy-MM-dd"),
     );
     return attendance ? attendance.status : null;
   };
@@ -83,7 +72,7 @@ export default function AdminTeacherAttendanceDashboard() {
       const csvData = convertTeacherAttendanceToCSV(data);
       downloadCSV(
         csvData,
-        `teacher-attendance-${formatDate(new Date(), "yyyy-MM-dd")}.csv`
+        `teacher-attendance-${formatDate(new Date(), "yyyy-MM-dd")}.csv`,
       );
     } catch (error: any) {
       toast.error(error.message || "Failed to export attendance");
@@ -223,20 +212,24 @@ export default function AdminTeacherAttendanceDashboard() {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          {statusButtons.map(({ status, label, icon, colors }) => (
-                            <button
-                              key={status}
-                              onClick={() => markAttendance(teacher._id, status)}
-                              disabled={markAttendanceMutation.isPending}
-                              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                                currentStatus === status
-                                  ? `${status === "present" ? "bg-green-500" : status === "late" ? "bg-yellow-500" : status === "absent" ? "bg-red-500" : "bg-blue-500"} text-white shadow-lg scale-105`
-                                  : colors
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                              {icon} {label}
-                            </button>
-                          ))}
+                          {statusButtons.map(
+                            ({ status, label, icon, colors }) => (
+                              <button
+                                key={status}
+                                onClick={() =>
+                                  markAttendance(teacher._id, status)
+                                }
+                                disabled={markAttendanceMutation.isPending}
+                                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                                  currentStatus === status
+                                    ? `${status === "present" ? "bg-green-500" : status === "late" ? "bg-yellow-500" : status === "absent" ? "bg-red-500" : "bg-blue-500"} text-white shadow-lg scale-105`
+                                    : colors
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                {icon} {label}
+                              </button>
+                            ),
+                          )}
                         </div>
                       </div>
                     </div>
@@ -253,7 +246,9 @@ export default function AdminTeacherAttendanceDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Total Teachers</h3>
-                <p className="text-3xl font-bold">{stats?.totalTeachers || 0}</p>
+                <p className="text-3xl font-bold">
+                  {stats?.totalTeachers || 0}
+                </p>
               </div>
               <div className="bg-gradient-to-br from-green-500 to-green-700 text-white p-6 rounded-3xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Present</h3>

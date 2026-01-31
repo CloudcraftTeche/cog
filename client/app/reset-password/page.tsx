@@ -16,8 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-
+import { useAuth } from "@/hooks/auth/useAuth";
 export default function ResetPassword() {
   const router = useRouter();
   const { logout } = useAuth();

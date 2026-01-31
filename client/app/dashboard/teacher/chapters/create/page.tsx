@@ -6,8 +6,7 @@ import { CheckCircle, Upload, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import api from "@/lib/api";
+import { useAuth } from "@/hooks/auth/useAuth";import api from "@/lib/api";
 import QuestionsSection, {
   Question,
 } from "@/components/admin/chapters/QuestionsSection";

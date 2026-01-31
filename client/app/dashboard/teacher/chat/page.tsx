@@ -13,8 +13,7 @@ import type {
 import { ConnectionStatus } from "@/components/shared/ConnectionStatus";
 import { MessageBubble } from "@/components/shared/MessageBubble";
 import { MessageInput } from "@/components/shared/MessageInput";
-import { useAuth } from "@/hooks/useAuth";
-const TeacherChatPanel: React.FC = () => {
+import { useAuth } from "@/hooks/auth/useAuth";const TeacherChatPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"grade" | "direct">("grade");
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [myGrade, setMyGrade] = useState<IGrade | null>(null);

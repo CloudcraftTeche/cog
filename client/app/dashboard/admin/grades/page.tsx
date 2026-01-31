@@ -66,7 +66,9 @@ export default function GradesPage() {
   });
   const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
   const [viewingGrade, setViewingGrade] = useState<Grade | null>(null);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {},
+  );
   const {
     data: gradesData,
     isLoading,
@@ -151,7 +153,7 @@ export default function GradesPage() {
     setFormData((prev) => ({
       ...prev,
       units: prev.units.map((unit, i) =>
-        i === index ? { ...unit, [field]: value } : unit
+        i === index ? { ...unit, [field]: value } : unit,
       ),
     }));
   };
@@ -571,7 +573,9 @@ export default function GradesPage() {
                   <XCircle className="h-6 w-6 text-red-500" />
                 )}
               </DialogTitle>
-              <DialogDescription>Grade details and information</DialogDescription>
+              <DialogDescription>
+                Grade details and information
+              </DialogDescription>
             </DialogHeader>
             {viewingGrade && (
               <div className="space-y-4 py-4">

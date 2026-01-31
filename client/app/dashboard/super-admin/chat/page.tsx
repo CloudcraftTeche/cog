@@ -16,8 +16,7 @@ import { IUser, IGrade, IMessage } from "@/types/chat.types";
 import { ConnectionStatus } from "@/components/shared/ConnectionStatus";
 import { MessageBubble } from "@/components/shared/MessageBubble";
 import { MessageInput } from "@/components/shared/MessageInput";
-import { useAuth } from "@/hooks/useAuth";
-const SuperAdminChatPanel: React.FC = () => {
+import { useAuth } from "@/hooks/auth/useAuth";const SuperAdminChatPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"grade" | "direct">("grade");
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [grades, setGrades] = useState<IGrade[]>([]);
@@ -255,7 +254,7 @@ const SuperAdminChatPanel: React.FC = () => {
           <div className="p-4 sm:p-6 bg-gradient-to-r from-purple-600 to-blue-600 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Pastor Chat
+                Admin Chat
               </h2>
               {isMobile && (
                 <button
@@ -382,7 +381,7 @@ const SuperAdminChatPanel: React.FC = () => {
                               {user.name}
                             </div>
                             <div className="text-xs opacity-80 truncate">
-                              { user.name==="Pastor" && user.role == "admin" ? "Pastor" : user.role}
+                              {user.role}
                             </div>
                           </div>
                         </div>
@@ -430,7 +429,7 @@ const SuperAdminChatPanel: React.FC = () => {
                       {activeTab === "grade" && "Message grade students"}
                       {activeTab === "direct" &&
                         selectedUser &&
-                        `${selectedUser.role == "admin" ? "Pastor" : "admin"} • ${selectedUser.email}`}
+                        `${selectedUser.role} • ${selectedUser.email}`}
                     </p>
                     {getTypingIndicator() && (
                       <p className="text-xs text-blue-500 italic mt-1">

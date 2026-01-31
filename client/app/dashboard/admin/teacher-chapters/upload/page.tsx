@@ -1,13 +1,21 @@
 "use client";
-
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useGrades, useCreateTeacherChapter } from "@/hooks/admin/use-teacher-chapters";
+import {
+  useGrades,
+  useCreateTeacherChapter,
+} from "@/hooks/admin/use-teacher-chapters";
 import { useUnitsForGrades } from "@/hooks/admin/use-units";
-import { Question, ValidationErrors } from "@/types/admin/teacher-chapter.types";
-import { validateTeacherChapter, filterValidQuestions, formatQuestionsForSubmit } from "@/lib/admin/validators/teacher-chapter.validation";
+import {
+  Question,
+  ValidationErrors,
+} from "@/types/admin/teacher-chapter.types";
+import {
+  validateTeacherChapter,
+  filterValidQuestions,
+  formatQuestionsForSubmit,
+} from "@/lib/admin/validators/teacher-chapter.validation";
 import { CreateTeacherChapterForm } from "@/components/admin/teacher-chapters/CreateTeacherChapterForm";
-
 export default function AdminUploadTeacherChapter() {
   const router = useRouter();
   const [contentType, setContentType] = useState<"video" | "text">("video");
@@ -24,11 +32,13 @@ export default function AdminUploadTeacherChapter() {
     { id: "1", questionText: "", options: ["", "", "", ""], correctAnswer: "" },
   ]);
   const [errors, setErrors] = useState<ValidationErrors>({});
-
   const { data: grades = [], isLoading: gradesLoading } = useGrades();
-  const { units, isLoading: unitsLoading } = useUnitsForGrades(selectedGrades, grades);
-  const { mutate: createChapter, isPending: isCreating } = useCreateTeacherChapter();
-
+  const { units, isLoading: unitsLoading } = useUnitsForGrades(
+    selectedGrades,
+    grades,
+  );
+  const { mutate: createChapter, isPending: isCreating } =
+    useCreateTeacherChapter();
   const validateForm = (): boolean => {
     const validationErrors = validateTeacherChapter({
       title,
@@ -42,21 +52,16 @@ export default function AdminUploadTeacherChapter() {
       questions,
       isEdit: false,
     });
-
     setErrors(validationErrors);
     return Object.keys(validationErrors).length === 0;
   };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       return;
     }
-
     const validQuestions = filterValidQuestions(questions);
     const formattedQuestions = formatQuestionsForSubmit(validQuestions);
-
     const payload = {
       title: title.trim(),
       description: description.trim(),
@@ -70,7 +75,6 @@ export default function AdminUploadTeacherChapter() {
       isPublished,
       requiresPreviousChapter,
     };
-
     createChapter(payload, {
       onSuccess: () => {
         setTimeout(() => {
@@ -79,7 +83,6 @@ export default function AdminUploadTeacherChapter() {
       },
     });
   };
-
   return (
     <CreateTeacherChapterForm
       contentType={contentType}

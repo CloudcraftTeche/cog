@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useSubmissions } from "@/hooks/useSubmissions";
+import { useSubmissions } from "@/hooks/admin/useSubmissions";
 import {
   LoadingState,
   NoSearchResultsState,
@@ -9,7 +9,6 @@ import {
   SubmissionCard,
   SubmissionHeader,
 } from "@/components/admin/assignments/SubmissionsComponents";
-import { ISubmission } from "@/components/admin/assignments/SubmissionsComponents";
 export default function SuperAdminSubmissionsPage() {
   const params = useParams();
   const assignmentId = params.id as string;
@@ -41,7 +40,7 @@ export default function SuperAdminSubmissionsPage() {
               {submissions.map((submission) => (
                 <SubmissionCard
                   key={submission._id}
-                  submission={submission as ISubmission}
+                  submission={submission}
                   onGradeSubmission={gradeSubmission}
                 />
               ))}

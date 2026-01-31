@@ -19,39 +19,23 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
-import { IQuestion } from "@/lib/assignmentValidation";
+import { IQuestion } from "@/types/admin/assignment.types";
 import { QuestionForm } from "@/components/admin/assignments/QuestionForm";
-
-export interface IGrade {
-  _id: string;
-  grade: string;
-}
-interface Assignment {
-  _id: string;
-  title: string;
-  description: string;
-  contentType: "video" | "text" | "pdf";
-  startDate: string;
-  endDate: string;
-  totalMarks: number;
-  passingMarks: number;
-  textContent?: string;
-  videoUrl?: string;
-  pdfUrl?: string;
-  questions: IQuestion[];
-  gradeId: IGrade;
-  gradeName: string;
-}
-const MAX_FILE_SIZE_MB = 25;
+import {
+  useAssignment,
+  useUpdateAssignment,
+} from "@/hooks/admin/useAssignments";
+import {
+  MAX_FILE_SIZE_MB,
+  MAX_FILE_SIZE_BYTES,
+} from "@/types/admin/assignment.types";
 export default function SuperAdminEditAssignment() {
   const router = useRouter();
   const params = useParams();
   const assignmentId = params.id as string;
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const { assignment, loading: initialLoading } = useAssignment(assignmentId);
+  const { updateAssignment, isUpdating } = useUpdateAssignment(assignmentId);
   const [success, setSuccess] = useState(false);
-  const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -67,87 +51,59 @@ export default function SuperAdminEditAssignment() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   useEffect(() => {
-    const fetchAssignment = async () => {
-      try {
-        setInitialLoading(true);
-        const response = await api.get(`/assignments/${assignmentId}`);
-        
-        if (!response.data.success && !response.data._id) {
-          throw new Error("Failed to fetch assignment");
-        }
-        const assignmentData = response.data.data || response.data;
-        setAssignment(assignmentData);
-        setFormData({
-          title: assignmentData.title || "",
-          description: assignmentData.description || "",
-          contentType: assignmentData.contentType || "video",
-          videoFile: null,
-          pdfFile: null,
-          textContent: assignmentData.textContent || "",
-          startDate: assignmentData.startDate
-            ? assignmentData.startDate.split("T")[0]
-            : "",
-          endDate: assignmentData.endDate
-            ? assignmentData.endDate.split("T")[0]
-            : "",
-          totalMarks: assignmentData.totalMarks || 100,
-          passingMarks: assignmentData.passingMarks || 40,
-          questions: (assignmentData.questions || []).map((q: any) => ({
-            questionText: q.questionText || "",
-            options: q.options || ["", "", "", ""],
-            correctAnswer: q.correctAnswer || "A",
-            _id: q._id,
-          })),
-        });
-        toast.success("Assignment loaded successfully");
-      } catch (error: any) {
-        console.error("Failed to fetch assignment:", error);
-        toast.error(
-          error.response?.data?.message || "Failed to load assignment"
-        );
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-    if (assignmentId) {
-      fetchAssignment();
+    if (assignment) {
+      setFormData({
+        title: assignment.title || "",
+        description: assignment.description || "",
+        contentType: assignment.contentType || "video",
+        videoFile: null,
+        pdfFile: null,
+        textContent: assignment.textContent || "",
+        startDate: assignment.startDate
+          ? assignment.startDate.split("T")[0]
+          : "",
+        endDate: assignment.endDate ? assignment.endDate.split("T")[0] : "",
+        totalMarks: assignment.totalMarks || 100,
+        passingMarks: assignment.passingMarks || 40,
+        questions: (assignment.questions || []).map((q: any) => ({
+          questionText: q.questionText || "",
+          options: q.options || ["", "", "", ""],
+          correctAnswer: q.correctAnswer || "A",
+          _id: q._id,
+        })),
+      });
     }
-  }, [assignmentId]);
+  }, [assignment]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setSuccess(false);
     setErrors({});
     try {
       if (
         formData.contentType === "video" &&
         formData.videoFile &&
-        formData.videoFile.size / (1024 * 1024) > MAX_FILE_SIZE_MB
+        formData.videoFile.size > MAX_FILE_SIZE_BYTES
       ) {
         toast.error(`Video file exceeds ${MAX_FILE_SIZE_MB}MB`);
-        setLoading(false);
         return;
       }
       if (
         formData.contentType === "pdf" &&
         formData.pdfFile &&
-        formData.pdfFile.size / (1024 * 1024) > MAX_FILE_SIZE_MB
+        formData.pdfFile.size > MAX_FILE_SIZE_BYTES
       ) {
         toast.error(`PDF file exceeds ${MAX_FILE_SIZE_MB}MB`);
-        setLoading(false);
         return;
       }
       if (formData.contentType === "text" && !formData.textContent.trim()) {
         toast.error("Text content cannot be empty");
-        setLoading(false);
         return;
       }
       const validQuestions = formData.questions.filter(
-        (q) => q.questionText.trim() !== ""
+        (q) => q.questionText.trim() !== "",
       );
       if (validQuestions.length === 0) {
         toast.error("Please add at least one valid question");
-        setLoading(false);
         return;
       }
       const updateFormData = new FormData();
@@ -168,13 +124,7 @@ export default function SuperAdminEditAssignment() {
       if (formData.contentType === "text") {
         updateFormData.append("textContent", formData.textContent);
       }
-      const response = await api.put(
-        `/assignments/${assignmentId}`,
-        updateFormData
-      );
-      if (!response.data.success) {
-        throw new Error("Failed to update assignment");
-      }
+      await updateAssignment(updateFormData);
       setSuccess(true);
       toast.success("Assignment updated successfully!");
       setTimeout(() => {
@@ -182,11 +132,7 @@ export default function SuperAdminEditAssignment() {
       }, 1500);
     } catch (err: any) {
       console.error("Update failed:", err);
-      toast.error(
-        err.response?.data?.message || "Failed to update assignment"
-      );
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.message || "Failed to update assignment");
     }
   };
   if (initialLoading) {
@@ -259,7 +205,10 @@ export default function SuperAdminEditAssignment() {
             </AlertDescription>
           </Alert>
         )}
-        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-8 pb-8">
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-5xl mx-auto space-y-8 pb-8"
+        >
           {}
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
@@ -312,11 +261,17 @@ export default function SuperAdminEditAssignment() {
                         <Video className="h-4 w-4" />
                         Video
                       </TabsTrigger>
-                      <TabsTrigger value="text" className="flex items-center gap-2">
+                      <TabsTrigger
+                        value="text"
+                        className="flex items-center gap-2"
+                      >
                         <BookOpen className="h-4 w-4" />
                         Text
                       </TabsTrigger>
-                      <TabsTrigger value="pdf" className="flex items-center gap-2">
+                      <TabsTrigger
+                        value="pdf"
+                        className="flex items-center gap-2"
+                      >
                         <FileText className="h-4 w-4" />
                         PDF
                       </TabsTrigger>
@@ -324,6 +279,7 @@ export default function SuperAdminEditAssignment() {
                   </Tabs>
                 </div>
               </div>
+              {}
               <div className="space-y-2">
                 <Label
                   htmlFor="description"
@@ -391,7 +347,10 @@ export default function SuperAdminEditAssignment() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="passingMarks" className="text-sm font-semibold">
+                  <Label
+                    htmlFor="passingMarks"
+                    className="text-sm font-semibold"
+                  >
                     Passing Marks
                   </Label>
                   <Input
@@ -512,16 +471,16 @@ export default function SuperAdminEditAssignment() {
               type="button"
               variant="outline"
               onClick={() => router.back()}
-              disabled={loading}
+              disabled={isUpdating}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isUpdating}
               className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 px-8"
             >
-              {loading ? (
+              {isUpdating ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
                   Updating...

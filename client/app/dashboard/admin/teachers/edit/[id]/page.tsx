@@ -1,6 +1,4 @@
-// app/dashboard/admin/teachers/edit/[id]/page.tsx
 "use client";
-
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -12,11 +10,9 @@ import { ProfessionalInfoSection } from "@/components/admin/teachers/Professiona
 import { AddressInfoSection } from "@/components/admin/teachers/AddressInfoSection";
 import { getGradeName } from "@/utils/admin/teacher.utils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-
 export default function EditTeacherPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
-
   const {
     formData,
     errors,
@@ -29,16 +25,13 @@ export default function EditTeacherPage() {
     handleFileChange,
     handleSubmit,
   } = useEditTeacherForm(id);
-
   if (isFetching || !formData) {
     return <LoadingState text="teacher data..." />;
   }
-
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     handleFileChange(file);
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
       <div className="space-y-8 px-4 sm:px-6 lg:px-8 py-8">
@@ -56,7 +49,6 @@ export default function EditTeacherPage() {
               headerGradient="from-emerald-500 to-blue-600"
             />
           </div>
-
           <div className="lg:col-span-2 space-y-8">
             <PersonalInfoSection
               formData={formData}
@@ -65,14 +57,12 @@ export default function EditTeacherPage() {
               onFieldChange={updateField}
               onFileChange={handleFileInputChange}
             />
-
             <ProfessionalInfoSection
               formData={formData}
               errors={errors}
               grades={grades}
               onFieldChange={updateField}
             />
-
             <AddressInfoSection
               address={formData.address}
               errors={errors}
@@ -80,9 +70,7 @@ export default function EditTeacherPage() {
             />
           </div>
         </div>
-
         <Separator className="my-8 border-emerald-200" />
-
         <div className="flex justify-end space-x-6">
           <Button
             variant="outline"

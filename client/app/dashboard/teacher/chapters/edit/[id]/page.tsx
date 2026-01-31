@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import EditQuestionsSection, {
+import { useAuth } from "@/hooks/auth/useAuth";import EditQuestionsSection, {
   EditQuestion,
 } from "@/components/admin/chapters/EditQuestionsSection";
 import {

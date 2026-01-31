@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { format } from "date-fns";
+import { useAuth } from "@/hooks/auth/useAuth";import { format } from "date-fns";
 import { IStudent, studentService } from "@/utils/attendanceStudent.service";
 import {
   attendanceService,

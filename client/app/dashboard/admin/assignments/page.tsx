@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -25,43 +24,34 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AssignmentCard } from "@/components/admin/assignments/AssignmentCard";
 import { useAssignments } from "@/hooks/admin/useAssignments";
-
 export default function AdminAssignmentsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
-
-  const {
-    assignments,
-    pagination,
-    loading,
-    deleteAssignment,
-  } = useAssignments({
-    search: searchTerm,
-    status: statusFilter,
-    page,
-    limit: 10,
-  });
-
+  const { assignments, pagination, loading, deleteAssignment } = useAssignments(
+    {
+      search: searchTerm,
+      status: statusFilter,
+      page,
+      limit: 10,
+    },
+  );
   const handleDeleteAssignment = async (assignmentId: string) => {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
-
     try {
       await deleteAssignment(assignmentId);
       toast.success("Assignment deleted successfully");
     } catch (error: any) {
       console.error("Error deleting assignment:", error);
       toast.error(
-        error.response?.data?.message || "Failed to delete assignment"
+        error.response?.data?.message || "Failed to delete assignment",
       );
     }
   };
-
   const handleViewSubmissions = (assignmentId: string) => {
     router.push(`/dashboard/admin/assignments/submissions/${assignmentId}`);
   };
-
   const totalAssignments = assignments.length;
   const activeAssignments = assignments.filter((a) => {
     const now = new Date();
@@ -69,11 +59,10 @@ export default function AdminAssignmentsPage() {
     const end = new Date(a.endDate);
     return now >= start && now <= end;
   }).length;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {}
         <div className="mb-8">
           <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-2xl mb-6">
             <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -91,8 +80,7 @@ export default function AdminAssignmentsPage() {
                     </p>
                   </div>
                 </div>
-
-                {/* Stats */}
+                {}
                 <div className="flex flex-wrap gap-4 mt-6">
                   <div className="bg-white/20 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/30">
                     <div className="flex items-center gap-3">
@@ -124,7 +112,6 @@ export default function AdminAssignmentsPage() {
                   </div>
                 </div>
               </div>
-
               <Button
                 className="w-full lg:w-auto bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border-2 border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
                 onClick={() =>
@@ -137,8 +124,7 @@ export default function AdminAssignmentsPage() {
               </Button>
             </div>
           </div>
-
-          {/* Filters */}
+          {}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
@@ -156,7 +142,6 @@ export default function AdminAssignmentsPage() {
                   />
                 </div>
               </div>
-
               <div className="lg:w-56">
                 <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                   <Filter className="h-4 w-4 inline mr-2" />
@@ -175,8 +160,7 @@ export default function AdminAssignmentsPage() {
                 </Select>
               </div>
             </div>
-
-            {/* Active Filters */}
+            {}
             {(searchTerm || statusFilter !== "all") && (
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200">
                 <span className="text-sm font-medium text-gray-600">
@@ -207,8 +191,7 @@ export default function AdminAssignmentsPage() {
             )}
           </div>
         </div>
-
-        {/* Content */}
+        {}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -256,8 +239,7 @@ export default function AdminAssignmentsPage() {
                 />
               ))}
             </div>
-
-            {/* Pagination */}
+            {}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8">
                 <Button

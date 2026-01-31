@@ -21,8 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
-import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/auth/useAuth";import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 interface Chapter {

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
   SelectContent,
@@ -24,57 +22,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AssignmentCard } from "@/components/admin/assignments/AssignmentCard";
-import { IAssignment } from "@/lib/assignmentValidation";
+import { AssignmentCard } from "@/components/admin/assignments/SuperAdminAssignmentCard";
+import { useAssignments } from "@/hooks/admin/useAssignments";
 export default function SuperAdminAssignmentsPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [assignments, setAssignments] = useState<IAssignment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const fetchAssignments = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/assignments", {
-        params: {
-          search: searchTerm,
-          page,
-          limit: 6,
-          status: statusFilter !== "all" ? statusFilter : undefined,
-        },
-      });
-      setAssignments(response.data.data || []);
-      setTotalPages(response.data.pagination?.totalPages || 1);
-    } catch (error: any) {
-      console.error("Error fetching assignments:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to load assignments"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    if (!user?.id) return;
-    setPage(1);
-  }, [searchTerm, statusFilter]);
-  useEffect(() => {
-    if (!user?.id) return;
-    fetchAssignments();
-  }, [user?.id, searchTerm, statusFilter, page]);
+  const { assignments, pagination, loading, deleteAssignment } = useAssignments(
+    {
+      search: searchTerm,
+      status: statusFilter,
+      page,
+      limit: 10,
+    },
+  );
   const handleDeleteAssignment = async (assignmentId: string) => {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
     try {
-      await api.delete(`/assignments/${assignmentId}`);
+      await deleteAssignment(assignmentId);
       toast.success("Assignment deleted successfully");
-      fetchAssignments();
     } catch (error: any) {
       console.error("Error deleting assignment:", error);
       toast.error(
-        error.response?.data?.message || "Failed to delete assignment"
+        error.response?.data?.message || "Failed to delete assignment",
       );
     }
   };
@@ -269,7 +240,7 @@ export default function SuperAdminAssignmentsPage() {
               ))}
             </div>
             {}
-            {totalPages > 1 && (
+            {pagination && pagination.totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8">
                 <Button
                   variant="outline"
@@ -279,11 +250,11 @@ export default function SuperAdminAssignmentsPage() {
                   Previous
                 </Button>
                 <span className="flex items-center px-4">
-                  Page {page} of {totalPages}
+                  Page {page} of {pagination.totalPages}
                 </span>
                 <Button
                   variant="outline"
-                  disabled={page === totalPages}
+                  disabled={page === pagination.totalPages}
                   onClick={() => setPage(page + 1)}
                 >
                   Next

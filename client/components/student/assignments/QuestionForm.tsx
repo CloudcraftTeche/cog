@@ -1,10 +1,12 @@
+// components/student/assignments/QuestionForm.tsx
 "use client";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Sparkles } from "lucide-react";
-import { IQuestion } from "@/types/assignment.types";
+import { IQuestion } from "@/types/student/assignment.types";
 
 interface QuestionFormProps {
   questions: IQuestion[];
@@ -26,6 +28,7 @@ export function QuestionForm({
 
   return (
     <div className="space-y-5">
+      {/* Progress Bar */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/50 to-transparent">
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-primary" />
@@ -44,6 +47,7 @@ export function QuestionForm({
         </div>
       </div>
 
+      {/* Questions */}
       <div className="space-y-5">
         {questions.map((question, index) => {
           const selectedAnswer = answers[index];
@@ -101,7 +105,7 @@ export function QuestionForm({
 
               <CardContent className="pt-0">
                 <RadioGroup
-                  value={selectedAnswer}
+                  value={selectedAnswer ?? ""}
                   onValueChange={(value) => onAnswerChange(index, value)}
                   disabled={disabled}
                   className="space-y-3"
