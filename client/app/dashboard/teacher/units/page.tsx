@@ -63,7 +63,7 @@ export default function TeacherUnitsPage() {
   });
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
-    {}
+    {},
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReordering, setIsReordering] = useState(false);

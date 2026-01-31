@@ -1,23 +1,20 @@
 "use client";
-
-import { useAuth } from "@/hooks/auth/useAuth";import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import SuperAdminDashboard from "@/components/admin-dashboard";
 import StudentDashboard from "@/components/student-dashboard";
 import TeacherDashboard from "@/components/teacher-dashboard";
 import AdminDashboard from "@/components/admin-dashboard";
-
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace("/login");
     }
   }, [user, isLoading, router]);
-
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
@@ -32,14 +29,12 @@ export default function DashboardPage() {
       </div>
     );
   }
-
   if (!user) {
     return null;
   }
   if (user.role === "admin" && user.name === "Pastor") {
     return <SuperAdminDashboard />;
   }
-
   const renderDashboard = () => {
     switch (user.role) {
       case "admin":
@@ -74,6 +69,5 @@ export default function DashboardPage() {
         );
     }
   };
-
   return <>{renderDashboard()}</>;
 }

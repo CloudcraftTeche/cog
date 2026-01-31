@@ -1,14 +1,14 @@
-// app/dashboard/student/assignments/[id]/page.tsx
 "use client";
-
 import { useParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { AssignmentDetail } from "@/components/student/assignments/AssignmentDetail";
-import { useAssignment, useAssignmentSubmission } from "@/hooks/student/use-assignments";
-
+import {
+  useAssignment,
+  useAssignmentSubmission,
+} from "@/hooks/student/use-assignments";
 function LoadingSkeleton() {
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
@@ -31,12 +31,10 @@ function LoadingSkeleton() {
     </div>
   );
 }
-
 interface ErrorStateProps {
   error: string | null;
   onRetry: () => void;
 }
-
 function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
@@ -48,8 +46,8 @@ function ErrorState({ error, onRetry }: ErrorStateProps) {
           {error || "Assignment not found"}
         </h3>
         <p className="text-muted-foreground text-center mb-6">
-          The assignment you&apos;re looking for doesn&apos;t exist or you don&apos;t have access
-          to it.
+          The assignment you&apos;re looking for doesn&apos;t exist or you
+          don&apos;t have access to it.
         </p>
         <div className="flex items-center gap-3">
           <Button variant="outline" asChild>
@@ -67,40 +65,31 @@ function ErrorState({ error, onRetry }: ErrorStateProps) {
     </div>
   );
 }
-
 export default function AssignmentDetailPage() {
   const params = useParams();
   const id = params.id as string;
-
-  // Fetch assignment and submission data
   const {
     data: assignmentData,
     isLoading: assignmentLoading,
     error: assignmentError,
     refetch,
   } = useAssignment(id);
-
-  const { submission, isLoading: submissionLoading } = useAssignmentSubmission(id);
-
+  const { submission, isLoading: submissionLoading } =
+    useAssignmentSubmission(id);
   const isLoading = assignmentLoading || submissionLoading;
   const error = assignmentError?.message ?? null;
   const assignment = assignmentData?.data ?? null;
-
-  // Extract gradeId
   const gradeId = assignment
     ? typeof assignment.gradeId === "object"
       ? assignment.gradeId._id
       : assignment.gradeId
     : undefined;
-
   if (isLoading) {
     return <LoadingSkeleton />;
   }
-
   if (error || !assignment) {
     return <ErrorState error={error} onRetry={refetch} />;
   }
-
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8">
       <AssignmentDetail

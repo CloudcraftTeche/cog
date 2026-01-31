@@ -1,4 +1,3 @@
-// components/student/assignments/ContentViewer.tsx
 "use client";
 
 import { useState } from "react";

@@ -1,22 +1,18 @@
-// components/chapters/ChapterCard.tsx
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { Play, FileText, Lock, CheckCircle, Clock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import type { Chapter } from '@/types/student/chapter.types';
-import { isChapterAccessible } from '@/utils/student/chapterUtils';
-
+import React from "react";
+import { useRouter } from "next/navigation";
+import { Play, FileText, Lock, CheckCircle, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Chapter } from "@/types/student/chapter.types";
+import { isChapterAccessible } from "@/utils/student/chapterUtils";
 interface ChapterCardProps {
   chapter: Chapter;
   index: number;
 }
-
 export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
   const router = useRouter();
-
   const getStatusBadge = () => {
-    if (chapter.isCompleted || chapter.status === 'completed') {
+    if (chapter.isCompleted || chapter.status === "completed") {
       return (
         <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
           <CheckCircle className="h-3 w-3 mr-1" />
@@ -24,7 +20,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
         </Badge>
       );
     }
-    if (chapter.isInProgress || chapter.status === 'in_progress') {
+    if (chapter.isInProgress || chapter.status === "in_progress") {
       return (
         <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
           <Clock className="h-3 w-3 mr-1" />
@@ -32,7 +28,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
         </Badge>
       );
     }
-    if (chapter.isLocked || chapter.status === 'locked') {
+    if (chapter.isLocked || chapter.status === "locked") {
       return (
         <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-xs">
           <Lock className="h-3 w-3 mr-1" />
@@ -46,36 +42,33 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
       </Badge>
     );
   };
-
   const handleClick = () => {
     if (isChapterAccessible(chapter)) {
       router.push(`/dashboard/student/chapters/${chapter._id}`);
     }
   };
-
   const clickable = isChapterAccessible(chapter);
-  const hasVideo = chapter.contentItems?.some((item) => item.type === 'video') ?? false;
-
+  const hasVideo =
+    chapter.contentItems?.some((item) => item.type === "video") ?? false;
   const getCardStyle = () => {
-    if (chapter.isCompleted || chapter.status === 'completed') {
-      return 'from-green-400 to-emerald-500';
+    if (chapter.isCompleted || chapter.status === "completed") {
+      return "from-green-400 to-emerald-500";
     }
-    if (chapter.isInProgress || chapter.status === 'in_progress') {
-      return 'from-blue-400 to-cyan-500';
+    if (chapter.isInProgress || chapter.status === "in_progress") {
+      return "from-blue-400 to-cyan-500";
     }
-    if (chapter.isLocked || chapter.status === 'locked') {
-      return 'from-gray-300 to-gray-400';
+    if (chapter.isLocked || chapter.status === "locked") {
+      return "from-gray-300 to-gray-400";
     }
-    return 'from-purple-400 to-pink-500';
+    return "from-purple-400 to-pink-500";
   };
-
   return (
     <Card
       onClick={handleClick}
       className={`border-0 shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-300 ${
         clickable
-          ? 'cursor-pointer hover:shadow-2xl hover:scale-105'
-          : 'opacity-60 cursor-not-allowed'
+          ? "cursor-pointer hover:shadow-2xl hover:scale-105"
+          : "opacity-60 cursor-not-allowed"
       }`}
     >
       <CardContent className="p-4 sm:p-6">
@@ -98,15 +91,12 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
           </div>
           {getStatusBadge()}
         </div>
-
         <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2">
           {chapter.title}
         </h3>
-
         <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-2">
           {chapter.description}
         </p>
-
         <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
           <span className="flex items-center gap-1">
             {hasVideo ? (
@@ -114,12 +104,11 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
             ) : (
               <FileText className="h-3 w-3" />
             )}
-            {chapter.contentItems?.length ?? 0} Content{' '}
-            {(chapter.contentItems?.length ?? 0) !== 1 ? 'Items' : 'Item'}
+            {chapter.contentItems?.length ?? 0} Content{" "}
+            {(chapter.contentItems?.length ?? 0) !== 1 ? "Items" : "Item"}
           </span>
           <span>{chapter.questions?.length ?? 0} Questions</span>
         </div>
-
         {chapter.score !== undefined && chapter.score > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-center justify-between text-xs">
@@ -127,10 +116,10 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
               <span
                 className={`font-bold ${
                   chapter.score >= 70
-                    ? 'text-green-600'
+                    ? "text-green-600"
                     : chapter.score >= 50
-                    ? 'text-yellow-600'
-                    : 'text-red-600'
+                      ? "text-yellow-600"
+                      : "text-red-600"
                 }`}
               >
                 {chapter.score}%

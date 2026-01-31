@@ -1,17 +1,16 @@
 "use client";
-
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/auth/useAuth";import ExportButtons from "@/components/admin/chapters/ExportButtons";
+import { useAuth } from "@/hooks/auth/useAuth";
+import ExportButtons from "@/components/admin/chapters/ExportButtons";
 import StatisticsCards from "@/components/admin/chapters/StatisticsCards";
 import CompletedStudentsTab from "@/components/admin/chapters/CompletedStudentsTab";
 import PendingStudentsTab from "@/components/admin/chapters/PendingStudentsTab";
 import { TeacherChapterService } from "@/components/teacher/chapter/chapterApiAndTypes";
-
 interface StudentScore {
   studentId: string;
   name: string;
@@ -25,7 +24,6 @@ interface StudentScore {
   completedAt: string | null;
   score: number;
 }
-
 interface NotCompletedStudent {
   studentId: string;
   name: string;
@@ -39,7 +37,6 @@ interface NotCompletedStudent {
   status?: string;
   startedAt?: string | null;
 }
-
 interface ChapterData {
   _id: string;
   title: string;
@@ -54,38 +51,30 @@ interface ChapterData {
   createdAt: Date;
   updatedAt: Date;
 }
-
 interface Statistics {
   totalCompleted: number;
   averageScore: number;
   highestScore: number;
   lowestScore: number;
 }
-
 interface ScoreData {
   chapter: ChapterData;
   completedStudents: StudentScore[];
   pendingStudents: NotCompletedStudent[];
   statistics: Statistics;
 }
-
 export default function TeacherChapterScoresPage() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
   const chapterId = params?.id as string;
-
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [loading, setLoading] = useState(true);
-
   const fetchScoreData = useCallback(async () => {
     if (!chapterId || !user?.id) return;
-
     try {
       setLoading(true);
-
       const chapterData = await TeacherChapterService.getChapterById(chapterId);
-
       const teacherGrade = await TeacherChapterService.getTeacherGrade(user.id);
       if (chapterData.gradeId._id !== teacherGrade._id) {
         toast.error("Unauthorized", {
@@ -95,29 +84,24 @@ export default function TeacherChapterScoresPage() {
         router.push("/dashboard/teacher/chapters");
         return;
       }
-
       const completedResponse =
         await TeacherChapterService.getCompletedStudents(chapterId);
       const completedData = completedResponse;
-
       const pendingResponse =
         await TeacherChapterService.getPendingStudents(chapterId);
       const pendingData = pendingResponse;
-
       const completedStudents = (completedData.data || []).filter(
-        (s: StudentScore) => s.gradeId._id === teacherGrade._id
+        (s: StudentScore) => s.gradeId._id === teacherGrade._id,
       );
       const pendingStudents = (pendingData.data || []).filter(
-        (s: NotCompletedStudent) => s.gradeId._id === teacherGrade._id
+        (s: NotCompletedStudent) => s.gradeId._id === teacherGrade._id,
       );
-
       const statistics = {
         totalCompleted: completedStudents.length,
         averageScore: completedData.stats?.averageScore || 0,
         highestScore: completedData.stats?.highestScore || 0,
         lowestScore: completedData.stats?.lowestScore || 0,
       };
-
       const combinedData: any = {
         chapter: {
           _id: chapterData._id,
@@ -134,23 +118,20 @@ export default function TeacherChapterScoresPage() {
         pendingStudents,
         statistics,
       };
-
       setScoreData(combinedData);
     } catch (error: any) {
       console.error("Score fetch error:", error);
       toast.error(
-        error.message || "Something went wrong while fetching scores"
+        error.message || "Something went wrong while fetching scores",
       );
       router.push("/dashboard/teacher/chapters");
     } finally {
       setLoading(false);
     }
   }, [chapterId, user?.id, router]);
-
   useEffect(() => {
     fetchScoreData();
   }, [fetchScoreData]);
-
   const handleSendChapterReminder = async (studentId: string) => {
     try {
       await TeacherChapterService.sendReminder(chapterId, studentId);
@@ -160,7 +141,6 @@ export default function TeacherChapterScoresPage() {
       toast.error("Failed to send reminder");
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
@@ -182,7 +162,6 @@ export default function TeacherChapterScoresPage() {
       </div>
     );
   }
-
   if (!scoreData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
@@ -203,23 +182,20 @@ export default function TeacherChapterScoresPage() {
       </div>
     );
   }
-
   const totalStudents =
     scoreData.completedStudents.length + scoreData.pendingStudents.length;
   const completionRate =
     totalStudents > 0
       ? Math.round((scoreData.completedStudents.length / totalStudents) * 100)
       : 0;
-
   const passingScore = scoreData.chapter.questionsCount * 0.6;
   const passedStudents = scoreData.completedStudents.filter(
-    (s) => (s.score || 0) >= passingScore
+    (s) => (s.score || 0) >= passingScore,
   ).length;
   const passRate =
     scoreData.completedStudents.length > 0
       ? Math.round((passedStudents / scoreData.completedStudents.length) * 100)
       : 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30">
       <div className="container mx-auto px-4 py-8">
@@ -246,7 +222,6 @@ export default function TeacherChapterScoresPage() {
             </span>
           </div>
         </div>
-
         <ExportButtons
           chapterTitle={scoreData.chapter.title}
           questionsCount={scoreData.chapter.questionsCount}
@@ -260,14 +235,12 @@ export default function TeacherChapterScoresPage() {
             passRate,
           }}
         />
-
         <StatisticsCards
           totalStudents={totalStudents}
           completionRate={completionRate}
           averageScore={scoreData.statistics.averageScore}
           passRate={passRate}
         />
-
         <Tabs defaultValue="completed" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-14 bg-white rounded-2xl shadow-lg border-0 p-2">
             <TabsTrigger
@@ -285,7 +258,6 @@ export default function TeacherChapterScoresPage() {
               Pending ({scoreData.pendingStudents.length})
             </TabsTrigger>
           </TabsList>
-
           <TabsContent value="completed" className="mt-6">
             <CompletedStudentsTab
               students={scoreData.completedStudents}
@@ -293,7 +265,6 @@ export default function TeacherChapterScoresPage() {
               highestScore={scoreData.statistics.highestScore}
             />
           </TabsContent>
-
           <TabsContent value="pending" className="mt-6">
             <PendingStudentsTab
               students={scoreData.pendingStudents}

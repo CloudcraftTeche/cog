@@ -84,7 +84,7 @@ export default function TeacherEditStudentPage() {
         }
       } catch (error: any) {
         toast.error(
-          error.response?.data?.message || "Failed to load student data"
+          error.response?.data?.message || "Failed to load student data",
         );
         router.push("/dashboard/teacher/students");
       } finally {
@@ -135,7 +135,7 @@ export default function TeacherEditStudentPage() {
       toast.error("Please fix all validation errors");
       const firstErrorField = Object.keys(validationErrors)[0];
       const element = document.getElementById(
-        firstErrorField.replace("address.", "")
+        firstErrorField.replace("address.", ""),
       );
       element?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;

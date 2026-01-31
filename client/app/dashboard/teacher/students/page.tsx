@@ -95,7 +95,7 @@ export default function TeacherStudentsPage() {
     try {
       setLoadingProgress(true);
       const response = await api.get(
-        `/students/teacher/students/${studentId}/progress`
+        `/students/teacher/students/${studentId}/progress`,
       );
       setStudentProgress(response.data.data);
     } catch (error: any) {
@@ -123,7 +123,7 @@ export default function TeacherStudentsPage() {
       await api.delete(`/students/teacher/students/${deleteDialog.studentId}`);
       toast.success("Student deleted successfully");
       setStudentsList((prev) =>
-        prev.filter((s) => s._id !== deleteDialog.studentId)
+        prev.filter((s) => s._id !== deleteDialog.studentId),
       );
       setTotalStudents((prev) => prev - 1);
       setDeleteDialog({ open: false, studentId: null });
@@ -228,13 +228,13 @@ export default function TeacherStudentsPage() {
                     dropdownOpen={dropdownOpen === student._id}
                     onDropdownToggle={() =>
                       setDropdownOpen(
-                        dropdownOpen === student._id ? null : student._id
+                        dropdownOpen === student._id ? null : student._id,
                       )
                     }
                     onViewProgress={() => handleViewProgress(student)}
                     onEdit={() =>
                       router.push(
-                        `/dashboard/teacher/students/edit/${student._id}`
+                        `/dashboard/teacher/students/edit/${student._id}`,
                       )
                     }
                     onDelete={() =>

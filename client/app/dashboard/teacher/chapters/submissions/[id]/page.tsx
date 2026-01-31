@@ -10,7 +10,6 @@ import {
   Video,
   FileText,
   MessageSquare,
-  Download,
   ExternalLink,
   Calendar,
   User,
@@ -394,7 +393,7 @@ export default function TeacherChapterSubmissionsPage() {
                                     submission.submittedAt,
                                   ).toLocaleString()}
                                 </p>
-                              </div>  
+                              </div>
                             </div>
                           </div>
                           {submission.type === "text" && submission.content && (

@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { useAuth } from "@/hooks/auth/useAuth";import {
+import { useAuth } from "@/hooks/auth/useAuth";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,7 +55,7 @@ export default function TeacherAssignmentsPage() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast.error(
-        error.response?.data?.message || "Failed to load assignments"
+        error.response?.data?.message || "Failed to load assignments",
       );
     } finally {
       setLoading(false);
@@ -77,14 +78,12 @@ export default function TeacherAssignmentsPage() {
     } catch (error: any) {
       console.error("Error deleting assignment:", error);
       toast.error(
-        error.response?.data?.message || "Failed to delete assignment"
+        error.response?.data?.message || "Failed to delete assignment",
       );
     }
   };
   const handleViewSubmissions = (assignmentId: string) => {
-    router.push(
-      `/dashboard/teacher/assignments/submissions/${assignmentId}`
-    );
+    router.push(`/dashboard/teacher/assignments/submissions/${assignmentId}`);
   };
   const totalAssignments = assignments.length;
   const activeAssignments = assignments.filter((a) => {
@@ -110,9 +109,7 @@ export default function TeacherAssignmentsPage() {
                       Assignments Management
                     </h1>
                     <p className="text-blue-100 text-lg mt-1">
-                      {grade
-                        ? `Managing Grade ${grade.grade}`
-                        : "Loading..."}
+                      {grade ? `Managing Grade ${grade.grade}` : "Loading..."}
                     </p>
                   </div>
                 </div>
@@ -140,7 +137,9 @@ export default function TeacherAssignmentsPage() {
                         <p className="text-blue-100 text-xs font-medium">
                           Active Now
                         </p>
-                        <p className="text-2xl font-bold">{activeAssignments}</p>
+                        <p className="text-2xl font-bold">
+                          {activeAssignments}
+                        </p>
                       </div>
                     </div>
                   </div>

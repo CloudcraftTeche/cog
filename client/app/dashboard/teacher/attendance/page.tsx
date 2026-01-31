@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/auth/useAuth";import { format } from "date-fns";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { format } from "date-fns";
 import { IStudent, studentService } from "@/utils/attendanceStudent.service";
 import {
   attendanceService,
@@ -14,9 +15,7 @@ import TodaySummaryView from "@/components/teacher/attendance/TodaySummaryView";
 import StatsView from "@/components/teacher/attendance/StatsView";
 import HistoryView from "@/components/teacher/attendance/HistoryView";
 import api from "@/lib/api";
-
 type ViewType = "attendance" | "today" | "stats" | "history";
-
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [students, setStudents] = useState<IStudent[]>([]);
@@ -28,13 +27,11 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingAttendance, setMarkingAttendance] = useState(false);
-
   useEffect(() => {
     if (user) {
       initializeDashboard();
     }
   }, [user]);
-
   useEffect(() => {
     if (selectedGradeId) {
       const filtered = allStudents.filter((student) => {
@@ -48,26 +45,25 @@ export default function TeacherDashboard() {
       setStudents(allStudents);
     }
   }, [selectedGradeId, allStudents]);
-
-  // Fetch attendance when date changes
   useEffect(() => {
     if (user) {
       fetchAttendanceByDate(selectedDate);
     }
   }, [selectedDate, user]);
-
   const initializeDashboard = async () => {
     try {
       setLoading(true);
       setError(null);
-      await Promise.all([fetchTeacherStudents(), fetchAttendanceByDate(selectedDate)]);
+      await Promise.all([
+        fetchTeacherStudents(),
+        fetchAttendanceByDate(selectedDate),
+      ]);
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   };
-
   const fetchTeacherStudents = async () => {
     try {
       const teacherData = await api.get("/auth/me");
@@ -80,7 +76,6 @@ export default function TeacherDashboard() {
       throw err;
     }
   };
-
   const fetchAttendanceByDate = async (date: Date) => {
     try {
       const data = await attendanceService.getAttendanceByDate(date);
@@ -90,11 +85,10 @@ export default function TeacherDashboard() {
       throw err;
     }
   };
-
   const markAttendance = async (
     studentId: string,
     status: AttendanceStatus,
-    date: Date
+    date: Date,
   ) => {
     try {
       setMarkingAttendance(true);
@@ -104,14 +98,12 @@ export default function TeacherDashboard() {
           ? student.gradeId._id
           : student.gradeId
         : undefined;
-
       await attendanceService.createOrUpdateAttendance({
         studentId,
         status,
         gradeId,
         date,
       });
-
       await fetchAttendanceByDate(date);
     } catch (err: any) {
       alert(err.message || "Failed to mark attendance");
@@ -119,13 +111,11 @@ export default function TeacherDashboard() {
       setMarkingAttendance(false);
     }
   };
-
   const exportTodayAttendance = () => {
     if (attendanceRecords.length === 0) {
       alert("No attendance records to export");
       return;
     }
-
     const filteredAttendance = selectedGradeId
       ? attendanceRecords.filter((record) => {
           const gradeId =
@@ -136,16 +126,16 @@ export default function TeacherDashboard() {
           return gradeId === selectedGradeId;
         })
       : attendanceRecords;
-
     if (filteredAttendance.length === 0) {
       alert("No attendance records to export for selected filter");
       return;
     }
-
     const csvData = convertAttendanceToCSV(filteredAttendance);
-    downloadCSV(csvData, `attendance-${format(selectedDate, "yyyy-MM-dd")}.csv`);
+    downloadCSV(
+      csvData,
+      `attendance-${format(selectedDate, "yyyy-MM-dd")}.csv`,
+    );
   };
-
   const convertAttendanceToCSV = (data: IAttendance[]) => {
     const header = "Student Name,Email,Roll Number,Grade,Status,Date,Time\n";
     const rows = data
@@ -168,7 +158,6 @@ export default function TeacherDashboard() {
       .join("\n");
     return header + rows;
   };
-
   const downloadCSV = (csvData: string, filename: string) => {
     const blob = new Blob([csvData], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -178,15 +167,12 @@ export default function TeacherDashboard() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
   const handleGradeChange = (gradeId: string | null) => {
     setSelectedGradeId(gradeId);
   };
-
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
   };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50">
@@ -197,7 +183,6 @@ export default function TeacherDashboard() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50">
@@ -213,7 +198,6 @@ export default function TeacherDashboard() {
       </div>
     );
   }
-
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50">
@@ -225,7 +209,6 @@ export default function TeacherDashboard() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
       <AttendanceNav
@@ -242,7 +225,6 @@ export default function TeacherDashboard() {
             />
           </div>
         )}
-
         {selectedView === "attendance" && (
           <MarkAttendanceView
             students={students}
@@ -253,7 +235,6 @@ export default function TeacherDashboard() {
             onDateChange={handleDateChange}
           />
         )}
-
         {selectedView === "today" && (
           <TodaySummaryView
             todayAttendance={attendanceRecords.filter((record) => {
@@ -269,7 +250,6 @@ export default function TeacherDashboard() {
             onExport={exportTodayAttendance}
           />
         )}
-
         {selectedView === "stats" && <StatsView />}
         {selectedView === "history" && <HistoryView />}
       </div>

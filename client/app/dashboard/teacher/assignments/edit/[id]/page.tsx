@@ -51,7 +51,7 @@ export default function TeacherEditAssignment() {
   const [success, setSuccess] = useState(false);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [contentType, setContentType] = useState<"video" | "text" | "pdf">(
-    "video"
+    "video",
   );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -93,14 +93,14 @@ export default function TeacherEditAssignment() {
               questionText: q.questionText || q.question || "",
               options: q.options || ["", "", "", ""],
               correctAnswer: q.correctAnswer || "A",
-            }))
+            })),
           );
         }
         toast.success("Assignment loaded successfully");
       } catch (error: any) {
         console.error("Failed to fetch assignment:", error);
         toast.error(
-          error.response?.data?.message || "Failed to load assignment"
+          error.response?.data?.message || "Failed to load assignment",
         );
       } finally {
         setInitialLoading(false);
@@ -140,7 +140,7 @@ export default function TeacherEditAssignment() {
         return;
       }
       const validQuestions = questions.filter(
-        (q) => q.questionText.trim() !== ""
+        (q) => q.questionText.trim() !== "",
       );
       if (validQuestions.length === 0) {
         toast.error("Please add at least one valid question");
@@ -167,7 +167,7 @@ export default function TeacherEditAssignment() {
       }
       const response = await api.put(
         `/teacher/assignments/${assignmentId}`,
-        formData
+        formData,
       );
       if (!response.data.success) {
         throw new Error("Failed to update assignment");

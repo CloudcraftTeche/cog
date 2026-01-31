@@ -1,7 +1,14 @@
 "use client";
 import React, { useState, useMemo } from "react";
-import { useOverview, useStreak, useAssignments } from "@/hooks/student/useTodo";
-import { LoadingSpinner, ErrorDisplay } from "@/components/shared/LoadingSpinner";
+import {
+  useOverview,
+  useStreak,
+  useAssignments,
+} from "@/hooks/student/useTodo";
+import {
+  LoadingSpinner,
+  ErrorDisplay,
+} from "@/components/shared/LoadingSpinner";
 import { StreakSection } from "@/components/student/todo/StreakSection";
 import { ActivityCalendar } from "@/components/student/todo/ActivityCalendar";
 import { StatsGrid } from "@/components/student/todo/StatsGrid";
@@ -10,11 +17,9 @@ import { ChaptersSection } from "@/components/student/todo/ChaptersSection";
 import { RecentActivitySection } from "@/components/student/todo/RecentActivitySection";
 import { filterAssignments } from "@/utils/student/todoFilters";
 import type { AssignmentFilterStatus } from "@/types/student/todo.types";
-
 const StudentTodoPage: React.FC = () => {
-  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilterStatus>("all");
-
-  // Queries
+  const [assignmentFilter, setAssignmentFilter] =
+    useState<AssignmentFilterStatus>("all");
   const {
     data: overviewData,
     isLoading: isLoadingOverview,
@@ -22,51 +27,38 @@ const StudentTodoPage: React.FC = () => {
     error: overviewError,
     refetch: refetchOverview,
   } = useOverview();
-
-  const {
-    data: streakData,
-    isLoading: isLoadingStreak,
-  } = useStreak();
-
-  const {
-    data: allAssignments,
-    isLoading: isLoadingAssignments,
-  } = useAssignments({
-    status: "all",
-    page: 1,
-    limit: 100,
-  });
-
-  // Loading state
-  const isLoading = isLoadingOverview || isLoadingStreak || isLoadingAssignments;
-
-  // Error handling
+  const { data: streakData, isLoading: isLoadingStreak } = useStreak();
+  const { data: allAssignments, isLoading: isLoadingAssignments } =
+    useAssignments({
+      status: "all",
+      page: 1,
+      limit: 100,
+    });
+  const isLoading =
+    isLoadingOverview || isLoadingStreak || isLoadingAssignments;
   if (isOverviewError) {
-    const errorMessage = overviewError instanceof Error 
-      ? overviewError.message 
-      : 'Failed to load dashboard data';
-    
-    return <ErrorDisplay error={errorMessage} onRetry={() => refetchOverview()} />;
+    const errorMessage =
+      overviewError instanceof Error
+        ? overviewError.message
+        : "Failed to load dashboard data";
+    return (
+      <ErrorDisplay error={errorMessage} onRetry={() => refetchOverview()} />
+    );
   }
-
   if (isLoading) {
     return <LoadingSpinner />;
   }
-
   if (!overviewData) {
     return null;
   }
-
-  // Filter assignments
   const filteredAssignments = useMemo(
     () => filterAssignments(allAssignments ?? [], assignmentFilter),
-    [allAssignments, assignmentFilter]
+    [allAssignments, assignmentFilter],
   );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
             Welcome Back! 👋
@@ -75,26 +67,21 @@ const StudentTodoPage: React.FC = () => {
             Here's your complete learning dashboard
           </p>
         </div>
-
-        {/* Streak Section */}
+        {}
         <StreakSection
           currentStreak={overviewData.streak}
           streakData={streakData ?? null}
         />
-
-        {/* Activity Calendar */}
+        {}
         {streakData && <ActivityCalendar calendar={streakData.calendar} />}
-
-        {/* Stats Grid */}
+        {}
         <StatsGrid stats={overviewData.stats} />
-
-        {/* Chapters and Recent Activity */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <ChaptersSection chapters={overviewData.todayChapters} />
           <RecentActivitySection activities={overviewData.recentActivity} />
         </div>
-
-        {/* All Assignments */}
+        {}
         <AssignmentsSection
           assignments={filteredAssignments}
           filterStatus={assignmentFilter}
@@ -104,5 +91,4 @@ const StudentTodoPage: React.FC = () => {
     </div>
   );
 };
-
 export default StudentTodoPage;

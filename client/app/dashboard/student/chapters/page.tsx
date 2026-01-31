@@ -1,6 +1,5 @@
-// app/dashboard/student/chapters/page.tsx
 "use client";
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Search,
@@ -11,16 +10,16 @@ import {
 } from "lucide-react";
 import { useChaptersList } from "@/hooks/student/useChapters";
 import { ChapterCard } from "@/components/student/chapter/ChapterCard";
-import { LoadingSpinner, ErrorDisplay } from "@/components/shared/LoadingSpinner";
-import { groupChaptersByUnit, getUnitColor } from "@/utils/student/chapterUtils";
+import { ErrorDisplay } from "@/components/shared/LoadingSpinner";
+import {
+  groupChaptersByUnit,
+  getUnitColor,
+} from "@/utils/student/chapterUtils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-
 const ITEMS_PER_PAGE = 100;
-
 export default function StudentChaptersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
-
   const {
     data: chaptersData,
     isLoading,
@@ -32,14 +31,11 @@ export default function StudentChaptersPage() {
     limit: ITEMS_PER_PAGE,
     search: searchTerm || undefined,
   });
-
   const chapters = chaptersData?.chapters ?? [];
-
   const groupedByUnit = useMemo(
     () => groupChaptersByUnit(chapters),
-    [chapters]
+    [chapters],
   );
-
   const toggleUnit = (unitId: string) => {
     const newExpanded = new Set(expandedUnits);
     if (newExpanded.has(unitId)) {
@@ -49,16 +45,14 @@ export default function StudentChaptersPage() {
     }
     setExpandedUnits(newExpanded);
   };
-
   if (isLoading) {
     return <LoadingState text="chapters..." />;
   }
-
   if (isError) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to fetch chapters";
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch chapters";
     return <ErrorDisplay error={errorMessage} onRetry={() => refetch()} />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -66,9 +60,8 @@ export default function StudentChaptersPage() {
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed blur-xl" />
         <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full animate-float blur-xl" />
       </div>
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
-        {/* Header */}
+        {}
         <div className="mb-6 sm:mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white shadow-2xl">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-2">
@@ -83,8 +76,7 @@ export default function StudentChaptersPage() {
             </p>
           </div>
         </div>
-
-        {/* Search */}
+        {}
         <div className="max-w-xl mx-auto mb-6 sm:mb-8">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5 group-hover:text-purple-500 transition-colors" />
@@ -96,8 +88,7 @@ export default function StudentChaptersPage() {
             />
           </div>
         </div>
-
-        {/* Units List */}
+        {}
         <div className="space-y-4 sm:space-y-6">
           {groupedByUnit.length === 0 ? (
             <div className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50 rounded-2xl sm:rounded-3xl overflow-hidden p-8 sm:p-12 text-center">
@@ -117,7 +108,6 @@ export default function StudentChaptersPage() {
             groupedByUnit.map((unitGroup, index) => {
               const isExpanded = expandedUnits.has(unitGroup.unitId);
               const colorClass = getUnitColor(index);
-
               return (
                 <div key={unitGroup.unitId} className="group">
                   <div
@@ -170,7 +160,6 @@ export default function StudentChaptersPage() {
                       </div>
                     </div>
                   </div>
-
                   {isExpanded && (
                     <div className="ml-2 sm:ml-4 mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
                       {unitGroup.chapters.map((chapter, chapterIndex) => (
@@ -188,15 +177,24 @@ export default function StudentChaptersPage() {
           )}
         </div>
       </div>
-
       <style jsx global>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
         }
         @keyframes float-delayed {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-15px);
+          }
         }
         .animate-float {
           animation: float 6s ease-in-out infinite;

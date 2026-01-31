@@ -97,7 +97,7 @@ export default function TeacherAddStudentPage() {
       toast.error("Please fix all validation errors");
       const firstErrorField = Object.keys(validationErrors)[0];
       const element = document.getElementById(
-        firstErrorField.replace("address.", "")
+        firstErrorField.replace("address.", ""),
       );
       element?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;

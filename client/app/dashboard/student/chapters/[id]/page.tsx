@@ -1,76 +1,61 @@
-// app/dashboard/student/chapters/[id]/page.tsx
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
-import { useChapter, useStartChapter, useChaptersList } from "@/hooks/student/useChapters";
-import { LoadingSpinner, ErrorDisplay } from "@/components/shared/LoadingSpinner";
+import {
+  useChapter,
+  useStartChapter,
+  useChaptersList,
+} from "@/hooks/student/useChapters";
+import { ErrorDisplay } from "@/components/shared/LoadingSpinner";
 import { ChapterHeader } from "@/components/student/chapter/ChapterHeader";
 import { ChapterContent } from "@/components/student/chapter/ChapterContent";
 import { ChapterSubmission } from "@/components/student/chapter/ChapterSubmission";
-import { findNextChapter, calculateQuizScore } from "@/utils/student/chapterUtils";
+import {
+  findNextChapter,
+  calculateQuizScore,
+} from "@/utils/student/chapterUtils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
-
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<number, string>
+  >({});
   const [submitted, setSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
-
-  const {
-    data: chapter,
-    isLoading,
-    isError,
-    error,
-  } = useChapter(id);
-
+  const { data: chapter, isLoading, isError, error } = useChapter(id);
   const { data: allChaptersData } = useChaptersList({
     page: 1,
     limit: 100,
   });
-
   const startChapterMutation = useStartChapter();
-
-  // Find next chapter
   const nextChapter = useMemo(() => {
     if (!chapter || !allChaptersData?.chapters) return null;
     return findNextChapter(chapter, allChaptersData.chapters);
   }, [chapter, allChaptersData]);
-
-  // Handle chapter initialization
   useEffect(() => {
     if (!chapter) return;
-
-    // Set initial state based on chapter status
-    if (chapter.isCompleted || chapter.status === 'completed') {
+    if (chapter.isCompleted || chapter.status === "completed") {
       setSubmitted(true);
       setQuizScore(chapter.score ?? 0);
     }
-
-    // Start chapter if accessible but not started
-    if (
-      chapter.isAccessible &&
-      !chapter.isInProgress &&
-      !chapter.isCompleted
-    ) {
+    if (chapter.isAccessible && !chapter.isInProgress && !chapter.isCompleted) {
       startChapterMutation.mutate(chapter._id);
     }
   }, [chapter]);
-
   const handleAnswer = (qIndex: number, value: string) => {
     if (!submitted) {
       setSelectedAnswers((prev) => ({ ...prev, [qIndex]: value }));
     }
   };
-
   const handleSubmitSuccess = (result: { score: number }) => {
-    const finalScore = result.score || (chapter ? calculateQuizScore(chapter.questions, selectedAnswers) : 0);
+    const finalScore =
+      result.score ||
+      (chapter ? calculateQuizScore(chapter.questions, selectedAnswers) : 0);
     setQuizScore(finalScore);
     setSubmitted(true);
   };
-
   const handleNextChapter = () => {
     if (nextChapter) {
       router.push(`/dashboard/student/chapters/${nextChapter._id}`);
@@ -79,30 +64,28 @@ export default function ChapterDetailPage() {
       toast.info("You've completed all chapters in this unit!");
     }
   };
-
   const handleRetake = () => {
     setSelectedAnswers({});
     setSubmitted(false);
     setQuizScore(0);
   };
-
   const currentScore = submitted
     ? quizScore > 0
       ? quizScore
-      : chapter ? calculateQuizScore(chapter.questions, selectedAnswers) : 0
+      : chapter
+        ? calculateQuizScore(chapter.questions, selectedAnswers)
+        : 0
     : 0;
-
   if (isLoading) {
     return <LoadingState text=" chapter content..." />;
   }
-
   if (isError) {
     let errorMessage = "Unable to load chapter. Please try again later.";
-    
     if (error instanceof Error) {
       const axiosError = error as any;
       if (axiosError.response?.status === 403) {
-        errorMessage = "You must complete previous chapters to access this chapter.";
+        errorMessage =
+          "You must complete previous chapters to access this chapter.";
       } else if (axiosError.response?.status === 404) {
         errorMessage = "Chapter not found.";
       } else if (axiosError.response?.data?.message) {
@@ -111,16 +94,20 @@ export default function ChapterDetailPage() {
         errorMessage = error.message;
       }
     }
-
-    return <ErrorDisplay error={errorMessage} onRetry={() => router.refresh()} />;
+    return (
+      <ErrorDisplay error={errorMessage} onRetry={() => router.refresh()} />
+    );
   }
-
   if (!chapter) {
-    return <ErrorDisplay error="Chapter not found." onRetry={() => { 
-      router.refresh();
-    }} />;
+    return (
+      <ErrorDisplay
+        error="Chapter not found."
+        onRetry={() => {
+          router.refresh();
+        }}
+      />
+    );
   }
-
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -128,13 +115,10 @@ export default function ChapterDetailPage() {
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed" />
         <div className="absolute bottom-20 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-teal-400/20 rounded-full animate-float" />
       </div>
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10 max-w-4xl">
         <ChapterHeader chapter={chapter} />
-
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
-
           {chapter.questions && chapter.questions.length > 0 && (
             <ChapterSubmission
               chapter={chapter}
@@ -150,15 +134,24 @@ export default function ChapterDetailPage() {
           )}
         </div>
       </div>
-
       <style jsx global>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
         }
         @keyframes float-delayed {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-15px);
+          }
         }
         @keyframes fade-in {
           from {

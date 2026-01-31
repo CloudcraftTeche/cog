@@ -104,14 +104,14 @@ export default function TeacherCreateAssignment() {
       formDataToSend.append("endDate", formData.endDate);
       formDataToSend.append(
         "totalMarks",
-        formData.totalMarks?.toString() || "100"
+        formData.totalMarks?.toString() || "100",
       );
       formDataToSend.append(
         "passingMarks",
-        formData.passingMarks?.toString() || "40"
+        formData.passingMarks?.toString() || "40",
       );
       const validQuestions = formData.questions.filter(
-        (q) => q.questionText?.trim() !== ""
+        (q) => q.questionText?.trim() !== "",
       );
       formDataToSend.append("questions", JSON.stringify(validQuestions));
       if (formData.contentType === "video" && formData.videoFile) {
@@ -131,7 +131,7 @@ export default function TeacherCreateAssignment() {
     } catch (error: any) {
       console.error("Error creating assignment:", error);
       toast.error(
-        error.response?.data?.message || "Failed to create assignment"
+        error.response?.data?.message || "Failed to create assignment",
       );
     } finally {
       setLoading(false);
@@ -576,7 +576,7 @@ const validateAssignmentForm = (form: IAssignmentForm): IValidationError[] => {
         });
       }
       const validOptions = q.options.filter(
-        (opt: string) => opt?.trim().length > 0
+        (opt: string) => opt?.trim().length > 0,
       );
       if (validOptions.length < 2) {
         errors.push({

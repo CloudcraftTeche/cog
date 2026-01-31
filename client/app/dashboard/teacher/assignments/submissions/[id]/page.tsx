@@ -10,11 +10,9 @@ import {
 import { Pagination } from "@/components/admin/teachers/Pagination";
 import { useTeacherSubmissions } from "@/hooks/useTeacherSubmissions";
 import { useParams } from "next/navigation";
-
 export default function TeacherSubmissionsPage() {
   const params = useParams();
   const assignmentId = params.id as string;
-
   const {
     submissions,
     loading,
@@ -25,11 +23,9 @@ export default function TeacherSubmissionsPage() {
     setCurrentPage,
     gradeSubmission,
   } = useTeacherSubmissions({ assignmentId, limit: 10 });
-
   if (submissions.length === 0 && !loading && searchTerm.trim() === "") {
     return <NoSubmissionsState />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
@@ -37,7 +33,6 @@ export default function TeacherSubmissionsPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
-
         {loading ? (
           <LoadingState />
         ) : submissions.length > 0 ? (
@@ -51,7 +46,6 @@ export default function TeacherSubmissionsPage() {
                 />
               ))}
             </div>
-
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}

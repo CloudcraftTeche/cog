@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,9 +20,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { useAuth } from "@/hooks/auth/useAuth";import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-
 interface Chapter {
   _id: string;
   title: string;
@@ -45,7 +44,6 @@ interface Chapter {
   createdAt: Date;
   questions?: Array<any>;
 }
-
 interface Grade {
   _id: string;
   grade: string;
@@ -56,32 +54,26 @@ interface Grade {
     orderIndex: number;
   }>;
 }
-
 export default function TeacherChaptersPage() {
   const router = useRouter();
   const { user } = useAuth();
-
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
-
   const fetchChapters = async () => {
     if (!user?.id) return;
-
     try {
       setLoading(true);
       const gradeRes = await api.get("/auth/me");
       const gradeId = gradeRes.data.data.gradeId._id;
-
       const res = await api.get(`/teacher-chapters/teacher/${gradeId}`, {
         params: {
           query: searchTerm || "",
         },
       });
-
       setChapters(res.data.data || []);
     } catch (error) {
       toast.error("Failed to fetch chapters");
@@ -90,35 +82,29 @@ export default function TeacherChaptersPage() {
       setLoading(false);
     }
   };
-
   const fetchGrades = async () => {
     try {
       const gradesRes = await api.get("/grades/all");
       const gradesData = gradesRes.data.data || [];
-
       const sortedGrades = gradesData.sort((a: Grade, b: Grade) => {
         const gradeA = parseInt(a.grade.replace(/\D/g, "")) || 0;
         const gradeB = parseInt(b.grade.replace(/\D/g, "")) || 0;
         return gradeA - gradeB;
       });
-
       setGrades(sortedGrades);
     } catch (error) {
       toast.error("Failed to fetch grades");
       console.error(error);
     }
   };
-
   useEffect(() => {
     if (!user?.id) return;
     fetchGrades();
   }, [user?.id]);
-
   useEffect(() => {
     if (!user?.id) return;
     fetchChapters();
   }, [user?.id, searchTerm]);
-
   const toggleGrade = (gradeId: string) => {
     const newExpanded = new Set(expandedGrades);
     if (newExpanded.has(gradeId)) {
@@ -128,7 +114,6 @@ export default function TeacherChaptersPage() {
     }
     setExpandedGrades(newExpanded);
   };
-
   const toggleUnit = (unitKey: string) => {
     const newExpanded = new Set(expandedUnits);
     if (newExpanded.has(unitKey)) {
@@ -138,7 +123,6 @@ export default function TeacherChaptersPage() {
     }
     setExpandedUnits(newExpanded);
   };
-
   const gradeColors = [
     "from-violet-500 via-purple-500 to-fuchsia-500",
     "from-blue-500 via-cyan-500 to-teal-500",
@@ -147,7 +131,6 @@ export default function TeacherChaptersPage() {
     "from-pink-500 via-rose-500 to-red-500",
     "from-indigo-500 via-blue-500 to-cyan-500",
   ];
-
   const unitColors = [
     "from-purple-400 to-pink-400",
     "from-blue-400 to-cyan-400",
@@ -156,21 +139,18 @@ export default function TeacherChaptersPage() {
     "from-rose-400 to-pink-400",
     "from-indigo-400 to-purple-400",
   ];
-
   const filteredChapters = searchTerm
     ? chapters.filter(
         (ch) =>
           ch.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ch.description.toLowerCase().includes(searchTerm.toLowerCase())
+          ch.description.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     : chapters;
-
   const groupedData = grades
     .map((grade) => {
       const gradeChapters = filteredChapters.filter(
-        (ch) => ch.gradeId._id === grade._id
+        (ch) => ch.gradeId._id === grade._id,
       );
-
       const unitGroups = (grade.units || []).map((unit) => {
         const unitChapters = gradeChapters
           .filter((ch) => {
@@ -184,13 +164,11 @@ export default function TeacherChaptersPage() {
             return chapterUnitId === unitIdStr;
           })
           .sort((a, b) => a.chapterNumber - b.chapterNumber);
-
         return {
           unit,
           chapters: unitChapters,
         };
       });
-
       return {
         grade,
         unitGroups: unitGroups.filter((ug) => ug.chapters.length > 0),
@@ -198,7 +176,6 @@ export default function TeacherChaptersPage() {
       };
     })
     .filter((g) => g.totalChapters > 0);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 flex items-center justify-center">
@@ -209,7 +186,6 @@ export default function TeacherChaptersPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -217,7 +193,6 @@ export default function TeacherChaptersPage() {
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed blur-xl"></div>
         <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full animate-float blur-xl"></div>
       </div>
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <div className="mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-2xl">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -236,7 +211,6 @@ export default function TeacherChaptersPage() {
             </div>
           </div>
         </div>
-
         <div className="max-w-xl mx-auto mb-8">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-purple-500 transition-colors" />
@@ -248,7 +222,6 @@ export default function TeacherChaptersPage() {
             />
           </div>
         </div>
-
         <div className="space-y-6">
           {groupedData.length === 0 ? (
             <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50 rounded-3xl overflow-hidden">
@@ -270,7 +243,6 @@ export default function TeacherChaptersPage() {
             groupedData.map((gradeData, gradeIndex) => {
               const isGradeExpanded = expandedGrades.has(gradeData.grade._id);
               const colorClass = gradeColors[gradeIndex % gradeColors.length];
-
               return (
                 <div key={gradeData.grade._id} className="group">
                   <button
@@ -313,7 +285,6 @@ export default function TeacherChaptersPage() {
                       </div>
                     </div>
                   </button>
-
                   {isGradeExpanded && (
                     <div className="ml-4 space-y-4 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
                       {gradeData.unitGroups.map((unitGroup, unitIndex) => {
@@ -321,14 +292,12 @@ export default function TeacherChaptersPage() {
                         const isUnitExpanded = expandedUnits.has(unitKey);
                         const unitColor =
                           unitColors[unitIndex % unitColors.length];
-
                         const completedCount = unitGroup.chapters.filter(
-                          (ch) => ch.isCompleted
+                          (ch) => ch.isCompleted,
                         ).length;
                         const totalCount = unitGroup.chapters.length;
                         const progressPercentage =
                           (completedCount / totalCount) * 100;
-
                         return (
                           <div key={unitKey} className="ml-4">
                             <button
@@ -383,7 +352,6 @@ export default function TeacherChaptersPage() {
                                 </div>
                               </div>
                             </button>
-
                             {isUnitExpanded && (
                               <div className="ml-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
                                 {unitGroup.chapters.map(
@@ -395,7 +363,6 @@ export default function TeacherChaptersPage() {
                                     ) : (
                                       <Clock className="h-5 w-5 text-white" />
                                     );
-
                                     const gradientClass = chapter.isCompleted
                                       ? "from-green-400 via-emerald-500 to-teal-500"
                                       : chapter.isInProgress
@@ -403,7 +370,6 @@ export default function TeacherChaptersPage() {
                                         : chapter.isAccessible
                                           ? unitColor
                                           : "from-gray-300 via-gray-400 to-gray-500";
-
                                     return (
                                       <Card
                                         key={chapter._id}
@@ -454,7 +420,6 @@ export default function TeacherChaptersPage() {
                                                 </p>
                                               </div>
                                             </div>
-
                                             <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 rounded-2xl p-4 space-y-2 text-sm border border-gray-100">
                                               <div className="flex items-center justify-between">
                                                 <span className="text-gray-600 font-medium">
@@ -484,19 +449,18 @@ export default function TeacherChaptersPage() {
                                                 </span>
                                                 <span className="font-bold text-gray-900">
                                                   {new Date(
-                                                    chapter.createdAt
+                                                    chapter.createdAt,
                                                   ).toLocaleDateString()}
                                                 </span>
                                               </div>
                                             </div>
-
                                             <div className="pt-2">
                                               {chapter.isAccessible ? (
                                                 <Button
                                                   className={`w-full bg-gradient-to-r ${gradientClass} hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-white font-semibold py-3 rounded-xl`}
                                                   onClick={() =>
                                                     router.push(
-                                                      `/dashboard/teacher/my-chapters/${chapter._id}`
+                                                      `/dashboard/teacher/my-chapters/${chapter._id}`,
                                                     )
                                                   }
                                                 >
@@ -528,7 +492,7 @@ export default function TeacherChaptersPage() {
                                         </CardContent>
                                       </Card>
                                     );
-                                  }
+                                  },
                                 )}
                               </div>
                             )}
@@ -543,7 +507,6 @@ export default function TeacherChaptersPage() {
           )}
         </div>
       </div>
-
       <style jsx global>{`
         @keyframes float {
           0%,

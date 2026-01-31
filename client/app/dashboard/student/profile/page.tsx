@@ -2,7 +2,8 @@
 import { useState, useRef, ChangeEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/auth/useAuth";import { ProfileHeader } from "@/components/student/profile/ProfileHeader";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { ProfileHeader } from "@/components/student/profile/ProfileHeader";
 import { PersonalInfoCard } from "@/components/student/profile/PersonalInfoCard";
 import { AddressInfoCard } from "@/components/student/profile/AddressInfoCard";
 import { StudentFormData } from "@/types/student/student.types";

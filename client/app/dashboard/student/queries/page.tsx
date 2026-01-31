@@ -1,13 +1,21 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { Plus, Sparkles } from "lucide-react";
-import { useQueriesList, useRecipients, useCreateQuery, useAddRating } from "@/hooks/student/useQueries";
+import {
+  useQueriesList,
+  useRecipients,
+  useCreateQuery,
+  useAddRating,
+} from "@/hooks/student/useQueries";
 import { QueryCard } from "@/components/student/queries/QueryCard";
 import { QueryFiltersBar } from "@/components/student/queries/QueryFilters";
 import { CreateQueryModal } from "@/components/student/queries/CreateQueryModal";
 import { QueryDetailModal } from "@/components/student/queries/QueryDetailModal";
-import { CreateQueryData, Query, QueryFilters } from "@/types/student/query.types";
-
+import {
+  CreateQueryData,
+  Query,
+  QueryFilters,
+} from "@/types/student/query.types";
 const INITIAL_FORM_DATA: CreateQueryData = {
   to: "",
   subject: "",
@@ -18,7 +26,6 @@ const INITIAL_FORM_DATA: CreateQueryData = {
   tags: [],
   attachments: [],
 };
-
 const StudentQueryPage: React.FC = () => {
   const [filters, setFilters] = useState<QueryFilters>({
     status: "",
@@ -30,8 +37,6 @@ const StudentQueryPage: React.FC = () => {
   const [selectedQuery, setSelectedQuery] = useState<Query | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState<CreateQueryData>(INITIAL_FORM_DATA);
-
-  // Queries
   const { data: queriesData, isLoading: isLoadingQueries } = useQueriesList({
     page,
     limit: 10,
@@ -39,50 +44,39 @@ const StudentQueryPage: React.FC = () => {
     queryType: filters.queryType || undefined,
     priority: filters.priority || undefined,
   });
-
   const { data: recipients } = useRecipients();
   const createMutation = useCreateQuery();
   const ratingMutation = useAddRating();
-
-  // Derived state
   const queries = queriesData?.queries ?? [];
   const totalPages = queriesData?.totalPages ?? 1;
-
   const filteredQueries = useMemo(() => {
     if (!searchTerm) return queries;
-    
     const searchLower = searchTerm.toLowerCase();
     return queries.filter(
       (query) =>
         query.subject.toLowerCase().includes(searchLower) ||
-        query.content.toLowerCase().includes(searchLower)
+        query.content.toLowerCase().includes(searchLower),
     );
   }, [queries, searchTerm]);
-
-  // Handlers
   const handleCreateQuery = async () => {
     await createMutation.mutateAsync(formData);
     setShowCreateModal(false);
     setFormData(INITIAL_FORM_DATA);
   };
-
   const handleAddRating = async (queryId: string, rating: number) => {
     await ratingMutation.mutateAsync({ queryId, rating });
   };
-
   const handleClearFilters = () => {
     setFilters({ status: "", queryType: "", priority: "" });
     setSearchTerm("");
   };
-
   const handleFormChange = (data: Partial<CreateQueryData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-purple-100">
           <div className="flex justify-between items-center">
             <div>
@@ -102,8 +96,7 @@ const StudentQueryPage: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Filters */}
+        {}
         <QueryFiltersBar
           filters={filters}
           searchTerm={searchTerm}
@@ -111,8 +104,7 @@ const StudentQueryPage: React.FC = () => {
           onSearchChange={setSearchTerm}
           onClearFilters={handleClearFilters}
         />
-
-        {/* Queries List */}
+        {}
         <div className="space-y-6">
           {isLoadingQueries ? (
             <div className="text-center py-16">
@@ -148,8 +140,7 @@ const StudentQueryPage: React.FC = () => {
             ))
           )}
         </div>
-
-        {/* Pagination */}
+        {}
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center gap-3">
             <button
@@ -171,8 +162,7 @@ const StudentQueryPage: React.FC = () => {
             </button>
           </div>
         )}
-
-        {/* Modals */}
+        {}
         <CreateQueryModal
           isOpen={showCreateModal}
           formData={formData}
@@ -182,7 +172,6 @@ const StudentQueryPage: React.FC = () => {
           onFormChange={handleFormChange}
           onSubmit={handleCreateQuery}
         />
-
         <QueryDetailModal
           query={selectedQuery}
           onClose={() => setSelectedQuery(null)}
@@ -191,5 +180,4 @@ const StudentQueryPage: React.FC = () => {
     </div>
   );
 };
-
 export default StudentQueryPage;

@@ -1,13 +1,10 @@
-// components/student/assignments/QuestionForm.tsx
 "use client";
-
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { IQuestion } from "@/types/student/assignment.types";
-
 interface QuestionFormProps {
   questions: IQuestion[];
   answers: Record<number, string>;
@@ -15,7 +12,6 @@ interface QuestionFormProps {
   disabled?: boolean;
   showResults?: boolean;
 }
-
 export function QuestionForm({
   questions,
   answers,
@@ -25,10 +21,9 @@ export function QuestionForm({
 }: QuestionFormProps) {
   const answeredCount = Object.keys(answers).length;
   const totalQuestions = questions.length;
-
   return (
     <div className="space-y-5">
-      {/* Progress Bar */}
+      {}
       <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/50 to-transparent">
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-primary" />
@@ -46,8 +41,7 @@ export function QuestionForm({
           </Badge>
         </div>
       </div>
-
-      {/* Questions */}
+      {}
       <div className="space-y-5">
         {questions.map((question, index) => {
           const selectedAnswer = answers[index];
@@ -58,7 +52,6 @@ export function QuestionForm({
             showResults &&
             selectedAnswer &&
             selectedAnswer !== question.correctAnswer;
-
           return (
             <Card
               key={index}
@@ -102,7 +95,6 @@ export function QuestionForm({
                   </p>
                 </div>
               </CardHeader>
-
               <CardContent className="pt-0">
                 <RadioGroup
                   value={selectedAnswer ?? ""}
@@ -119,7 +111,6 @@ export function QuestionForm({
                       showResults &&
                       isSelected &&
                       option !== question.correctAnswer;
-
                     return (
                       <div
                         key={optionIndex}

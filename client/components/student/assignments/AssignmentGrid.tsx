@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,15 +24,16 @@ import {
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AssignmentCard } from "./AssignmentCard";
-import { useAssignments, useMySubmissions } from "@/hooks/student/use-assignments";
+import {
+  useAssignments,
+  useMySubmissions,
+} from "@/hooks/student/use-assignments";
 import { extractSubmittedAssignmentIds } from "@/utils/student/assignment-utils";
 import { useAssignmentFilters } from "@/utils/student/use-assignment-filters";
 import { UserRole } from "@/types/student/assignment.types";
-
 interface AssignmentsGridProps {
   userRole?: UserRole;
 }
-
 function LoadingSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
   return (
     <div
@@ -70,30 +70,31 @@ function LoadingSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
     </div>
   );
 }
-
-export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) {
+export function AssignmentsGrid({
+  userRole = "student",
+}: AssignmentsGridProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
-  // Fetch data
-  const { data: assignmentsData, isLoading: assignmentsLoading, error: assignmentsError, refetch } = useAssignments();
-  const { data: submissionsData, isLoading: submissionsLoading } = useMySubmissions();
-
-  // Extract submitted IDs
-  const submittedIds = submissionsData?.data ? extractSubmittedAssignmentIds(submissionsData.data) : [];
-
-  // Filters
+  const {
+    data: assignmentsData,
+    isLoading: assignmentsLoading,
+    error: assignmentsError,
+    refetch,
+  } = useAssignments();
+  const { data: submissionsData, isLoading: submissionsLoading } =
+    useMySubmissions();
+  const submittedIds = submissionsData?.data
+    ? extractSubmittedAssignmentIds(submissionsData.data)
+    : [];
   const { filters, setFilters, filteredAssignments } = useAssignmentFilters(
     assignmentsData?.data,
     submittedIds,
-    userRole
+    userRole,
   );
-
   const isLoading = assignmentsLoading || submissionsLoading;
   const error = assignmentsError?.message ?? null;
-
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-info p-6 sm:p-8 text-primary-foreground">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
@@ -122,10 +123,15 @@ export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) 
               disabled={isLoading}
               className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+              />
             </Button>
             {(userRole === "teacher" || userRole === "admin") && (
-              <Button className="bg-white text-primary hover:bg-white/90 shadow-lg" asChild>
+              <Button
+                className="bg-white text-primary hover:bg-white/90 shadow-lg"
+                asChild
+              >
                 <Link href="/assignments/create">
                   <Plus className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Create Assignment</span>
@@ -136,8 +142,7 @@ export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) 
           </div>
         </div>
       </div>
-
-      {/* Filters */}
+      {}
       <div className="flex flex-col gap-4 p-5 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl shadow-primary/5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
@@ -145,14 +150,18 @@ export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) 
             <Input
               placeholder="Search assignments..."
               value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, search: e.target.value })
+              }
               className="pl-12 h-12 rounded-xl bg-background/50 border-border/50 focus:border-primary/50 transition-colors"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Select
               value={filters.status}
-              onValueChange={(value) => setFilters({ ...filters, status: value })}
+              onValueChange={(value) =>
+                setFilters({ ...filters, status: value })
+              }
             >
               <SelectTrigger className="w-full sm:w-[150px] h-12 rounded-xl bg-background/50 border-border/50">
                 <Filter className="w-4 h-4 mr-2 shrink-0 text-muted-foreground" />
@@ -173,7 +182,9 @@ export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) 
             </Select>
             <Select
               value={filters.contentType}
-              onValueChange={(value) => setFilters({ ...filters, contentType: value })}
+              onValueChange={(value) =>
+                setFilters({ ...filters, contentType: value })
+              }
             >
               <SelectTrigger className="w-full sm:w-[140px] h-12 rounded-xl bg-background/50 border-border/50">
                 <SelectValue placeholder="Type" />
@@ -208,14 +219,15 @@ export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) 
           </div>
         </div>
       </div>
-
-      {/* Error State */}
+      {}
       {error && (
         <div className="flex flex-col items-center justify-center py-16 px-6 rounded-2xl border-2 border-dashed border-destructive/30 bg-destructive/5">
           <div className="p-4 rounded-full bg-destructive/10 mb-4">
             <BookOpen className="w-8 h-8 text-destructive" />
           </div>
-          <p className="text-destructive font-semibold mb-2 text-center">{error}</p>
+          <p className="text-destructive font-semibold mb-2 text-center">
+            {error}
+          </p>
           <Button
             variant="outline"
             onClick={() => refetch()}
@@ -226,26 +238,27 @@ export function AssignmentsGrid({ userRole = "student" }: AssignmentsGridProps) 
           </Button>
         </div>
       )}
-
-      {/* Loading State */}
+      {}
       {isLoading && <LoadingSkeleton viewMode={viewMode} />}
-
-      {/* Empty State */}
+      {}
       {!isLoading && !error && filteredAssignments.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 px-6 rounded-2xl border-2 border-dashed border-border bg-gradient-to-br from-muted/30 to-transparent">
           <div className="p-5 rounded-full bg-gradient-to-br from-primary/20 to-info/20 mb-5">
             <Search className="w-10 h-10 text-primary" />
           </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No assignments found</h3>
+          <h3 className="text-xl font-bold text-foreground mb-2">
+            No assignments found
+          </h3>
           <p className="text-muted-foreground text-center max-w-md">
-            {filters.search || filters.status !== "all" || filters.contentType !== "all"
+            {filters.search ||
+            filters.status !== "all" ||
+            filters.contentType !== "all"
               ? "Try adjusting your search or filter criteria"
               : "There are no assignments available at the moment"}
           </p>
         </div>
       )}
-
-      {/* Assignments Grid */}
+      {}
       {!isLoading && !error && filteredAssignments.length > 0 && (
         <div
           className={

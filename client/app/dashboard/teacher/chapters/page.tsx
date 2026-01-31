@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,41 +16,33 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/auth/useAuth";import {
+import { useAuth } from "@/hooks/auth/useAuth";
+import {
   TeacherChapter,
   TeacherChapterService,
   TeacherGrade,
 } from "@/components/teacher/chapter/chapterApiAndTypes";
 import TeacherChapterCard from "@/components/teacher/chapter/TeacherChapterCard";
-
 const ITEMS_PER_PAGE = 100;
-
 export default function TeacherChaptersPage() {
   const router = useRouter();
   const { user } = useAuth();
-
   const [chapters, setChapters] = useState<TeacherChapter[]>([]);
   const [grade, setGrade] = useState<TeacherGrade | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
-
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
     }, 300);
-
     return () => clearTimeout(timer);
   }, [searchTerm]);
-
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
-
     try {
       setLoading(true);
-
       const [gradeData, chaptersResponse] = await Promise.all([
         TeacherChapterService.getTeacherGrade(user.id),
         TeacherChapterService.getChapters({
@@ -60,7 +51,6 @@ export default function TeacherChaptersPage() {
           search: debouncedSearch || undefined,
         }),
       ]);
-
       setGrade(gradeData);
       setChapters(chaptersResponse.chapters);
     } catch (error: any) {
@@ -70,11 +60,9 @@ export default function TeacherChaptersPage() {
       setLoading(false);
     }
   }, [user?.id, debouncedSearch]);
-
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
   const toggleUnit = useCallback((unitId: string) => {
     setExpandedUnits((prev) => {
       const newExpanded = new Set(prev);
@@ -86,18 +74,14 @@ export default function TeacherChaptersPage() {
       return newExpanded;
     });
   }, []);
-
   const handleDeleteChapter = useCallback(
     async (chapterId: string) => {
       const chapter = chapters.find((c) => c._id === chapterId);
       if (!chapter) return;
-
       const confirmed = window.confirm(
-        `Are you sure you want to delete "${chapter.title}"? This action cannot be undone.`
+        `Are you sure you want to delete "${chapter.title}"? This action cannot be undone.`,
       );
-
       if (!confirmed) return;
-
       try {
         await TeacherChapterService.deleteChapter(chapterId);
         toast.success("Chapter deleted successfully");
@@ -107,23 +91,20 @@ export default function TeacherChaptersPage() {
         console.error(error);
       }
     },
-    [chapters, fetchData]
+    [chapters, fetchData],
   );
-
   const handleViewScores = useCallback(
     (chapterId: string) => {
       router.push(`/dashboard/teacher/chapters/scores/${chapterId}`);
     },
-    [router]
+    [router],
   );
-
   const handleEdit = useCallback(
     (chapterId: string) => {
       router.push(`/dashboard/teacher/chapters/edit/${chapterId}`);
     },
-    [router]
+    [router],
   );
-
   const unitColors = useMemo(
     () => [
       "from-purple-400 to-pink-400",
@@ -133,12 +114,10 @@ export default function TeacherChaptersPage() {
       "from-rose-400 to-pink-400",
       "from-indigo-400 to-purple-400",
     ],
-    []
+    [],
   );
-
   const unitGroups = useMemo(() => {
     if (!grade?.units || !Array.isArray(grade.units)) return [];
-
     return grade.units
       .map((unit, index) => {
         const unitChapters = chapters
@@ -150,7 +129,6 @@ export default function TeacherChaptersPage() {
             return chapterUnitId === unitIdStr;
           })
           .sort((a, b) => a.chapterNumber - b.chapterNumber);
-
         return {
           unit,
           chapters: unitChapters,
@@ -159,7 +137,6 @@ export default function TeacherChaptersPage() {
       })
       .filter((ug) => ug.chapters.length > 0);
   }, [grade?.units, chapters, unitColors]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 flex items-center justify-center">
@@ -170,7 +147,6 @@ export default function TeacherChaptersPage() {
       </div>
     );
   }
-
   if (!grade) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 flex items-center justify-center p-4">
@@ -190,12 +166,9 @@ export default function TeacherChaptersPage() {
       </div>
     );
   }
-
-    
   const handleViewSubmissions = (chapterId: string) => {
     router.push(`/dashboard/teacher/chapters/submissions/${chapterId}`);
-  }
-
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -203,7 +176,6 @@ export default function TeacherChaptersPage() {
         <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 rounded-full animate-float-delayed blur-xl"></div>
         <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full animate-float blur-xl"></div>
       </div>
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <div className="mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-2xl">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -230,7 +202,6 @@ export default function TeacherChaptersPage() {
             </Button>
           </div>
         </div>
-
         <div className="max-w-xl mx-auto mb-8">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-purple-500 transition-colors" />
@@ -242,7 +213,6 @@ export default function TeacherChaptersPage() {
             />
           </div>
         </div>
-
         <div className="space-y-6">
           {unitGroups.length === 0 ? (
             <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50 rounded-3xl overflow-hidden">
@@ -273,7 +243,6 @@ export default function TeacherChaptersPage() {
           ) : (
             unitGroups.map((unitGroup) => {
               const isUnitExpanded = expandedUnits.has(unitGroup.unit._id);
-
               return (
                 <div key={unitGroup.unit._id}>
                   <button
@@ -313,7 +282,6 @@ export default function TeacherChaptersPage() {
                       </div>
                     </div>
                   </button>
-
                   {isUnitExpanded && (
                     <div className="ml-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
                       {unitGroup.chapters.map((chapter, chapterIndex) => (
@@ -336,7 +304,6 @@ export default function TeacherChaptersPage() {
           )}
         </div>
       </div>
-
       <style jsx global>{`
         @keyframes float {
           0%,

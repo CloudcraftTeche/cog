@@ -1,6 +1,4 @@
-// components/student/assignments/SubmissionForm.tsx
 "use client";
-
 import { useState, useRef, ChangeEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,25 +14,24 @@ import {
   CheckCircle2,
   Sparkles,
 } from "lucide-react";
-import { SubmissionContent, SubmissionType } from "@/types/student/assignment.types";
-
+import {
+  SubmissionContent,
+  SubmissionType,
+} from "@/types/student/assignment.types";
 interface ExistingSubmission {
   submissionType: SubmissionType;
   textContent?: string;
   videoUrl?: string;
   pdfUrl?: string;
 }
-
 interface SubmissionFormProps {
   value: SubmissionContent;
   onChange: (content: SubmissionContent) => void;
   disabled?: boolean;
   existingSubmission?: ExistingSubmission | null;
 }
-
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
-const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB
-
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+const MAX_PDF_SIZE = 10 * 1024 * 1024;
 export function SubmissionForm({
   value,
   onChange,
@@ -44,7 +41,6 @@ export function SubmissionForm({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
-
   const handleTypeChange = (type: string) => {
     const newType = type as SubmissionType;
     onChange({
@@ -55,61 +51,49 @@ export function SubmissionForm({
     });
     setUploadError(null);
   };
-
   const handleTextChange = (text: string) => {
     onChange({ ...value, textContent: text });
   };
-
   const handleVideoSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith("video/")) {
       setUploadError("Please select a video file");
       return;
     }
-
     if (file.size > MAX_VIDEO_SIZE) {
       setUploadError("Video file size must be less than 100MB");
       return;
     }
-
     setUploadError(null);
     onChange({ ...value, videoFile: file });
   };
-
   const handlePdfSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.type !== "application/pdf") {
       setUploadError("Please select a PDF file");
       return;
     }
-
     if (file.size > MAX_PDF_SIZE) {
       setUploadError("PDF file size must be less than 10MB");
       return;
     }
-
     setUploadError(null);
     onChange({ ...value, pdfFile: file });
   };
-
   const clearPdf = () => {
     onChange({ ...value, pdfFile: undefined });
     if (pdfInputRef.current) {
       pdfInputRef.current.value = "";
     }
   };
-
   const clearVideo = () => {
     onChange({ ...value, videoFile: undefined });
     if (videoInputRef.current) {
       videoInputRef.current.value = "";
     }
   };
-
   const isValid = (): boolean => {
     switch (value.type) {
       case "text":
@@ -122,8 +106,6 @@ export function SubmissionForm({
         return false;
     }
   };
-
-  // Display existing submission
   if (existingSubmission && disabled) {
     return (
       <Card className="shadow-lg border-success/30 overflow-hidden">
@@ -138,54 +120,66 @@ export function SubmissionForm({
         <CardContent>
           <div className="space-y-5">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
-              <span className="text-sm text-muted-foreground font-medium">Type:</span>
+              <span className="text-sm text-muted-foreground font-medium">
+                Type:
+              </span>
               <span className="text-sm font-bold capitalize flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-info/10 text-primary">
-                {existingSubmission.submissionType === "video" && <Video className="w-4 h-4" />}
-                {existingSubmission.submissionType === "text" && <FileText className="w-4 h-4" />}
-                {existingSubmission.submissionType === "pdf" && <File className="w-4 h-4" />}
+                {existingSubmission.submissionType === "video" && (
+                  <Video className="w-4 h-4" />
+                )}
+                {existingSubmission.submissionType === "text" && (
+                  <FileText className="w-4 h-4" />
+                )}
+                {existingSubmission.submissionType === "pdf" && (
+                  <File className="w-4 h-4" />
+                )}
                 {existingSubmission.submissionType}
               </span>
             </div>
-
-            {existingSubmission.submissionType === "text" && existingSubmission.textContent && (
-              <div className="p-5 rounded-xl bg-muted/30 border-2 border-border/50">
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {existingSubmission.textContent}
-                </p>
-              </div>
-            )}
-
-            {existingSubmission.submissionType === "video" && existingSubmission.videoUrl && (
-              <div className="rounded-xl overflow-hidden border-2 border-border/50 shadow-lg">
-                <video src={existingSubmission.videoUrl} controls className="w-full aspect-video" />
-              </div>
-            )}
-
-            {existingSubmission.submissionType === "pdf" && existingSubmission.pdfUrl && (
-              <div className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-destructive/5 to-warning/5 border-2 border-destructive/20">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-destructive to-warning text-white shadow-md">
-                  <File className="w-6 h-6" />
+            {existingSubmission.submissionType === "text" &&
+              existingSubmission.textContent && (
+                <div className="p-5 rounded-xl bg-muted/30 border-2 border-border/50">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {existingSubmission.textContent}
+                  </p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate text-foreground">Submitted PDF</p>
-                  <a
-                    href={existingSubmission.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline font-medium"
-                  >
-                    View PDF
-                  </a>
+              )}
+            {existingSubmission.submissionType === "video" &&
+              existingSubmission.videoUrl && (
+                <div className="rounded-xl overflow-hidden border-2 border-border/50 shadow-lg">
+                  <video
+                    src={existingSubmission.videoUrl}
+                    controls
+                    className="w-full aspect-video"
+                  />
                 </div>
-              </div>
-            )}
+              )}
+            {existingSubmission.submissionType === "pdf" &&
+              existingSubmission.pdfUrl && (
+                <div className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-destructive/5 to-warning/5 border-2 border-destructive/20">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-destructive to-warning text-white shadow-md">
+                    <File className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate text-foreground">
+                      Submitted PDF
+                    </p>
+                    <a
+                      href={existingSubmission.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline font-medium"
+                    >
+                      View PDF
+                    </a>
+                  </div>
+                </div>
+              )}
           </div>
         </CardContent>
       </Card>
     );
   }
-
-  // Submission form
   return (
     <Card className="shadow-lg border-border/50 overflow-hidden">
       <CardHeader className="pb-4 bg-gradient-to-r from-info/10 to-transparent">
@@ -203,7 +197,11 @@ export function SubmissionForm({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={value.type} onValueChange={handleTypeChange} className="w-full">
+        <Tabs
+          value={value.type}
+          onValueChange={handleTypeChange}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-3 mb-6 h-14 rounded-xl bg-muted/50 p-1.5">
             <TabsTrigger
               value="text"
@@ -230,11 +228,13 @@ export function SubmissionForm({
               <span className="hidden sm:inline font-semibold">PDF</span>
             </TabsTrigger>
           </TabsList>
-
-          {/* Text Tab */}
+          {}
           <TabsContent value="text" className="mt-0">
             <div className="space-y-3">
-              <Label htmlFor="textContent" className="text-sm font-semibold flex items-center gap-2">
+              <Label
+                htmlFor="textContent"
+                className="text-sm font-semibold flex items-center gap-2"
+              >
                 <Sparkles className="w-4 h-4 text-success" />
                 Write your answer
               </Label>
@@ -251,8 +251,7 @@ export function SubmissionForm({
               </p>
             </div>
           </TabsContent>
-
-          {/* Video Tab */}
+          {}
           <TabsContent value="video" className="mt-0">
             <div className="space-y-5">
               {!value.videoFile && (
@@ -276,12 +275,15 @@ export function SubmissionForm({
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-primary to-info text-white shadow-lg">
                       <Upload className="w-8 h-8" />
                     </div>
-                    <p className="text-base font-bold text-foreground">Click to select Video</p>
-                    <p className="text-xs text-muted-foreground">MP4, WebM, MOV - Max 100MB</p>
+                    <p className="text-base font-bold text-foreground">
+                      Click to select Video
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      MP4, WebM, MOV - Max 100MB
+                    </p>
                   </div>
                 </div>
               )}
-
               {value.videoFile && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-success/5 to-primary/5 border-2 border-success/30">
@@ -317,12 +319,14 @@ export function SubmissionForm({
                   </div>
                 </div>
               )}
-
-              {uploadError && <p className="text-sm text-destructive font-medium">{uploadError}</p>}
+              {uploadError && (
+                <p className="text-sm text-destructive font-medium">
+                  {uploadError}
+                </p>
+              )}
             </div>
           </TabsContent>
-
-          {/* PDF Tab */}
+          {}
           <TabsContent value="pdf" className="mt-0">
             <div className="space-y-5">
               {!value.pdfFile && (
@@ -346,19 +350,24 @@ export function SubmissionForm({
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-destructive to-warning text-white shadow-lg">
                       <Upload className="w-8 h-8" />
                     </div>
-                    <p className="text-base font-bold text-foreground">Click to select PDF</p>
-                    <p className="text-xs text-muted-foreground">Max file size: 10MB</p>
+                    <p className="text-base font-bold text-foreground">
+                      Click to select PDF
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Max file size: 10MB
+                    </p>
                   </div>
                 </div>
               )}
-
               {value.pdfFile && (
                 <div className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-success/5 to-primary/5 border-2 border-success/30">
                   <div className="p-3 rounded-xl bg-gradient-to-br from-destructive to-warning text-white shadow-md">
                     <File className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate text-foreground">{value.pdfFile.name}</p>
+                    <p className="text-sm font-bold truncate text-foreground">
+                      {value.pdfFile.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {(value.pdfFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
@@ -376,8 +385,11 @@ export function SubmissionForm({
                   )}
                 </div>
               )}
-
-              {uploadError && <p className="text-sm text-destructive font-medium">{uploadError}</p>}
+              {uploadError && (
+                <p className="text-sm text-destructive font-medium">
+                  {uploadError}
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

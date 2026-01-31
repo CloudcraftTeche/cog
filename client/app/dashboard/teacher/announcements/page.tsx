@@ -1,6 +1,4 @@
-// app/(dashboard)/announcements/page.tsx
 "use client";
-
 import { useState, useMemo } from "react";
 import { Pin } from "lucide-react";
 import { useAnnouncements } from "@/hooks/teacher/useAnnouncements";
@@ -12,40 +10,40 @@ import { AnnouncementCard } from "@/components/teacher/announcements/Announcemen
 import { AnnouncementModal } from "@/components/teacher/announcements/AnnouncementModal";
 import { AnnouncementSkeleton } from "@/components/teacher/announcements/AnnouncementSkeleton";
 import { AnnouncementsHeader } from "@/components/teacher/announcements/AnnouncementsHeader";
-import { EmptyState, ErrorState } from "@/components/teacher/announcements/AnnouncementStates";
-import type { Announcement, FilterType, AnnouncementsFilters } from "@/types/teacher/announcement";
-
+import {
+  EmptyState,
+  ErrorState,
+} from "@/components/teacher/announcements/AnnouncementStates";
+import type {
+  Announcement,
+  FilterType,
+  AnnouncementsFilters,
+} from "@/types/teacher/announcement";
 export default function AnnouncementsPage() {
   const { data: announcements, isLoading, error, refetch } = useAnnouncements();
-
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<Announcement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
-
   const filters: AnnouncementsFilters = useMemo(
     () => ({
       searchQuery,
       filterType,
     }),
-    [searchQuery, filterType]
+    [searchQuery, filterType],
   );
-
   const filteredAnnouncements = useMemo(
     () => filterAnnouncements(announcements, filters),
-    [announcements, filters]
+    [announcements, filters],
   );
-
   const { pinned, regular } = useMemo(
     () => separatePinnedAnnouncements(filteredAnnouncements),
-    [filteredAnnouncements]
+    [filteredAnnouncements],
   );
-
   const handleClearFilters = () => {
     setSearchQuery("");
     setFilterType("all");
   };
-
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -56,13 +54,9 @@ export default function AnnouncementsPage() {
         </div>
       );
     }
-
     if (error) {
-      return (
-        <ErrorState error={error} onRetry={() => refetch()} />
-      );
+      return <ErrorState error={error} onRetry={() => refetch()} />;
     }
-
     if (filteredAnnouncements.length === 0) {
       return (
         <EmptyState
@@ -72,7 +66,6 @@ export default function AnnouncementsPage() {
         />
       );
     }
-
     return (
       <>
         {pinned.length > 0 && (
@@ -99,7 +92,6 @@ export default function AnnouncementsPage() {
             </div>
           </div>
         )}
-
         {regular.length > 0 && (
           <div>
             {pinned.length > 0 && (
@@ -126,7 +118,6 @@ export default function AnnouncementsPage() {
       </>
     );
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
       <AnnouncementsHeader
@@ -139,11 +130,9 @@ export default function AnnouncementsPage() {
         announcements={announcements}
         filteredCount={filteredAnnouncements.length}
       />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </div>
-
       <AnnouncementModal
         announcement={selectedAnnouncement}
         onClose={() => setSelectedAnnouncement(null)}

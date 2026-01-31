@@ -6,7 +6,8 @@ import { CheckCircle, Upload, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/auth/useAuth";import api from "@/lib/api";
+import { useAuth } from "@/hooks/auth/useAuth";
+import api from "@/lib/api";
 import QuestionsSection, {
   Question,
 } from "@/components/admin/chapters/QuestionsSection";
@@ -41,7 +42,7 @@ export default function TeacherCreateChapterPage() {
   const [grade, setGrade] = useState<TeacherGrade | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [contentItems, setContentItems] = useState<ContentItem[]>([
-    { type: "video", order: 0, title: "" }
+    { type: "video", order: 0, title: "" },
   ]);
   const [questions, setQuestions] = useState<Question[]>([
     { id: "1", questionText: "", options: ["", "", "", ""], correctAnswer: "" },
@@ -55,7 +56,7 @@ export default function TeacherCreateChapterPage() {
         setGrade(gradeData);
         if (gradeData?.units) {
           const sortedUnits = [...gradeData.units].sort(
-            (a, b) => a.orderIndex - b.orderIndex
+            (a, b) => a.orderIndex - b.orderIndex,
           );
           setUnits(sortedUnits);
         }
@@ -87,7 +88,7 @@ export default function TeacherCreateChapterPage() {
       for (let i = 0; i < contentItems.length; i++) {
         const item = contentItems[i];
         if (item.type === "video") {
-          const hasVideo = (item.videoUrl?.trim() || item.file);
+          const hasVideo = item.videoUrl?.trim() || item.file;
           if (!hasVideo) {
             newErrors[`content_${i}`] = "Video URL or file is required";
             break;
@@ -103,10 +104,11 @@ export default function TeacherCreateChapterPage() {
             break;
           }
         } else if (item.type === "mixed") {
-          const hasVideo = (item.videoUrl?.trim() || item.file);
+          const hasVideo = item.videoUrl?.trim() || item.file;
           const hasText = item.textContent?.trim();
           if (!hasVideo && !hasText) {
-            newErrors[`content_${i}`] = "Provide at least video or text content";
+            newErrors[`content_${i}`] =
+              "Provide at least video or text content";
             break;
           }
         }
@@ -248,7 +250,8 @@ export default function TeacherCreateChapterPage() {
           <Alert className="mb-8 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg rounded-2xl">
             <CheckCircle className="h-5 w-5 text-emerald-600" />
             <AlertDescription className="text-emerald-800 font-medium">
-              Content uploaded successfully! Students can now access this material.
+              Content uploaded successfully! Students can now access this
+              material.
             </AlertDescription>
           </Alert>
         )}
@@ -259,7 +262,9 @@ export default function TeacherCreateChapterPage() {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-lg">1</span>
               </div>
-              <h2 className="text-2xl font-bold text-slate-800">Basic Information</h2>
+              <h2 className="text-2xl font-bold text-slate-800">
+                Basic Information
+              </h2>
             </div>
             <div className="space-y-4">
               <div>
@@ -293,7 +298,9 @@ export default function TeacherCreateChapterPage() {
                   }`}
                 />
                 {errors.description && (
-                  <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.description}
+                  </p>
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -315,11 +322,15 @@ export default function TeacherCreateChapterPage() {
                     value={chapter}
                     onChange={(e) => setChapter(parseInt(e.target.value) || 1)}
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                      errors.chapterNumber ? "border-red-300" : "border-slate-200"
+                      errors.chapterNumber
+                        ? "border-red-300"
+                        : "border-slate-200"
                     }`}
                   />
                   {errors.chapterNumber && (
-                    <p className="text-red-500 text-sm mt-1">{errors.chapterNumber}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.chapterNumber}
+                    </p>
                   )}
                 </div>
               </div>

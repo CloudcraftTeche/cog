@@ -1,7 +1,10 @@
-// components/student/assignments/AssignmentCard.tsx
 "use client";
-
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,13 +33,11 @@ import {
   getGradeName,
 } from "@/utils/student/assignment-utils";
 import { IAssignment, UserRole } from "@/types/student/assignment.types";
-
 interface AssignmentCardProps {
   assignment: IAssignment;
   userRole?: UserRole;
   isSubmitted?: boolean;
 }
-
 const contentTypeConfig = {
   video: {
     icon: Video,
@@ -66,20 +67,18 @@ const contentTypeConfig = {
     iconBg: "bg-gradient-to-br from-destructive to-warning",
   },
 } as const;
-
 export function AssignmentCard({
   assignment,
   userRole = "student",
   isSubmitted = false,
 }: AssignmentCardProps) {
-  const { isUpcoming, isActive, isEnded, isLocked } = getAssignmentStatus(assignment);
+  const { isUpcoming, isActive, isEnded, isLocked } =
+    getAssignmentStatus(assignment);
   const timeRemaining = getTimeRemaining(assignment);
   const timeProgress = getTimeProgress(assignment);
   const gradeName = getGradeName(assignment.gradeId);
-
   const config = contentTypeConfig[assignment.contentType];
   const ContentTypeIcon = config.icon;
-
   const getStatusBadge = () => {
     if (isSubmitted && userRole === "student") {
       return (
@@ -91,7 +90,10 @@ export function AssignmentCard({
     }
     if (isLocked) {
       return (
-        <Badge variant="secondary" className="bg-muted/80 text-muted-foreground border-0">
+        <Badge
+          variant="secondary"
+          className="bg-muted/80 text-muted-foreground border-0"
+        >
           <Lock className="w-3.5 h-3.5 mr-1.5" />
           Locked
         </Badge>
@@ -136,7 +138,6 @@ export function AssignmentCard({
       </Badge>
     );
   };
-
   const getButtonContent = () => {
     if (isSubmitted && userRole === "student") {
       if (isActive) {
@@ -161,9 +162,7 @@ export function AssignmentCard({
       gradient: config.gradient,
     };
   };
-
   const buttonContent = getButtonContent();
-
   return (
     <Card
       className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-gradient-to-br from-card via-card to-muted/30 border-border/50 ${
@@ -174,21 +173,23 @@ export function AssignmentCard({
     >
       <div
         className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${
-          isSubmitted && userRole === "student" ? "from-success to-primary" : config.gradient
+          isSubmitted && userRole === "student"
+            ? "from-success to-primary"
+            : config.gradient
         }`}
       />
       <div
         className={`absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br ${
-          isSubmitted && userRole === "student" ? "from-success to-primary" : config.gradient
+          isSubmitted && userRole === "student"
+            ? "from-success to-primary"
+            : config.gradient
         } opacity-10 blur-2xl group-hover:opacity-20 transition-opacity duration-500`}
       />
-
       {isSubmitted && userRole === "student" && (
         <div className="absolute top-4 right-4 p-2 rounded-full bg-success/20 backdrop-blur-sm">
           <CheckCircle2 className="w-6 h-6 text-success" />
         </div>
       )}
-
       <div className="absolute top-1.5 left-0 w-full h-0.5 bg-muted/50">
         <div
           className={`h-full transition-all duration-300 rounded-full ${
@@ -205,7 +206,6 @@ export function AssignmentCard({
           }}
         />
       </div>
-
       <CardHeader className="pt-8 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -243,7 +243,6 @@ export function AssignmentCard({
           <div className="shrink-0">{getStatusBadge()}</div>
         </div>
       </CardHeader>
-
       <CardContent className="pb-4">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
           {assignment.description}
@@ -257,22 +256,27 @@ export function AssignmentCard({
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span className="font-medium">Due {formatDate(assignment.endDate)}</span>
+            <span className="font-medium">
+              Due {formatDate(assignment.endDate)}
+            </span>
           </div>
           {assignment.questions.length > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success">
               <BookOpen className="w-3.5 h-3.5" />
-              <span className="font-medium">{assignment.questions.length} questions</span>
-            </div>
-          )}
-          {(userRole === "teacher" || userRole === "admin") && assignment.submittedStudents && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-info/10 text-info">
-              <Users className="w-3.5 h-3.5" />
               <span className="font-medium">
-                {assignment.submittedStudents.length} submitted
+                {assignment.questions.length} questions
               </span>
             </div>
           )}
+          {(userRole === "teacher" || userRole === "admin") &&
+            assignment.submittedStudents && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-info/10 text-info">
+                <Users className="w-3.5 h-3.5" />
+                <span className="font-medium">
+                  {assignment.submittedStudents.length} submitted
+                </span>
+              </div>
+            )}
           {assignment.totalMarks && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/10 text-warning-foreground">
               <span className="font-bold">{assignment.totalMarks} pts</span>
@@ -280,7 +284,6 @@ export function AssignmentCard({
           )}
         </div>
       </CardContent>
-
       <CardFooter className="pt-4 border-t border-border/50">
         <div className="flex items-center justify-between w-full gap-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -320,7 +323,9 @@ export function AssignmentCard({
                       : "text-muted-foreground"
               }`}
             >
-              {isSubmitted && userRole === "student" ? "Completed" : timeRemaining}
+              {isSubmitted && userRole === "student"
+                ? "Completed"
+                : timeRemaining}
             </span>
           </div>
           <Button
