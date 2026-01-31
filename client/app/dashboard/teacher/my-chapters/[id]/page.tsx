@@ -9,6 +9,9 @@ import LoadingState from "@/components/teacher/mychapter/LoadingState";
 import ChapterHeader from "@/components/teacher/mychapter/ChapterHeader";
 import ChapterContent from "@/components/teacher/mychapter/ChapterContent";
 import QuizSection from "@/components/teacher/mychapter/QuizSection";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -29,6 +32,7 @@ export default function ChapterDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quizScore, setQuizScore] = useState<number>(0);
+
   useEffect(() => {
     if (!user?.id || !id) return;
     const fetchChapter = async () => {
@@ -61,9 +65,11 @@ export default function ChapterDetailPage() {
     };
     fetchChapter();
   }, [user?.id, id]);
+
   const handleAnswer = (qIndex: number, value: string) => {
     setSelectedAnswers((prev) => ({ ...prev, [qIndex]: value }));
   };
+
   const calculateQuizScore = () => {
     if (!chapter?.questions?.length) return 0;
     const correctCount = chapter.questions.reduce((count, q, i) => {
@@ -71,6 +77,7 @@ export default function ChapterDetailPage() {
     }, 0);
     return Math.round((correctCount / chapter.questions.length) * 100);
   };
+
   const submitQuiz = async () => {
     if (!chapter || !user?.id) return;
     setSubmitting(true);
@@ -90,29 +97,55 @@ export default function ChapterDetailPage() {
       setSubmitting(false);
     }
   };
+
+  const completeChapterWithoutQuiz = async () => {
+    if (!chapter || !user?.id) return;
+    setSubmitting(true);
+    try {
+      await chapterService.completeChapter(user?.id, chapter._id, 100);
+      setChapter((prev) => (prev ? { ...prev, isCompleted: true } : null));
+      toast.success("Chapter completed successfully.");
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message ||
+          "Unable to complete chapter. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleNextChapter = async () => {
     router.push(`/dashboard/student/chapters`);
   };
+
   const handleRetake = () => {
     setSelectedAnswers({});
     setSubmitted(false);
     setQuizScore(0);
     setChapter((prev) => (prev ? { ...prev, isCompleted: false } : null));
   };
+
   const currentScore = submitted
     ? quizScore > 0
       ? quizScore
       : calculateQuizScore()
     : 0;
+
   if (loading) {
     return <LoadingState message="Loading chapter content..." />;
   }
+
   if (error) {
     return <ErrorState message={error} />;
   }
+
   if (!chapter) {
     return <ErrorState message="Chapter not found." />;
   }
+
+  const hasQuestions = chapter.questions && chapter.questions.length > 0;
+
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -124,7 +157,7 @@ export default function ChapterDetailPage() {
         <ChapterHeader chapter={chapter} />
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
-          {chapter.questions && chapter.questions.length > 0 && (
+          {hasQuestions ? (
             <QuizSection
               chapter={chapter}
               selectedAnswers={selectedAnswers}
@@ -136,6 +169,27 @@ export default function ChapterDetailPage() {
               onRetake={handleRetake}
               onNextChapter={handleNextChapter}
             />
+          ) : (
+            <div className="flex justify-center gap-4 pt-6">
+              {!chapter.isCompleted ? (
+                <Button
+                  onClick={completeChapterWithoutQuiz}
+                  disabled={submitting}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                >
+                  {submitting ? "Completing..." : "Complete Chapter"}
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNextChapter}
+                  className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-medium px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                >
+                  Next Chapter
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
