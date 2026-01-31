@@ -26,7 +26,8 @@ const filterOptions = [
   { value: "image", label: "Image", icon: Image },
   { value: "video", label: "Video", icon: Video },
 ] as const;
-export function AnnouncementsPage() {
+
+const AnnouncementsPage = () => {
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<IAnnouncement | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -265,3 +266,5 @@ export function AnnouncementsPage() {
     </div>
   );
 }
+
+export default AnnouncementsPage;
