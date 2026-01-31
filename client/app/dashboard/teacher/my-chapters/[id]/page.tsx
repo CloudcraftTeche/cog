@@ -11,7 +11,6 @@ import ChapterContent from "@/components/teacher/mychapter/ChapterContent";
 import QuizSection from "@/components/teacher/mychapter/QuizSection";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -32,7 +31,6 @@ export default function ChapterDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [quizScore, setQuizScore] = useState<number>(0);
-
   useEffect(() => {
     if (!user?.id || !id) return;
     const fetchChapter = async () => {
@@ -65,11 +63,9 @@ export default function ChapterDetailPage() {
     };
     fetchChapter();
   }, [user?.id, id]);
-
   const handleAnswer = (qIndex: number, value: string) => {
     setSelectedAnswers((prev) => ({ ...prev, [qIndex]: value }));
   };
-
   const calculateQuizScore = () => {
     if (!chapter?.questions?.length) return 0;
     const correctCount = chapter.questions.reduce((count, q, i) => {
@@ -77,7 +73,6 @@ export default function ChapterDetailPage() {
     }, 0);
     return Math.round((correctCount / chapter.questions.length) * 100);
   };
-
   const submitQuiz = async () => {
     if (!chapter || !user?.id) return;
     setSubmitting(true);
@@ -97,7 +92,6 @@ export default function ChapterDetailPage() {
       setSubmitting(false);
     }
   };
-
   const completeChapterWithoutQuiz = async () => {
     if (!chapter || !user?.id) return;
     setSubmitting(true);
@@ -114,38 +108,54 @@ export default function ChapterDetailPage() {
       setSubmitting(false);
     }
   };
-
   const handleNextChapter = async () => {
-    router.push(`/dashboard/student/chapters`);
+    if (!user?.id || !chapter) return;
+    try {
+      const response = await chapterService.getChapters({
+        unitId: chapter.unitId,
+      });
+      if (response.data && response.data.length > 0) {
+        const sortedChapters = response.data.sort(
+          (a, b) => a.chapterNumber - b.chapterNumber
+        );
+        const currentIndex = sortedChapters.findIndex(
+          (ch) => ch._id === chapter._id
+        );
+        if (currentIndex !== -1 && currentIndex < sortedChapters.length - 1) {
+          const nextChapter = sortedChapters[currentIndex + 1];
+          router.push(`/dashboard/teacher/my-chapters/${nextChapter._id}`);
+        } else {
+          toast.info("You've completed all chapters in this unit!");
+          router.push(`/dashboard/teacher/my-chapters`);
+        }
+      } else {
+        router.push(`/dashboard/teacher/my-chapters`);
+      }
+    } catch (err) {
+      router.push(`/dashboard/teacher/my-chapters`);
+    }
   };
-
   const handleRetake = () => {
     setSelectedAnswers({});
     setSubmitted(false);
     setQuizScore(0);
     setChapter((prev) => (prev ? { ...prev, isCompleted: false } : null));
   };
-
   const currentScore = submitted
     ? quizScore > 0
       ? quizScore
       : calculateQuizScore()
     : 0;
-
   if (loading) {
     return <LoadingState message="Loading chapter content..." />;
   }
-
   if (error) {
     return <ErrorState message={error} />;
   }
-
   if (!chapter) {
     return <ErrorState message="Chapter not found." />;
   }
-
   const hasQuestions = chapter.questions && chapter.questions.length > 0;
-
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
