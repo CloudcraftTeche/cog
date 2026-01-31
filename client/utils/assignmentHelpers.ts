@@ -1,4 +1,5 @@
-import { IAssignment } from "@/types/assignment.types";
+import { IAssignment } from "@/lib/assignmentValidation";
+
 export const getGradeId = (assignment: IAssignment): string => {
   return typeof assignment.gradeId === 'object' 
     ? assignment.gradeId._id 
