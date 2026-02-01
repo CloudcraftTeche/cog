@@ -1,3 +1,4 @@
+"use client";
 import {
   Bar,
   BarChart,
@@ -8,37 +9,39 @@ import {
   YAxis,
 } from "recharts";
 import { Calendar } from "lucide-react";
-interface HeatmapViewProps {
-  heatmapData?: any[];
-  attendanceTrend?: Array<{
-    date: string;
-    present: number;
-    absent: number;
-    late: number;
-    total?: number;
-    attendanceRate?: number;
-  }>;
+import { AttendanceTrendItem, HeatmapViewProps } from "@/types/admin/admindashboard.types";
+
+interface ChartDataItem {
+  date: string;
+  present: number;
+  late: number;
+  absent: number;
 }
+
+const TOOLTIP_STYLE = {
+  backgroundColor: "rgba(255, 255, 255, 0.98)",
+  border: "none",
+  borderRadius: "20px",
+  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+  backdropFilter: "blur(20px)",
+};
+
+const transformDataForChart = (data: AttendanceTrendItem[]): ChartDataItem[] => {
+  return data.map((item) => ({
+    date: item._id ?? item.date,
+    present: item.present ?? 0,
+    late: item.late ?? 0,
+    absent: item.absent ?? 0,
+  }));
+};
+
 export const HeatmapView = ({ heatmapData, attendanceTrend }: HeatmapViewProps) => {
-  const data = attendanceTrend && attendanceTrend.length > 0 
+  const rawData = attendanceTrend && attendanceTrend.length > 0 
     ? attendanceTrend 
     : heatmapData ?? [];
-  const chartData = data.map(item => {
-    if ('_id' in item) {
-      return {
-        date: item._id,
-        present: item.present ?? 0,
-        late: item.late ?? 0,
-        absent: item.absent ?? 0,
-      };
-    }
-    return {
-      date: item.date,
-      present: item.present ?? 0,
-      late: item.late ?? 0,
-      absent: item.absent ?? 0,
-    };
-  });
+
+  const chartData = transformDataForChart(rawData);
+
   return (
     <div className="relative group">
       <div className="absolute inset-0 bg-gradient-to-br from-orange-200/50 to-red-200/50 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
@@ -66,15 +69,7 @@ export const HeatmapView = ({ heatmapData, attendanceTrend }: HeatmapViewProps) 
               />
               <XAxis dataKey="date" stroke="#92400e" fontSize={12} />
               <YAxis stroke="#92400e" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.98)",
-                  border: "none",
-                  borderRadius: "20px",
-                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-                  backdropFilter: "blur(20px)",
-                }}
-              />
+              <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Bar
                 dataKey="present"
                 stackId="a"

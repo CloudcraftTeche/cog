@@ -1,3 +1,4 @@
+"use client";
 import {
   Bar,
   BarChart,
@@ -14,21 +15,9 @@ import {
   AreaChart,
   ComposedChart,
 } from "recharts";
-import {
-  PieChartIcon,
-  BarChart3,
-  TrendingUp,
-  Activity,
-} from "lucide-react";
-interface ChartsSectionProps {
-  charts?: {
-    gradeDistribution?: Array<{ grade: string; studentCount: number }>;
-    assignmentStats?: Array<{ status: string; count: number }>;
-    studentGrowth?: Array<{ month: string; students: number }>;
-    teacherGrowth?: Array<{ month: string; teachers: number }>;
-  };
-}
-const COLORS = [
+import { PieChartIcon, BarChart3, TrendingUp, Activity } from "lucide-react";
+import { ChartsSectionProps } from "@/types/admin/admindashboard.types";
+const CHART_COLORS = [
   "#8b5cf6",
   "#3b82f6",
   "#10b981",
@@ -38,6 +27,13 @@ const COLORS = [
   "#f97316",
   "#84cc16",
 ];
+const TOOLTIP_STYLE = {
+  backgroundColor: "rgba(255, 255, 255, 0.98)",
+  border: "none",
+  borderRadius: "20px",
+  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+  backdropFilter: "blur(20px)",
+};
 export const ChartsSection = ({ charts }: ChartsSectionProps) => {
   const gradeDistribution = charts?.gradeDistribution ?? [];
   const assignmentStats = charts?.assignmentStats ?? [];
@@ -71,8 +67,8 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ grade, studentCount }: any) =>
-                      `${grade || "N/A"} (${studentCount ?? 0})`
+                    label={({ grade, studentCount }) =>
+                      `${grade ?? "N/A"} (${studentCount ?? 0})`
                     }
                     outerRadius={120}
                     fill="#8884d8"
@@ -80,24 +76,14 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                     strokeWidth={4}
                     stroke="#fff"
                   >
-                    {gradeDistribution
-                      .slice(0, 8)
-                      .map((entry: any, index: number) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
+                    {gradeDistribution.slice(0, 8).map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.98)",
-                      border: "none",
-                      borderRadius: "20px",
-                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-                      backdropFilter: "blur(20px)",
-                    }}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -124,9 +110,7 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                 <h3 className="text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   Assignment Status
                 </h3>
-                <p className="text-gray-500 font-medium">
-                  Assignment overview
-                </p>
+                <p className="text-gray-500 font-medium">Assignment overview</p>
               </div>
             </div>
             {assignmentStats.length > 0 ? (
@@ -139,20 +123,8 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                   />
                   <XAxis dataKey="status" stroke="#6b7280" fontSize={12} />
                   <YAxis stroke="#6b7280" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.98)",
-                      border: "none",
-                      borderRadius: "20px",
-                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-                      backdropFilter: "blur(20px)",
-                    }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill="#3b82f6"
-                    radius={[8, 8, 0, 0]}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -168,7 +140,6 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
           </div>
         </div>
       </div>
-      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
         {}
         <div className="relative group">
@@ -197,15 +168,7 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                   />
                   <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
                   <YAxis stroke="#6b7280" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.98)",
-                      border: "none",
-                      borderRadius: "20px",
-                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-                      backdropFilter: "blur(20px)",
-                    }}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                   <Area
                     type="monotone"
                     dataKey="students"
@@ -233,11 +196,7 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                       x2="0"
                       y2="1"
                     >
-                      <stop
-                        offset="5%"
-                        stopColor="#10b981"
-                        stopOpacity={0.3}
-                      />
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                       <stop
                         offset="95%"
                         stopColor="#10b981"
@@ -286,15 +245,7 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                   />
                   <XAxis dataKey="month" stroke="#92400e" fontSize={12} />
                   <YAxis stroke="#92400e" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.98)",
-                      border: "none",
-                      borderRadius: "20px",
-                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-                      backdropFilter: "blur(20px)",
-                    }}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                   <Area
                     type="monotone"
                     dataKey="teachers"
@@ -310,11 +261,7 @@ export const ChartsSection = ({ charts }: ChartsSectionProps) => {
                       x2="0"
                       y2="1"
                     >
-                      <stop
-                        offset="5%"
-                        stopColor="#f59e0b"
-                        stopOpacity={0.4}
-                      />
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
                       <stop
                         offset="95%"
                         stopColor="#f59e0b"

@@ -1,4 +1,5 @@
-import { link } from "fs";
+"use client";
+import { OverviewStatsProps } from "@/types/admin/admindashboard.types";
 import {
   Users,
   GraduationCap,
@@ -9,22 +10,24 @@ import {
   Star,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-interface OverviewStatsProps {
-  overview?: {
-    totalStudents?: number;
-    totalTeachers?: number;
-    totalGrades?: number;
-    totalChapters?: number;
-    totalAnnouncements?: number;
-    totalQueries?: number;
-    completionRate?: number;
-  };
+interface StatCard {
+  title: string;
+  value: number;
+  icon: typeof Users;
+  gradient: string;
+  iconColor: string;
+  link: string;
 }
-
+interface SecondaryStatCard {
+  title: string;
+  value: number;
+  icon: typeof Users;
+  gradient: string;
+  link: string;
+}
 export const SuperAdminOverviewStats = ({ overview }: OverviewStatsProps) => {
-  const router=useRouter();
-  const stats = [
+  const router = useRouter();
+  const stats: StatCard[] = [
     {
       title: "Students",
       value: overview?.totalStudents ?? 0,
@@ -58,8 +61,7 @@ export const SuperAdminOverviewStats = ({ overview }: OverviewStatsProps) => {
       link: "/dashboard/super-admin/announcements",
     },
   ];
-
-  const secondaryStats = [
+  const secondaryStats: SecondaryStatCard[] = [
     {
       title: "Grades",
       value: overview?.totalGrades ?? 0,
@@ -75,66 +77,77 @@ export const SuperAdminOverviewStats = ({ overview }: OverviewStatsProps) => {
       link: "/dashboard/super-admin/queries",
     },
   ];
-
+  const handleCardClick = (link: string) => {
+    router.push(link);
+  };
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
-        {stats.map((stat, index) => (
-          <div key={index} className="group relative"
-          onClick={() => router.push(stat.link)}
-          >
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
             <div
-              className={`relative bg-gradient-to-br ${stat.gradient} text-white p-8 rounded-3xl shadow-2xl transition-all duration-500 hover:scale-105 hover:-rotate-1`}
+              key={stat.title}
+              className="group relative cursor-pointer"
+              onClick={() => handleCardClick(stat.link)}
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center ring-4 ring-white/10">
-                  <stat.icon className="h-8 w-8 text-white" />
+              <div
+                className={`relative bg-gradient-to-br ${stat.gradient} text-white p-8 rounded-3xl shadow-2xl transition-all duration-500 hover:scale-105 hover:-rotate-1`}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center ring-4 ring-white/10">
+                    <Icon className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className={`${stat.iconColor} text-sm font-semibold uppercase tracking-wider`}
+                    >
+                      Total
+                    </p>
+                    <h3 className="text-xl font-bold">{stat.title}</h3>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p
-                    className={`${stat.iconColor} text-sm font-semibold uppercase tracking-wider`}
-                  >
-                    Total
-                  </p>
-                  <h3 className="text-xl font-bold">{stat.title}</h3>
+                <p className="text-5xl font-black mb-4">{stat.value}</p>
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 bg-white/20 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-white to-purple-100 rounded-full h-3 w-3/4 shadow-sm"></div>
+                  </div>
+                  <Star className="h-4 w-4 text-yellow-300" />
                 </div>
-              </div>
-              <p className="text-5xl font-black mb-4">{stat.value}</p>
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 bg-white/20 rounded-full h-3">
-                  <div className="bg-gradient-to-r from-white to-purple-100 rounded-full h-3 w-3/4 shadow-sm"></div>
-                </div>
-                <Star className="h-4 w-4 text-yellow-300" />
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-        {secondaryStats.map((stat, index) => (
-          <div key={index} className="group relative" 
-          onClick={()=>{router.push(stat.link)}}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-3xl blur-xl opacity-25 group-hover:opacity-40 transition-opacity duration-300"></div>
+        {secondaryStats.map((stat) => {
+          const Icon = stat.icon;
+          return (
             <div
-              className={`relative bg-gradient-to-br ${stat.gradient} text-white p-8 rounded-3xl shadow-2xl transition-all duration-500 hover:scale-105`}
+              key={stat.title}
+              className="group relative cursor-pointer"
+              onClick={() => handleCardClick(stat.link)}
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center ring-4 ring-white/10">
-                  <stat.icon className="h-8 w-8 text-white" />
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-3xl blur-xl opacity-25 group-hover:opacity-40 transition-opacity duration-300"></div>
+              <div
+                className={`relative bg-gradient-to-br ${stat.gradient} text-white p-8 rounded-3xl shadow-2xl transition-all duration-500 hover:scale-105`}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center ring-4 ring-white/10">
+                    <Icon className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-indigo-100 text-sm font-semibold uppercase tracking-wider">
+                      Total
+                    </p>
+                    <h3 className="text-xl font-bold">{stat.title}</h3>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-indigo-100 text-sm font-semibold uppercase tracking-wider">
-                    Total
-                  </p>
-                  <h3 className="text-xl font-bold">{stat.title}</h3>
-                </div>
+                <p className="text-5xl font-black mb-4">{stat.value}</p>
               </div>
-              <p className="text-5xl font-black mb-4">{stat.value}</p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );
