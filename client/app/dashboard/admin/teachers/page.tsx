@@ -36,6 +36,7 @@ export default function TeachersPage() {
         <TeacherListHeader
           searchQuery={query}
           onSearchChange={handleSearchChange}
+          totalTeachers={total}
           onAddNew={() => router.push("/dashboard/admin/teachers/add")}
         />
         {teachers.length === 0 ? (

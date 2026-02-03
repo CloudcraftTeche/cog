@@ -36,6 +36,7 @@ export default function SuperAdminTeachersPage() {
         <TeacherListHeader
           searchQuery={query}
           onSearchChange={handleSearchChange}
+          totalTeachers={total}
           onAddNew={() => router.push("/dashboard/super-admin/teachers/add")}
         />
         {teachers.length === 0 ? (
