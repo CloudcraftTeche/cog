@@ -1,4 +1,3 @@
-// lib/utils/navigation.ts
 import {
   Home,
   Users,
@@ -64,7 +63,7 @@ const teacherNavItems: NavItem[] = [
 ];
 
 const studentNavItems: NavItem[] = [
-  { name: "Todo List", href: "/dashboard/student/todo-list", icon: CalendarDaysIcon },
+  { name: "To Do List", href: "/dashboard/student/todo-list", icon: CalendarDaysIcon },
   { name: "Chapters", href: "/dashboard/student/chapters", icon: BookOpen },
   { name: "Assignments", href: "/dashboard/student/assignments", icon: Upload },
   { name: "Chat", href: "/dashboard/student/chat", icon: MessageCircleMore },
