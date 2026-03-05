@@ -80,7 +80,7 @@ const fetchTodoOverview = async (): Promise<{
   success: boolean;
   data: TodoData;
 }> => {
-  const response = await api.get(`/todo-list/overview`);
+  const response = await api.get(`/todo/overview`);
   return response.data;
 };
 
@@ -88,7 +88,7 @@ const fetchStreak = async (): Promise<{
   success: boolean;
   data: StreakData;
 }> => {
-  const response = await api.get(`/todo-list/streak`);
+  const response = await api.get(`/todo/streak`);
   return response.data;
 };
 
