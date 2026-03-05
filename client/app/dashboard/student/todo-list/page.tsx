@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
-
 
 interface Assignment {
   _id: string;
@@ -77,8 +76,6 @@ interface StreakData {
   streakMessage: string;
 }
 
-
-
 const fetchTodoOverview = async (): Promise<{
   success: boolean;
   data: TodoData;
@@ -94,8 +91,6 @@ const fetchStreak = async (): Promise<{
   const response = await api.get(`/todo-list/streak`);
   return response.data;
 };
-
-
 
 const getStreakColor = (streak: number): string => {
   if (streak === 0) return "from-gray-400 to-gray-500";
@@ -145,7 +140,6 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
   return date1.toDateString() === date2.toDateString();
 };
 
-
 const StudentTodoPage: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
@@ -153,16 +147,13 @@ const StudentTodoPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<TodoData | null>(null);
   const [streakData, setStreakData] = useState<StreakData | null>(null);
+  const [mounted, setMounted] = useState<boolean>(false);
 
-<<<<<<< HEAD
-  const fetchData = async () => {
-=======
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const fetchData = useCallback(async () => {
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
     try {
       setError(null);
 
@@ -186,37 +177,24 @@ const StudentTodoPage: React.FC = () => {
         return;
       }
 
-<<<<<<< HEAD
-      setError(err.response?.data?.message || err.message || "Failed to load data");
-=======
       setError(
         err.response?.data?.message || err.message || "Failed to load data",
       );
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
-  };
+  }, [fetchData]);
 
-<<<<<<< HEAD
-  const navigateToChapter = (chapterId: string) => {
-    router.push(`/dashboard/student/chapters/${chapterId}`);
-  };
-
-  const navigateToAssignment = (assignmentId: string) => {
-    router.push(`/dashboard/student/assignments/${assignmentId}`);
-  };
-=======
   const navigateToChapter = useCallback(
     (chapterId: string) => {
       router.push(`/dashboard/student/chapters/${chapterId}`);
@@ -230,38 +208,35 @@ const StudentTodoPage: React.FC = () => {
     },
     [router],
   );
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 
-  const getTodayActivityCount = (): number => {
-    if (!data?.recentActivity) return 0;
+  const getTodayActivityCount = useCallback((): number => {
+    if (!data?.recentActivity || !mounted) return 0;
     const today = new Date();
     return data.recentActivity.filter((a) =>
       isSameDay(new Date(a.createdAt), today),
     ).length;
-  };
+  }, [data?.recentActivity, mounted]);
 
-  const getDailyProgress = (): number => {
+  const getDailyProgress = useCallback((): number => {
     return Math.min(getTodayActivityCount() * 100, 100);
-  };
+  }, [getTodayActivityCount]);
 
-
-<<<<<<< HEAD
-=======
   const calendarDays = useMemo(() => {
     return streakData?.calendar.slice(-28) || [];
   }, [streakData?.calendar]);
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 
   if (loading) {
     return (
-      <ErrorDisplay error={errorMessage} onRetry={() => refetchOverview()} />
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">
+            Loading your dashboard...
+          </p>
+        </div>
+      </div>
     );
   }
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-
 
   if (error) {
     return (
@@ -281,11 +256,10 @@ const StudentTodoPage: React.FC = () => {
     );
   }
 
-  if (!data || !streakData) return null;
+  if (!data || !streakData) {
+    return null;
+  }
 
-
-<<<<<<< HEAD
-=======
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
@@ -298,21 +272,10 @@ const StudentTodoPage: React.FC = () => {
       </div>
     );
   }
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-<<<<<<< HEAD
-        {}
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
-            Welcome Back! 👋
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Here's your complete learning dashboard
-          </p>
-=======
         <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
@@ -334,9 +297,9 @@ const StudentTodoPage: React.FC = () => {
               }`}
             />
           </button>
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
         </div>
 
+        {/* Streak Banner */}
         <div
           className={`bg-gradient-to-r ${getStreakColor(
             data.streak,
@@ -417,8 +380,11 @@ const StudentTodoPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Assignments & Chapters */}
           <div className="lg:col-span-2">
+            {/* Due Assignments */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -489,6 +455,7 @@ const StudentTodoPage: React.FC = () => {
               )}
             </div>
 
+            {/* Today's Learning */}
             <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                 <Star className="text-yellow-500" />
@@ -524,7 +491,9 @@ const StudentTodoPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Right Column - Activity & Stats */}
           <div className="lg:col-span-1">
+            {/* Activity Calendar */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                 <TrendingUp className="text-green-600" />
@@ -533,9 +502,9 @@ const StudentTodoPage: React.FC = () => {
 
               <div className="mb-6">
                 <div className="grid grid-cols-7 gap-2">
-                  {streakData.calendar.slice(-28).map((day, idx) => (
+                  {calendarDays.map((day, idx) => (
                     <div
-                      key={idx}
+                      key={`${day.date}-${idx}`}
                       className={`aspect-square rounded-lg ${getActivityColor(
                         day.count,
                       )} transition-all hover:scale-110 cursor-pointer`}
@@ -581,6 +550,7 @@ const StudentTodoPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Daily Goal */}
             <div className="bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 rounded-2xl shadow-lg p-6 mt-6 text-white">
               <h3 className="text-xl font-bold mb-2">🎯 Daily Goal</h3>
               <p className="text-white/90 mb-4">
@@ -597,7 +567,7 @@ const StudentTodoPage: React.FC = () => {
                   <div
                     className="bg-white h-2 rounded-full transition-all duration-500"
                     style={{ width: `${getDailyProgress()}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
@@ -619,7 +589,6 @@ const StudentTodoPage: React.FC = () => {
                 >
                   📝 View All Assignments
                 </button>
-               
               </div>
             </div>
           </div>
@@ -678,8 +647,5 @@ const StudentTodoPage: React.FC = () => {
     </div>
   );
 };
-<<<<<<< HEAD
-=======
 
->>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 export default StudentTodoPage;
