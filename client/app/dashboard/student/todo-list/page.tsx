@@ -154,7 +154,15 @@ const StudentTodoPage: React.FC = () => {
   const [data, setData] = useState<TodoData | null>(null);
   const [streakData, setStreakData] = useState<StreakData | null>(null);
 
+<<<<<<< HEAD
   const fetchData = async () => {
+=======
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const fetchData = useCallback(async () => {
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
     try {
       setError(null);
 
@@ -178,7 +186,13 @@ const StudentTodoPage: React.FC = () => {
         return;
       }
 
+<<<<<<< HEAD
       setError(err.response?.data?.message || err.message || "Failed to load data");
+=======
+      setError(
+        err.response?.data?.message || err.message || "Failed to load data",
+      );
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -194,6 +208,7 @@ const StudentTodoPage: React.FC = () => {
     fetchData();
   };
 
+<<<<<<< HEAD
   const navigateToChapter = (chapterId: string) => {
     router.push(`/dashboard/student/chapters/${chapterId}`);
   };
@@ -201,12 +216,27 @@ const StudentTodoPage: React.FC = () => {
   const navigateToAssignment = (assignmentId: string) => {
     router.push(`/dashboard/student/assignments/${assignmentId}`);
   };
+=======
+  const navigateToChapter = useCallback(
+    (chapterId: string) => {
+      router.push(`/dashboard/student/chapters/${chapterId}`);
+    },
+    [router],
+  );
+
+  const navigateToAssignment = useCallback(
+    (assignmentId: string) => {
+      router.push(`/dashboard/student/assignments/${assignmentId}`);
+    },
+    [router],
+  );
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 
   const getTodayActivityCount = (): number => {
     if (!data?.recentActivity) return 0;
     const today = new Date();
     return data.recentActivity.filter((a) =>
-      isSameDay(new Date(a.createdAt), today)
+      isSameDay(new Date(a.createdAt), today),
     ).length;
   };
 
@@ -215,6 +245,12 @@ const StudentTodoPage: React.FC = () => {
   };
 
 
+<<<<<<< HEAD
+=======
+  const calendarDays = useMemo(() => {
+    return streakData?.calendar.slice(-28) || [];
+  }, [streakData?.calendar]);
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 
   if (loading) {
     return (
@@ -248,10 +284,26 @@ const StudentTodoPage: React.FC = () => {
   if (!data || !streakData) return null;
 
 
+<<<<<<< HEAD
+=======
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">
+            Loading your dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
+<<<<<<< HEAD
         {}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
@@ -260,11 +312,34 @@ const StudentTodoPage: React.FC = () => {
           <p className="text-gray-600 text-lg">
             Here's your complete learning dashboard
           </p>
+=======
+        <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
+              Welcome Back! 👋
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Let's make today productive!
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+            aria-label="Refresh data"
+          >
+            <RefreshCw
+              className={`w-6 h-6 text-purple-600 ${
+                refreshing ? "animate-spin" : ""
+              }`}
+            />
+          </button>
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
         </div>
 
         <div
           className={`bg-gradient-to-r ${getStreakColor(
-            data.streak
+            data.streak,
           )} rounded-3xl shadow-2xl p-6 md:p-8 mb-8 text-white transform hover:scale-105 transition-all duration-300`}
         >
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -389,7 +464,7 @@ const StudentTodoPage: React.FC = () => {
                         </div>
                         <div
                           className={`px-3 py-1 rounded-lg border-2 text-sm font-semibold whitespace-nowrap ${getDaysLeftColor(
-                            assignment.daysLeft
+                            assignment.daysLeft,
                           )}`}
                         >
                           {assignment.isPastDue
@@ -462,7 +537,7 @@ const StudentTodoPage: React.FC = () => {
                     <div
                       key={idx}
                       className={`aspect-square rounded-lg ${getActivityColor(
-                        day.count
+                        day.count,
                       )} transition-all hover:scale-110 cursor-pointer`}
                       title={`${day.date}: ${day.count} ${
                         day.count === 1 ? "activity" : "activities"
@@ -579,7 +654,7 @@ const StudentTodoPage: React.FC = () => {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span
                         className={`px-4 py-2 rounded-lg font-bold ${getScoreColor(
-                          activity.score
+                          activity.score,
                         )}`}
                       >
                         {activity.score}%
@@ -603,4 +678,8 @@ const StudentTodoPage: React.FC = () => {
     </div>
   );
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6644d6b (`Removed 7 lines of code, modified 21 lines of code`)
 export default StudentTodoPage;
