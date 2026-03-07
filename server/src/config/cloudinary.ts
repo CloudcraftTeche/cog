@@ -1,4 +1,3 @@
-// FILE: backend/src/config/cloudinary.ts
 import { v2 as cloudinary } from "cloudinary";
 import type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 
@@ -11,17 +10,29 @@ cloudinary.config({
 export const uploadToCloudinary = (
   buffer: Buffer,
   folder: string,
-  resourceType: "image" | "video" | "raw" | "auto" = "auto",
-  filename?: string
+  resourceType: "image" | "video" | "raw" | "auto" = "image",
+  filename?: string,
 ): Promise<UploadApiResponse> => {
   return new Promise((resolve, reject) => {
+    let resolvedResourceType = resourceType;
+    if (filename) {
+      const ext = filename.split(".").pop()?.toLowerCase();
+      if (ext === "pdf") resolvedResourceType = "image";
+      else if (["mp4", "mov", "avi", "mkv"].includes(ext || ""))
+        resolvedResourceType = "video";
+      else if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || ""))
+        resolvedResourceType = "image";
+    }
+
     const uploadOptions: any = {
       folder,
-      resource_type: resourceType,
+      upload_preset: "ml_default",
+      resource_type: resolvedResourceType,
       timeout: 600000,
-      // KEY FIX: Make all uploads publicly accessible
       access_mode: "public",
-      type: "upload", // Ensure it's not 'authenticated'
+      type: "upload",
+      invalidate: true,
+      overwrite: true,
     };
 
     const isLargeFile = buffer.length > 10 * 1024 * 1024;
@@ -31,16 +42,11 @@ export const uploadToCloudinary = (
       uploadOptions.public_id = `${nameWithoutExt}_${Date.now()}`;
     }
 
-    // For PDFs, set the format explicitly
-    if (resourceType === "raw" && filename?.toLowerCase().endsWith('.pdf')) {
-      uploadOptions.format = "pdf";
-    }
-
     if (isLargeFile) {
       uploadOptions.chunk_size = 10000000;
     }
 
-    if (resourceType === "video") {
+    if (resolvedResourceType === "video") {
       uploadOptions.eager_async = true;
       uploadOptions.eager = [{ streaming_profile: "auto", format: "m3u8" }];
       uploadOptions.resource_type = "video";
@@ -50,7 +56,7 @@ export const uploadToCloudinary = (
       uploadOptions,
       (
         error: UploadApiErrorResponse | undefined,
-        result: UploadApiResponse | undefined
+        result: UploadApiResponse | undefined,
       ) => {
         if (error) {
           console.error("Cloudinary upload error:", error);
@@ -60,7 +66,7 @@ export const uploadToCloudinary = (
         } else {
           reject(new Error("Upload failed with no result"));
         }
-      }
+      },
     );
 
     if (isLargeFile) {
@@ -96,7 +102,7 @@ export const uploadToCloudinary = (
 
 export const deleteFromCloudinary = async (
   publicId: string,
-  resourceType: "image" | "video" | "raw" = "image"
+  resourceType: "image" | "video" | "raw" = "image",
 ) => {
   try {
     const result = await cloudinary.uploader.destroy(publicId, {
@@ -110,12 +116,10 @@ export const deleteFromCloudinary = async (
   }
 };
 
-// Helper function to generate signed URLs for existing authenticated resources
-// Use this for PDFs and videos that were uploaded before the fix
 export const getSignedUrl = (
-  publicId: string, 
+  publicId: string,
   resourceType: "image" | "video" | "raw" = "raw",
-  expiresIn: number = 3600 // Default 1 hour
+  expiresIn: number = 3600,
 ): string => {
   return cloudinary.url(publicId, {
     resource_type: resourceType,
@@ -125,20 +129,22 @@ export const getSignedUrl = (
   });
 };
 
-// Helper to check if a URL is from Cloudinary and needs signing
 export const isCloudinaryUrl = (url: string): boolean => {
-  return url.includes('cloudinary.com');
+  return url.includes("cloudinary.com");
 };
 
-// Helper to extract publicId from Cloudinary URL
-export const extractPublicIdFromUrl = (url: string, resourceType: "image" | "video" | "raw"): string | null => {
+export const extractPublicIdFromUrl = (
+  url: string,
+  resourceType: "image" | "video" | "raw",
+): string | null => {
   try {
-    const regex = resourceType === "video" 
-      ? /\/video\/upload\/(?:v\d+\/)?(.+)\.\w+$/
-      : resourceType === "raw"
-      ? /\/raw\/upload\/(?:v\d+\/)?(.+)\.\w+$/
-      : /\/image\/upload\/(?:v\d+\/)?(.+)\.\w+$/;
-    
+    const regex =
+      resourceType === "video"
+        ? /\/video\/upload\/(?:v\d+\/)?(.+)\.\w+$/
+        : resourceType === "raw"
+          ? /\/raw\/upload\/(?:v\d+\/)?(.+)\.\w+$/
+          : /\/image\/upload\/(?:v\d+\/)?(.+)\.\w+$/;
+
     const match = url.match(regex);
     return match ? match[1] : null;
   } catch (error) {
