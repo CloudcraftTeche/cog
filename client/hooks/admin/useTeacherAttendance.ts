@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import {
-  ITeacher,
   ITeacherAttendance,
   AttendanceStatus,
   TeacherAttendanceStats,
@@ -12,14 +11,13 @@ import { toast } from "sonner";
 export const teacherAttendanceKeys = {
   all: ["teacherAttendance"] as const,
   teachers: () => ["teachers"] as const,
+  teachersPaginated: (params: any) =>
+    ["teachers", "paginated", params] as const,
   stats: () => [...teacherAttendanceKeys.all, "stats"] as const,
   heatmap: () => [...teacherAttendanceKeys.all, "heatmap"] as const,
   today: () => [...teacherAttendanceKeys.all, "today"] as const,
-  byDate: (date: Date) => [
-    ...teacherAttendanceKeys.all,
-    "byDate",
-    date.toISOString(),
-  ] as const,
+  byDate: (date: Date) =>
+    [...teacherAttendanceKeys.all, "byDate", date.toISOString()] as const,
   byGrade: (gradeId: string, startDate?: Date, endDate?: Date) =>
     [
       ...teacherAttendanceKeys.all,
@@ -35,17 +33,26 @@ export const teacherAttendanceKeys = {
     gradeId?: string;
   }) => [...teacherAttendanceKeys.all, "export", filters] as const,
 };
-export const useTeachers = () => {
+
+export const useTeachers = (params: any) => {
   return useQuery({
-    queryKey: teacherAttendanceKeys.teachers(),
-    queryFn: async (): Promise<ITeacher[]> => {
-      const { data } = await api.get("/teachers");
-      return data.data;
+    queryKey: teacherAttendanceKeys.teachersPaginated(params),
+    queryFn: async (): Promise<any> => {
+      const { data } = await api.get<any>("/teachers", {
+        params: {
+          page: params.page,
+          limit: params.limit,
+          ...(params.search?.trim() ? { search: params.search.trim() } : {}),
+        },
+      });
+      return data;
     },
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
     retry: 2,
+    placeholderData: (previousData) => previousData,
   });
 };
+
 export const useTeacherAttendanceStats = () => {
   return useQuery({
     queryKey: teacherAttendanceKeys.stats(),
@@ -118,8 +125,12 @@ export const useMarkTeacherAttendance = () => {
       return data;
     },
     onSuccess: (_, { date }) => {
-      queryClient.invalidateQueries({ queryKey: teacherAttendanceKeys.stats() });
-      queryClient.invalidateQueries({ queryKey: teacherAttendanceKeys.today() });
+      queryClient.invalidateQueries({
+        queryKey: teacherAttendanceKeys.stats(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: teacherAttendanceKeys.today(),
+      });
       if (date) {
         queryClient.invalidateQueries({
           queryKey: teacherAttendanceKeys.byDate(date),
@@ -129,7 +140,7 @@ export const useMarkTeacherAttendance = () => {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.error || "Failed to mark teacher attendance"
+        error.response?.data?.error || "Failed to mark teacher attendance",
       );
     },
   });
@@ -165,7 +176,7 @@ export const useExportTeacherAttendance = () => {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.error || "Failed to export teacher attendance"
+        error.response?.data?.error || "Failed to export teacher attendance",
       );
     },
   });
@@ -182,7 +193,7 @@ export const useDeleteTeacherAttendance = () => {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.error || "Failed to delete teacher attendance"
+        error.response?.data?.error || "Failed to delete teacher attendance",
       );
     },
   });
@@ -200,7 +211,7 @@ export const formatDate = (date: Date, formatStr: string): string => {
   return date.toDateString();
 };
 export const convertTeacherAttendanceToCSV = (
-  data: ITeacherAttendance[]
+  data: ITeacherAttendance[],
 ): string => {
   const header = "Teacher Name,Email,Grade,Status,Date,Time\n";
   const rows = data

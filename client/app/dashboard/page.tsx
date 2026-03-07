@@ -32,9 +32,7 @@ export default function DashboardPage() {
   if (!user) {
     return null;
   }
-  if (user.role === "admin" && user.name === "Pastor") {
-    return <SuperAdminDashboard />;
-  }
+  
   const renderDashboard = () => {
     switch (user.role) {
       case "admin":

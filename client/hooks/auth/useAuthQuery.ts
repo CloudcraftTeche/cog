@@ -6,13 +6,11 @@ import { authStorage } from "@/utils/auth/auth-storage";
 import { User, AuthResponse } from "@/types/auth/auth";
 
 const AUTH_QUERY_KEY = ["auth", "verify"] as const;
-const STALE_TIME = 5 * 60 * 1000; // 5 minutes
+const STALE_TIME = 5 * 60 * 1000;
 
 export function useAuthQuery() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const initialUser = authStorage.getUser();
-  const initialToken = authStorage.getToken();
 
   const verifyQuery = useQuery<User | null>({
     queryKey: AUTH_QUERY_KEY,
@@ -32,10 +30,9 @@ export function useAuthQuery() {
         return null;
       }
     },
-    enabled: !!initialToken,
+    enabled: !!authStorage.getToken(),
     staleTime: STALE_TIME,
     retry: 1,
-    initialData: initialUser || undefined,
   });
 
   const logoutMutation = useMutation({
@@ -55,10 +52,6 @@ export function useAuthQuery() {
       toast.error("Error logging out, but you've been signed out locally");
     },
   });
-
-  const handleLogout = async () => {
-    await logoutMutation.mutateAsync();
-  };
 
   const updateUserMutation = useMutation({
     mutationFn: (userData: User) => {
@@ -93,7 +86,7 @@ export function useAuthQuery() {
     user: verifyQuery.data ?? null,
     isLoading: verifyQuery.isLoading,
     isAuthenticated: !!verifyQuery.data,
-    logout: handleLogout,
+    logout: () => logoutMutation.mutateAsync(),
     updateUser: (userData: User) => updateUserMutation.mutate(userData),
     refreshToken: () => refreshTokenMutation.mutateAsync(),
   };
