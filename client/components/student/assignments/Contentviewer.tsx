@@ -23,7 +23,24 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
   const [pdfError, setPdfError] = useState(false);
   const [viewerType, setViewerType] = useState<ViewerType>("google");
 
-  // Video Content
+  const handleDownload = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(
+        new Blob([blob], { type: "application/pdf" }),
+      );
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = "assignment.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      window.open(url, "_blank");
+    }
+  };
   if (assignment.contentType === "video" && assignment.videoUrl) {
     return (
       <div className="space-y-3">
@@ -45,7 +62,6 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     );
   }
 
-  // PDF Content
   if (assignment.contentType === "pdf" && assignment.pdfUrl) {
     const pdfUrl = assignment.pdfUrl;
     const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
@@ -82,24 +98,20 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     };
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 p-2">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <File className="w-4 h-4 text-rose-500" />
             PDF Document
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" asChild>
-              <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open
-              </a>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <a href={pdfUrl} download>
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </a>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(pdfUrl)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
             </Button>
           </div>
         </div>
@@ -161,7 +173,6 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     );
   }
 
-  // Text Content
   if (assignment.contentType === "text" && assignment.textContent) {
     return (
       <div className="space-y-3">
@@ -178,7 +189,6 @@ export function ContentViewer({ assignment }: ContentViewerProps) {
     );
   }
 
-  // No Content
   return (
     <div className="flex items-center justify-center p-8 rounded-xl bg-muted/30 border border-dashed border-border">
       <p className="text-muted-foreground">No content available</p>
