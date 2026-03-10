@@ -12,6 +12,8 @@ import {
   BookOpen,
   Filter,
   TrendingUp,
+  Users,
+  FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -22,21 +24,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AssignmentCard } from "@/components/admin/assignments/SuperAdminAssignmentCard";
+import { AssignmentCard } from "@/components/admin/assignments/AssignmentCard";
 import { useAssignments } from "@/hooks/admin/useAssignments";
-export default function SuperAdminAssignmentsPage() {
+import { generateAssignmentsReport } from "@/components/admin/assignments/Assignment.report";
+
+export default function AdminAssignmentsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const { assignments, pagination, loading, deleteAssignment } = useAssignments(
+
+  const { assignments, pagination, loading, deleteAssignment, grades, gradesLoading } = useAssignments(
     {
       search: searchTerm,
       status: statusFilter,
+      grade: gradeFilter !== "all" ? gradeFilter : undefined,
       page,
       limit: 10,
     },
   );
+
   const handleDeleteAssignment = async (assignmentId: string) => {
     if (!confirm("Are you sure you want to delete this assignment?")) return;
     try {
@@ -49,9 +57,28 @@ export default function SuperAdminAssignmentsPage() {
       );
     }
   };
+
   const handleViewSubmissions = (assignmentId: string) => {
-    router.push(`/dashboard/super-admin/assignments/submissions/${assignmentId}`);
+    router.push(`/dashboard/admin/assignments/submissions/${assignmentId}`);
   };
+
+  const handleExport = () => {
+    if (assignments.length === 0) {
+      toast.error("No assignments to export");
+      return;
+    }
+    const gradeLabel =
+      gradeFilter !== "all"
+        ? grades.find((g) => g._id === gradeFilter)?.grade
+        : "All Grades";
+    try {
+      generateAssignmentsReport(assignments, gradeLabel);
+      toast.success("Report downloaded successfully");
+    } catch {
+      toast.error("Failed to generate report");
+    }
+  };
+
   const totalAssignments = assignments.length;
   const activeAssignments = assignments.filter((a) => {
     const now = new Date();
@@ -59,6 +86,10 @@ export default function SuperAdminAssignmentsPage() {
     const end = new Date(a.endDate);
     return now >= start && now <= end;
   }).length;
+
+  const hasActiveFilters =
+    searchTerm || statusFilter !== "all" || gradeFilter !== "all";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -80,6 +111,7 @@ export default function SuperAdminAssignmentsPage() {
                     </p>
                   </div>
                 </div>
+
                 {}
                 <div className="flex flex-wrap gap-4 mt-6">
                   <div className="bg-white/20 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/30">
@@ -112,21 +144,35 @@ export default function SuperAdminAssignmentsPage() {
                   </div>
                 </div>
               </div>
-              <Button
-                className="w-full lg:w-auto bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border-2 border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-                onClick={() =>
-                  router.push("/dashboard/super-admin/assignments/create")
-                }
-                size="lg"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Create New Assignment
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <Button
+                  className="w-full sm:w-auto bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border-2 border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                  onClick={handleExport}
+                  disabled={loading || assignments.length === 0}
+                  size="lg"
+                  variant="outline"
+                >
+                  <FileDown className="h-5 w-5 mr-2" />
+                  Export Excel
+                </Button>
+                <Button
+                  className="w-full sm:w-auto bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border-2 border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                  onClick={() =>
+                    router.push("/dashboard/admin/assignments/create")
+                  }
+                  size="lg"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Create New Assignment
+                </Button>
+              </div>
             </div>
           </div>
+
           {}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex flex-col lg:flex-row gap-4">
+              {}
               <div className="flex-1">
                 <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                   <Search className="h-4 w-4 inline mr-2" />
@@ -142,12 +188,39 @@ export default function SuperAdminAssignmentsPage() {
                   />
                 </div>
               </div>
+
+              {}
+              <div className="lg:w-48">
+                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  <Users className="h-4 w-4 inline mr-2" />
+                  Grade
+                </Label>
+                <Select value={gradeFilter} onValueChange={(val) => { setGradeFilter(val); setPage(1); }}>
+                  <SelectTrigger className="h-12 bg-gray-50 border-2 border-gray-200 rounded-xl">
+                    <SelectValue placeholder="All Grades" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Grades</SelectItem>
+                    {gradesLoading ? (
+                      <SelectItem value="loading" disabled>Loading grades...</SelectItem>
+                    ) : (
+                      grades.map((grade) => (
+                        <SelectItem key={grade._id} value={grade._id}>
+                          {grade.grade}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {}
               <div className="lg:w-56">
                 <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                   <Filter className="h-4 w-4 inline mr-2" />
                   Status Filter
                 </Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(1); }}>
                   <SelectTrigger className="h-12 bg-gray-50 border-2 border-gray-200 rounded-xl">
                     <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
@@ -160,15 +233,21 @@ export default function SuperAdminAssignmentsPage() {
                 </Select>
               </div>
             </div>
+
             {}
-            {(searchTerm || statusFilter !== "all") && (
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200">
+            {hasActiveFilters && (
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200 flex-wrap">
                 <span className="text-sm font-medium text-gray-600">
                   Active Filters:
                 </span>
                 {searchTerm && (
                   <Badge className="bg-blue-100 text-blue-700 border-blue-200">
                     Search: "{searchTerm}"
+                  </Badge>
+                )}
+                {gradeFilter !== "all" && (
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                    Grade: {grades.find((g) => g._id === gradeFilter)?.grade ?? gradeFilter}
                   </Badge>
                 )}
                 {statusFilter !== "all" && (
@@ -182,6 +261,8 @@ export default function SuperAdminAssignmentsPage() {
                   onClick={() => {
                     setSearchTerm("");
                     setStatusFilter("all");
+                    setGradeFilter("all");
+                    setPage(1);
                   }}
                   className="text-xs ml-auto"
                 >
@@ -191,6 +272,7 @@ export default function SuperAdminAssignmentsPage() {
             )}
           </div>
         </div>
+
         {}
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -207,17 +289,17 @@ export default function SuperAdminAssignmentsPage() {
               <GraduationCap className="h-16 w-16 text-gray-400" />
             </div>
             <h3 className="text-3xl font-bold text-gray-900 mb-3">
-              {searchTerm ? "No results found" : "No assignments yet"}
+              {hasActiveFilters ? "No results found" : "No assignments yet"}
             </h3>
             <p className="text-gray-600 text-lg mb-6">
-              {searchTerm
-                ? "Try adjusting your search terms"
+              {hasActiveFilters
+                ? "Try adjusting your search or filter terms"
                 : "Create your first assignment to get started"}
             </p>
-            {!searchTerm && (
+            {!hasActiveFilters && (
               <Button
                 onClick={() =>
-                  router.push("/dashboard/super-admin/assignments/create")
+                  router.push("/dashboard/admin/assignments/create")
                 }
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg"
                 size="lg"
@@ -239,6 +321,7 @@ export default function SuperAdminAssignmentsPage() {
                 />
               ))}
             </div>
+
             {}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8">

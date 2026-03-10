@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -9,12 +9,14 @@ import {
   ChevronRight,
   User,
   GraduationCap,
+  X,
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { StudentCard } from "@/components/teacher/students/StudentCard";
 import { DeleteStudentDialog } from "@/components/teacher/students/DeleteStudentDialog";
 import { StudentProgressDialog } from "@/components/teacher/students/StudentProgressDialog";
+
 interface Student {
   _id: string;
   name: string;
@@ -34,6 +36,7 @@ interface Student {
   profilePictureUrl?: string;
   role: string;
 }
+
 interface StudentProgress {
   totalChapters: number;
   completedCount: number;
@@ -47,6 +50,7 @@ interface StudentProgress {
     score?: number;
   }>;
 }
+
 export default function TeacherStudentsPage() {
   const router = useRouter();
   const [studentsList, setStudentsList] = useState<Student[]>([]);
@@ -54,34 +58,31 @@ export default function TeacherStudentsPage() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [limit] = useState(9);
+
+  const [searchInput, setSearchInput] = useState("");
   const [query, setQuery] = useState("");
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     studentId: string | null;
-  }>({
-    open: false,
-    studentId: null,
-  });
+  }>({ open: false, studentId: null });
+
   const [progressDialog, setProgressDialog] = useState<{
     open: boolean;
     student: Student | null;
-  }>({
-    open: false,
-    student: null,
-  });
-  const [studentProgress, setStudentProgress] =
-    useState<StudentProgress | null>(null);
+  }>({ open: false, student: null });
+
+  const [studentProgress, setStudentProgress] = useState<StudentProgress | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+
   const fetchStudents = async () => {
     try {
       setLoading(true);
       const response = await api.get("/students/teacher/students", {
-        params: {
-          query,
-          page,
-          limit,
-        },
+        params: { query, page, limit },
       });
       setStudentsList(response.data.data);
       setTotalStudents(response.data.total);
@@ -91,12 +92,11 @@ export default function TeacherStudentsPage() {
       setLoading(false);
     }
   };
+
   const fetchStudentProgress = async (studentId: string) => {
     try {
       setLoadingProgress(true);
-      const response = await api.get(
-        `/students/teacher/students/${studentId}/progress`,
-      );
+      const response = await api.get(`/students/teacher/students/${studentId}/progress`);
       setStudentProgress(response.data.data);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to fetch progress");
@@ -104,38 +104,57 @@ export default function TeacherStudentsPage() {
       setLoadingProgress(false);
     }
   };
+
   useEffect(() => {
     fetchStudents();
   }, [page, query]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest(".dropdown-container")) {
-        setDropdownOpen(null);
-      }
+      if (!target.closest(".dropdown-container")) setDropdownOpen(null);
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  const commitSearch = () => {
+    setPage(1);
+    setQuery(searchInput.trim());
+  };
+
+  const clearSearch = () => {
+    setSearchInput("");
+    setQuery("");
+    setPage(1);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") commitSearch();
+    if (e.key === "Escape") clearSearch();
+  };
+
   const handleDeleteStudent = async () => {
     if (!deleteDialog.studentId) return;
     try {
       await api.delete(`/students/teacher/students/${deleteDialog.studentId}`);
       toast.success("Student deleted successfully");
-      setStudentsList((prev) =>
-        prev.filter((s) => s._id !== deleteDialog.studentId),
-      );
+      setStudentsList((prev) => prev.filter((s) => s._id !== deleteDialog.studentId));
       setTotalStudents((prev) => prev - 1);
       setDeleteDialog({ open: false, studentId: null });
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to delete student");
     }
   };
+
   const handleViewProgress = (student: Student) => {
     setProgressDialog({ open: true, student });
     fetchStudentProgress(student._id);
   };
+
   const totalPages = Math.ceil(totalStudents / limit);
+
   const cardGradients = [
     "from-rose-400 to-pink-500",
     "from-blue-400 to-indigo-500",
@@ -144,10 +163,11 @@ export default function TeacherStudentsPage() {
     "from-purple-400 to-violet-500",
     "from-cyan-400 to-sky-500",
   ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {}
+
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -169,41 +189,67 @@ export default function TeacherStudentsPage() {
             </button>
           </div>
         </div>
-        {}
+
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 shadow-lg">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1">
               <label className="text-sm font-medium text-blue-900 mb-2 block">
                 Search Students
               </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, or roll number..."
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full pl-11 pr-4 py-3 bg-white border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500 h-5 w-5" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Type and press Enter to search..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full pl-11 pr-10 py-3 bg-white border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all"
+                  />
+                  {searchInput && (
+                    <button
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={commitSearch}
+                  disabled={loading}
+                  className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
+                >
+                  {loading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Search className="h-4 w-4" />
+                  }
+                  Search
+                </button>
               </div>
+              {query && (
+                <p className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                  Results for <span className="font-semibold">"{query}"</span>
+                  <button onClick={clearSearch} className="underline hover:no-underline ml-1">
+                    Clear
+                  </button>
+                </p>
+              )}
             </div>
           </div>
         </div>
-        {}
+
         {loading && (
           <div className="flex justify-center items-center py-16">
             <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-8 shadow-lg">
               <Loader2 className="h-10 w-10 animate-spin text-purple-600 mx-auto" />
-              <p className="mt-4 text-purple-700 font-medium">
-                Loading students...
-              </p>
+              <p className="mt-4 text-purple-700 font-medium">Loading students...</p>
             </div>
           </div>
         )}
-        {}
+
         {!loading && (
           <>
             {studentsList.length === 0 ? (
@@ -213,7 +259,7 @@ export default function TeacherStudentsPage() {
                   <p className="text-xl text-gray-600">No students found</p>
                   <p className="text-gray-500 mt-2">
                     {query
-                      ? "Try adjusting your search"
+                      ? `No results for "${query}" — try a different search`
                       : "Start by adding your first student"}
                   </p>
                 </div>
@@ -227,25 +273,17 @@ export default function TeacherStudentsPage() {
                     gradient={cardGradients[index % cardGradients.length]}
                     dropdownOpen={dropdownOpen === student._id}
                     onDropdownToggle={() =>
-                      setDropdownOpen(
-                        dropdownOpen === student._id ? null : student._id,
-                      )
+                      setDropdownOpen(dropdownOpen === student._id ? null : student._id)
                     }
                     onViewProgress={() => handleViewProgress(student)}
-                    onEdit={() =>
-                      router.push(
-                        `/dashboard/teacher/students/edit/${student._id}`,
-                      )
-                    }
-                    onDelete={() =>
-                      setDeleteDialog({ open: true, studentId: student._id })
-                    }
+                    onEdit={() => router.push(`/dashboard/teacher/students/edit/${student._id}`)}
+                    onDelete={() => setDeleteDialog({ open: true, studentId: student._id })}
                     onCloseDropdown={() => setDropdownOpen(null)}
                   />
                 ))}
               </div>
             )}
-            {}
+
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 pt-6">
                 <button
@@ -272,13 +310,12 @@ export default function TeacherStudentsPage() {
           </>
         )}
       </div>
-      {}
+
       <DeleteStudentDialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, studentId: null })}
         onConfirm={handleDeleteStudent}
       />
-      {}
       <StudentProgressDialog
         open={progressDialog.open}
         student={progressDialog.student}
