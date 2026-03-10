@@ -1,4 +1,4 @@
-// types/navigation.ts
+
 import { LucideIcon } from "lucide-react";
 import { UserRole } from "./auth/auth";
 

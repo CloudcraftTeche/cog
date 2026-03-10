@@ -65,10 +65,10 @@ export interface TeacherChapter {
   title: string;
   description: string;
   chapterNumber: number;
-  contentType?: "video" | "text"; // Legacy field
-  contentItems?: ContentItem[]; // New multi-content field
-  videoUrl?: string; // Legacy field
-  textContent?: string; // Legacy field
+  contentType?: "video" | "text"; 
+  contentItems?: ContentItem[]; 
+  videoUrl?: string; 
+  textContent?: string; 
   gradeId: {
     _id: string;
     grade: string;
@@ -100,11 +100,11 @@ export interface TeacherStudent {
 export interface ChapterFormData {
   title: string;
   description: string;
-  contentType?: "video" | "text"; // Legacy field
+  contentType?: "video" | "text"; 
   unitId: string;
   chapterNumber: number;
-  videoUrl?: string; // Legacy field
-  textContent?: string; // Legacy field
+  videoUrl?: string; 
+  textContent?: string; 
   questions: Array<{
     questionText: string;
     options: string[];

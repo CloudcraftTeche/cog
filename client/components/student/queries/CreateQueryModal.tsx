@@ -1,4 +1,4 @@
-// components/queries/CreateQueryModal.tsx
+
 import React from 'react';
 import { X, Send, Paperclip } from 'lucide-react';
 import { CreateQueryData, Recipients } from '@/types/student/query.types';

@@ -68,7 +68,7 @@ export default function ChapterCardItem({
     chapter.status === "in_progress" ||
     chapter.status === "completed";
 
-  // Get primary content type from contentItems
+  
   const primaryContentType = chapter.contentItems?.[0]?.type || "text";
   const hasVideo = chapter.contentItems?.some((item) => item.type === "video");
 

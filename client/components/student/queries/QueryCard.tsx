@@ -1,4 +1,4 @@
-// components/queries/QueryCard.tsx
+
 import React from 'react';
 import { Clock, Star } from 'lucide-react';
 import { getPriorityConfig, getStatusConfig } from '@/utils/student/queryConfig';

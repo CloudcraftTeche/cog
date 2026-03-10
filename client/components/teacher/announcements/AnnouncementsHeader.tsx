@@ -1,4 +1,4 @@
-// components/announcements/AnnouncementsHeader.tsx
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -58,7 +58,7 @@ export const AnnouncementsHeader = ({
   return (
     <div className="bg-white shadow-xl border-b-4 border-emerald-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Title Section */}
+        {}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
@@ -83,7 +83,7 @@ export const AnnouncementsHeader = ({
           </button>
         </div>
 
-        {/* Search and Filter Section */}
+        {}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
@@ -110,7 +110,7 @@ export const AnnouncementsHeader = ({
             </button>
           </div>
 
-          {/* Filter Buttons */}
+          {}
           <div
             className={`flex gap-2 flex-wrap ${
               showFilters ? "block" : "hidden sm:flex"
@@ -135,7 +135,7 @@ export const AnnouncementsHeader = ({
             })}
           </div>
 
-          {/* Stats Bar */}
+          {}
           <div className="flex items-center gap-4 text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-2 flex-wrap">
             <span className="font-medium">
               Total:{" "}

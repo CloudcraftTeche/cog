@@ -1,4 +1,4 @@
-// components/chapters/ChapterHeader.tsx
+
 import React from 'react';
 import { CheckCircle, BookOpen, Play, FileText, Award } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

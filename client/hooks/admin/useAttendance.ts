@@ -5,7 +5,6 @@ import api from "@/lib/api";
 import { AttendanceStats, HeatmapData, AttendanceRecord } from "@/types/admin/attendance.types";
 import { toast } from "sonner";
 
-// ===== QUERY KEYS =====
 export const attendanceKeys = {
   all: ["attendance"] as const,
   stats: () => [...attendanceKeys.all, "stats"] as const,
@@ -15,7 +14,6 @@ export const attendanceKeys = {
     [...attendanceKeys.all, "export", filters] as const,
 };
 
-// ===== STATS QUERY =====
 export const useAttendanceStats = () => {
   return useQuery({
     queryKey: attendanceKeys.stats(),
@@ -23,12 +21,11 @@ export const useAttendanceStats = () => {
       const { data } = await api.get("/attendance/stats");
       return data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 2,
   });
 };
 
-// ===== HEATMAP QUERY =====
 export const useAttendanceHeatmap = () => {
   return useQuery({
     queryKey: attendanceKeys.heatmap(),
@@ -41,7 +38,6 @@ export const useAttendanceHeatmap = () => {
   });
 };
 
-// ===== RECORDS QUERY =====
 export const useAttendanceRecords = (limit = 50) => {
   return useQuery({
     queryKey: [...attendanceKeys.records(), limit],
@@ -49,12 +45,11 @@ export const useAttendanceRecords = (limit = 50) => {
       const { data } = await api.get("/attendance/export?status=all");
       return data?.slice(0, limit) || [];
     },
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    staleTime: 3 * 60 * 1000,
     retry: 2,
   });
 };
 
-// ===== EXPORT MUTATION =====
 export const useExportAttendance = () => {
   return useMutation({
     mutationFn: async ({
@@ -79,13 +74,11 @@ export const useExportAttendance = () => {
   });
 };
 
-// ===== REFRESH ALL MUTATION =====
 export const useRefreshAttendance = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      // Trigger all queries to refetch
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: attendanceKeys.stats() }),
         queryClient.invalidateQueries({ queryKey: attendanceKeys.heatmap() }),

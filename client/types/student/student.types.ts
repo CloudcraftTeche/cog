@@ -1,4 +1,4 @@
-// types/student.types.ts
+
 
 export type Gender = "male" | "female" | "other";
 

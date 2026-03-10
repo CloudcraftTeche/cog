@@ -1,4 +1,3 @@
-// hooks/queries/useChapterQueries.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -10,7 +9,6 @@ import {
   StudentSubmission,
 } from "@/types/admin/chapter.types";
 
-// Query Keys
 export const chapterKeys = {
   all: ["chapters"] as const,
   lists: () => [...chapterKeys.all, "list"] as const,
@@ -27,7 +25,6 @@ export const gradeKeys = {
   lists: () => [...gradeKeys.all, "list"] as const,
 };
 
-// Fetch Chapters
 interface FetchChaptersParams extends Record<string, unknown> {
   page?: number;
   limit?: number;
@@ -41,11 +38,10 @@ export const useChapters = (params: FetchChaptersParams) => {
       const { data } = await api.get("/chapters/chapters", { params });
       return data.data as Chapter[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 };
 
-// Fetch Grades
 export const useGrades = () => {
   return useQuery({
     queryKey: gradeKeys.lists(),
@@ -58,11 +54,10 @@ export const useGrades = () => {
         return gradeA - gradeB;
       }) as Grade[];
     },
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 10,
   });
 };
 
-// Fetch Single Chapter
 export const useChapter = (id: string) => {
   return useQuery({
     queryKey: chapterKeys.detail(id),
@@ -74,7 +69,6 @@ export const useChapter = (id: string) => {
   });
 };
 
-// Fetch Chapter Scores
 export const useChapterScores = (id: string) => {
   return useQuery({
     queryKey: chapterKeys.scores(id),
@@ -120,7 +114,6 @@ export const useChapterScores = (id: string) => {
   });
 };
 
-// Fetch Chapter Submissions
 export const useChapterSubmissions = (id: string) => {
   return useQuery({
     queryKey: chapterKeys.submissions(id),
@@ -153,7 +146,6 @@ export const useChapterSubmissions = (id: string) => {
   });
 };
 
-// Delete Chapter Mutation
 export const useDeleteChapter = () => {
   const queryClient = useQueryClient();
 
@@ -172,7 +164,6 @@ export const useDeleteChapter = () => {
   });
 };
 
-// Send Reminder Mutation
 export const useSendReminder = (chapterId: string) => {
   return useMutation({
     mutationFn: async (studentId: string) => {
@@ -187,7 +178,6 @@ export const useSendReminder = (chapterId: string) => {
   });
 };
 
-// Create Chapter Mutation
 export const useCreateChapter = () => {
   const queryClient = useQueryClient();
 
@@ -215,7 +205,6 @@ export const useCreateChapter = () => {
   });
 };
 
-// Update Chapter Mutation
 export const useUpdateChapter = (gradeId: string, chapterId: string) => {
   const queryClient = useQueryClient();
 

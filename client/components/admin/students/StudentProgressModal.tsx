@@ -1,4 +1,4 @@
-// components/admin/students/StudentProgressModal.tsx
+
 "use client";
 
 import { X, Loader2, BookOpen, Award, TrendingUp } from "lucide-react";
@@ -55,7 +55,7 @@ export const StudentProgressModal = ({
             </div>
           ) : progress ? (
             <div className="space-y-6">
-              {/* Stats Cards */}
+              {}
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 text-center shadow-sm">
                   <BookOpen className="h-8 w-8 text-blue-600 mx-auto mb-2" />
@@ -86,7 +86,7 @@ export const StudentProgressModal = ({
                 </div>
               </div>
 
-              {/* Progress Bar */}
+              {}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 shadow-sm">
                 <div className="flex justify-between text-sm mb-3">
                   <span className="font-semibold text-gray-700">
@@ -106,7 +106,7 @@ export const StudentProgressModal = ({
                 </div>
               </div>
 
-              {/* Completed Chapters */}
+              {}
               {progress.completedChapters.length > 0 ? (
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">

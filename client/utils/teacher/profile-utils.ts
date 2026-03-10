@@ -2,7 +2,7 @@ import { Teacher } from "@/types/teacher/profile";
 import { FILE_VALIDATION } from "@/lib/teacher/profile";
 
 export const teacherUtils = {
-  // Format API response to form state
+  
   formatTeacherData: (apiData: any): Teacher => ({
     id: apiData.id || "",
     name: apiData.name || "",
@@ -27,7 +27,7 @@ export const teacherUtils = {
     updatedAt: apiData.updatedAt,
   }),
 
-  // Validate image file
+  
   validateImageFile: (file: File): { valid: boolean; error?: string } => {
     if (file.size > FILE_VALIDATION.MAX_SIZE) {
       return { valid: false, error: "Image size should be less than 5MB" };
@@ -38,7 +38,7 @@ export const teacherUtils = {
     return { valid: true };
   },
 
-  // Convert file to data URL for preview
+  
   fileToDataURL: (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -48,7 +48,7 @@ export const teacherUtils = {
     });
   },
 
-  // Create FormData from teacher data
+  
   createFormData: (teacher: Teacher, profileFile?: File | null): FormData => {
     const formData = new FormData();
 
@@ -82,13 +82,13 @@ export const teacherUtils = {
     return formData;
   },
 
-  // Get teacher initials for avatar
+  
   getInitials: (name: string | null | undefined): string => {
     if (!name) return "T";
     return name.charAt(0).toUpperCase();
   },
 
-  // Check if teacher data has changed
+  
   hasChanged: (original: Teacher, edited: Teacher): boolean => {
     return JSON.stringify(original) !== JSON.stringify(edited);
   },

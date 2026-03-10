@@ -1,4 +1,4 @@
-// components/queries/QueryDetailModal.tsx
+
 import React from 'react';
 import { X } from 'lucide-react';
 import { getStatusConfig, getPriorityConfig } from '@/utils/student/queryConfig';

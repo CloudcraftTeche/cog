@@ -1,7 +1,7 @@
-// utils/chapterUtils.ts
+
 import type { Chapter, UnitGroup, SubmissionType } from '@/types/student/chapter.types';
 
-// Unit color classes
+
 export const unitColors = [
   'from-purple-400 to-pink-400',
   'from-blue-400 to-cyan-400',
@@ -13,12 +13,12 @@ export const unitColors = [
   'from-teal-400 to-emerald-400',
 ];
 
-// Get unit color by index
+
 export const getUnitColor = (index: number): string => {
   return unitColors[index % unitColors.length];
 };
 
-// Group chapters by unit
+
 export const groupChaptersByUnit = (chapters: Chapter[]): UnitGroup[] => {
   const unitMap = new Map<string, UnitGroup>();
 
@@ -39,7 +39,7 @@ export const groupChaptersByUnit = (chapters: Chapter[]): UnitGroup[] => {
     unitMap.get(unitId)!.chapters.push(chapter);
   });
 
-  // Sort chapters within each unit
+  
   unitMap.forEach((unitGroup) => {
     unitGroup.chapters.sort((a, b) => a.chapterNumber - b.chapterNumber);
   });
@@ -47,7 +47,7 @@ export const groupChaptersByUnit = (chapters: Chapter[]): UnitGroup[] => {
   return Array.from(unitMap.values());
 };
 
-// Find next chapter in the same unit
+
 export const findNextChapter = (
   currentChapter: Chapter,
   allChapters: Chapter[]
@@ -68,7 +68,7 @@ export const findNextChapter = (
   return null;
 };
 
-// Check if chapter is accessible
+
 export const isChapterAccessible = (chapter: Chapter): boolean => {
   return (
     chapter.isAccessible ||
@@ -80,7 +80,7 @@ export const isChapterAccessible = (chapter: Chapter): boolean => {
   );
 };
 
-// Get YouTube embed URL
+
 export const getYouTubeEmbedUrl = (url?: string): string | null => {
   if (!url) return null;
 
@@ -97,18 +97,18 @@ export const getYouTubeEmbedUrl = (url?: string): string | null => {
   return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&fs=1&iv_load_policy=3`;
 };
 
-// Check if URL is YouTube
+
 export const isYouTubeUrl = (url?: string): boolean => {
   if (!url) return false;
   return url.includes('youtube.com') || url.includes('youtu.be');
 };
 
-// Validate file for submission
+
 export const validateSubmissionFile = (
   file: File,
   type: SubmissionType
 ): string | null => {
-  const maxSize = 25 * 1024 * 1024; // 25MB
+  const maxSize = 25 * 1024 * 1024; 
 
   if (file.size > maxSize) {
     return 'File size must be less than 25MB';
@@ -134,7 +134,7 @@ export const validateSubmissionFile = (
   return null;
 };
 
-// Calculate quiz score
+
 export const calculateQuizScore = (
   questions: { correctAnswer: string }[],
   selectedAnswers: Record<number, string>
@@ -148,7 +148,7 @@ export const calculateQuizScore = (
   return Math.round((correctCount / questions.length) * 100);
 };
 
-// Format file size
+
 export const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 };

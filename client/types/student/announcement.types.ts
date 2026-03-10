@@ -1,4 +1,4 @@
-// types/announcement.types.ts
+
 
 export type AnnouncementType = "text" | "image" | "video";
 export type TargetAudience = "all" | "specific";

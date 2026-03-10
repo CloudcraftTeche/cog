@@ -1,4 +1,3 @@
-// hooks/queries/useTeachers.ts
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +14,6 @@ import {
 } from "@/utils/admin/teacher.utils";
 import { toast } from "sonner";
 
-// ===== QUERY KEYS =====
 export const teacherKeys = {
   all: ["teachers"] as const,
   lists: () => [...teacherKeys.all, "list"] as const,
@@ -26,7 +24,6 @@ export const teacherKeys = {
   grades: () => ["grades", "all"] as const,
 };
 
-// ===== TEACHERS LIST QUERY =====
 export const useTeachers = (params: TeacherListParams) => {
   return useQuery({
     queryKey: teacherKeys.list(params),
@@ -37,12 +34,11 @@ export const useTeachers = (params: TeacherListParams) => {
       });
       return data;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
     retry: 2,
   });
 };
 
-// ===== TEACHER DETAIL QUERY =====
 export const useTeacher = (id: string | null) => {
   return useQuery({
     queryKey: teacherKeys.detail(id || ""),
@@ -58,7 +54,6 @@ export const useTeacher = (id: string | null) => {
   });
 };
 
-// ===== GRADES QUERY =====
 export const useGrades = () => {
   return useQuery({
     queryKey: teacherKeys.grades(),
@@ -68,11 +63,10 @@ export const useGrades = () => {
       );
       return data.data || [];
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
   });
 };
 
-// ===== CREATE TEACHER MUTATION =====
 export const useCreateTeacher = () => {
   const queryClient = useQueryClient();
 
@@ -102,7 +96,6 @@ export const useCreateTeacher = () => {
   });
 };
 
-// ===== UPDATE TEACHER MUTATION =====
 export const useUpdateTeacher = () => {
   const queryClient = useQueryClient();
 
@@ -135,7 +128,6 @@ export const useUpdateTeacher = () => {
   });
 };
 
-// ===== DELETE TEACHER MUTATION =====
 export const useDeleteTeacher = () => {
   const queryClient = useQueryClient();
 
@@ -155,7 +147,6 @@ export const useDeleteTeacher = () => {
   });
 };
 
-// ===== HELPER HOOK: Use Teacher for Edit =====
 export const useTeacherForEdit = (id: string | null) => {
   const { data: teacher, isLoading } = useTeacher(id);
   const { data: grades = [] } = useGrades();

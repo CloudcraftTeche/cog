@@ -1,4 +1,4 @@
-// components/admin/teacher-chapters/EditTeacherChapterForm.tsx
+
 
 "use client";
 

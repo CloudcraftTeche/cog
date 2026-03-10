@@ -1,4 +1,4 @@
-// components/admin/teacher-chapters/BasicInfoSection.tsx
+
 
 "use client";
 
@@ -133,14 +133,14 @@ export default function BasicInfoSection({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Modern Grade Selection */}
+          {}
           <div className="space-y-3">
             <Label className="text-sm font-semibold text-slate-700 flex items-center">
               <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full mr-2"></div>
               Grade Level <span className="text-red-500 ml-1">*</span>
             </Label>
             
-            {/* Search Input */}
+            {}
             <div className="relative">
               <Input
                 placeholder="Search grades..."
@@ -155,7 +155,7 @@ export default function BasicInfoSection({
               <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
             </div>
 
-            {/* Selected Grades Pills */}
+            {}
             {selectedGrades.length > 0 && (
               <div className="flex flex-wrap gap-2 p-3 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-100">
                 {selectedGrades.map((gradeId) => {
@@ -181,7 +181,7 @@ export default function BasicInfoSection({
               </div>
             )}
 
-            {/* Grade Grid Selection */}
+            {}
             <div className={`max-h-64 overflow-y-auto rounded-xl border-2 transition-all duration-300 ${
               errors.gradeIds 
                 ? "border-red-300"

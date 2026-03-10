@@ -299,7 +299,7 @@ const StudentTodoPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Streak Banner */}
+        {}
         <div
           className={`bg-gradient-to-r ${getStreakColor(
             data.streak,
@@ -322,7 +322,7 @@ const StudentTodoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-blue-100 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -380,11 +380,11 @@ const StudentTodoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content Grid */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Assignments & Chapters */}
+          {}
           <div className="lg:col-span-2">
-            {/* Due Assignments */}
+            {}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -455,7 +455,7 @@ const StudentTodoPage: React.FC = () => {
               )}
             </div>
 
-            {/* Today's Learning */}
+            {}
             <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                 <Star className="text-yellow-500" />
@@ -491,9 +491,9 @@ const StudentTodoPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column - Activity & Stats */}
+          {}
           <div className="lg:col-span-1">
-            {/* Activity Calendar */}
+            {}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                 <TrendingUp className="text-green-600" />
@@ -550,7 +550,7 @@ const StudentTodoPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Daily Goal */}
+            {}
             <div className="bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 rounded-2xl shadow-lg p-6 mt-6 text-white">
               <h3 className="text-xl font-bold mb-2">🎯 Daily Goal</h3>
               <p className="text-white/90 mb-4">

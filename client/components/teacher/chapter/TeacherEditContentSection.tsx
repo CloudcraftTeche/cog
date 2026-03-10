@@ -121,7 +121,7 @@ export default function TeacherEditContentSection({
           <CardTitle className="text-2xl font-bold">Chapter Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-8 p-8">
-          {/* Grade Display */}
+          {}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -265,7 +265,7 @@ export default function TeacherEditContentSection({
         </CardContent>
       </Card>
 
-      {/* Content Items Section */}
+      {}
       <Card className="shadow-2xl border-0 bg-white rounded-3xl overflow-hidden">
         <CardHeader className="pb-4 bg-gradient-to-br from-slate-50 to-gray-50">
           <div className="flex items-center justify-between flex-wrap gap-4">

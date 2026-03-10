@@ -167,7 +167,7 @@ export function AssignmentDetail({
       }
 
       if (isEditing && existingSubmission) {
-        // Update existing submission
+        
         const response = await api.put(`/submissions/${existingSubmission._id}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -177,7 +177,7 @@ export function AssignmentDetail({
           router.push(`/dashboard/student/assignments`);
         }
       } else {
-        // Create new submission
+        
         const response = await api.post("/submissions", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -203,7 +203,7 @@ export function AssignmentDetail({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    // Reset to original submission values
+    
     if (existingSubmission) {
       setSubmissionContent({
         type: existingSubmission.submissionType,
@@ -248,7 +248,7 @@ export function AssignmentDetail({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-28 sm:pb-8">
-      {/* Header */}
+      {}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-info p-6 sm:p-8 text-primary-foreground">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
@@ -308,7 +308,7 @@ export function AssignmentDetail({
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:shadow-lg hover:shadow-primary/10 transition-all">
           <CardContent className="p-4">
@@ -383,7 +383,7 @@ export function AssignmentDetail({
         </Card>
       </div>
 
-      {/* Score Card */}
+      {}
       {submitted && existingSubmission?.score !== undefined && !isEditing && (
         <Card className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-success/5 to-warning/10 border-primary/30 shadow-xl">
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-success/20 blur-3xl" />
@@ -433,7 +433,7 @@ export function AssignmentDetail({
         </Card>
       )}
 
-      {/* Assignment Content */}
+      {}
       <Card className="shadow-lg border-border/50 overflow-hidden">
         <CardHeader className="pb-4 bg-gradient-to-r from-muted/50 to-transparent">
           <CardTitle className="text-lg flex items-center gap-3">
@@ -450,7 +450,7 @@ export function AssignmentDetail({
         </CardContent>
       </Card>
 
-      {/* Questions */}
+      {}
       {assignment.questions.length > 0 && (
         <Card className="shadow-lg border-border/50 overflow-hidden">
           <CardHeader className="pb-4 bg-gradient-to-r from-success/10 to-transparent">
@@ -473,7 +473,7 @@ export function AssignmentDetail({
         </Card>
       )}
 
-      {/* Submission Form */}
+      {}
       {userRole === "student" && (
         <SubmissionForm
           value={submissionContent}
@@ -492,14 +492,14 @@ export function AssignmentDetail({
         />
       )}
 
-      {/* Error Message */}
+      {}
       {submitError && (
         <div className="p-5 rounded-2xl bg-destructive/10 border-2 border-destructive/30 text-destructive font-medium">
           {submitError}
         </div>
       )}
 
-      {/* Action Buttons */}
+      {}
       {userRole === "student" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border shadow-2xl sm:static sm:bg-transparent sm:backdrop-blur-none sm:border-0 sm:shadow-none sm:p-0">
           <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">

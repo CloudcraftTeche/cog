@@ -1,5 +1,5 @@
-// ===== TYPES =====
-// lib/types/student.types.ts
+
+
 
 export interface StudentAddress {
   street: string;
@@ -82,7 +82,7 @@ export interface DetailedExcelData {
   Score: string;
 }
 
-// types/admin/student.types.ts
+
 
 export interface Address {
   street: string;

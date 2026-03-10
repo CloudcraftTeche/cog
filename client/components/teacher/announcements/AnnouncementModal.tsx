@@ -1,4 +1,4 @@
-// components/announcements/AnnouncementModal.tsx
+
 "use client";
 
 import { X, Pin, Calendar, Users } from "lucide-react";
@@ -25,7 +25,7 @@ export const AnnouncementModal = ({
         className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {}
         <div
           className="sticky top-0 p-6 border-b border-gray-200 flex items-center justify-between z-10 backdrop-blur-sm"
           style={{
@@ -64,7 +64,7 @@ export const AnnouncementModal = ({
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="p-8">
           {announcement.mediaUrl && (
             <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
@@ -91,7 +91,7 @@ export const AnnouncementModal = ({
             </p>
           </div>
 
-          {/* Target Audience Info */}
+          {}
           <div
             className={`mt-6 p-5 rounded-2xl border-2 ${
               announcement.targetAudience === "all"

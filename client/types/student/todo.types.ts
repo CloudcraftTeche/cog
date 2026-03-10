@@ -1,4 +1,4 @@
-// types/todo.types.ts
+
 export interface Stats {
   totalChapters: number;
   completedChapters: number;

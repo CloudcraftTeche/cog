@@ -1,4 +1,4 @@
-// lib/validation/teacher-chapter.validation.ts
+
 
 import { Question, ValidationErrors } from "@/types/admin/teacher-chapter.types";
 
@@ -31,19 +31,19 @@ export function validateTeacherChapter({
 }: ValidateChapterParams): ValidationErrors {
   const errors: ValidationErrors = {};
 
-  // Title validation
+  
   if (!title.trim()) {
     errors.title = "Title is required";
   } else if (title.length > 200) {
     errors.title = "Title must be less than 200 characters";
   }
 
-  // Description validation
+  
   if (!description.trim()) {
     errors.description = "Description is required";
   }
 
-  // Grade validation
+  
   if (!isEdit && selectedGrades && selectedGrades.length === 0) {
     errors.gradeIds = "At least one grade must be selected";
   }
@@ -52,17 +52,17 @@ export function validateTeacherChapter({
     errors.gradeId = "Grade is required";
   }
 
-  // Unit validation
+  
   if (!selectedUnitId) {
     errors.unitId = "Unit is required";
   }
 
-  // Chapter number validation
+  
   if (chapterNumber < 1) {
     errors.chapterNumber = "Chapter number must be at least 1";
   }
 
-  // Content type validation
+  
   if (contentType === "video") {
     if (!videoUrl?.trim()) {
       errors.videoUrl = "Video URL is required for video content";
@@ -81,7 +81,7 @@ export function validateTeacherChapter({
     }
   }
 
-  // Questions validation
+  
   if (!isEdit && questions.length === 0) {
     errors.questions = "At least one question is required";
   } else if (questions.length > 0) {
@@ -98,7 +98,7 @@ export function validateQuestions(questions: Question[]): string | null {
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
 
-    // Skip empty questions for create mode
+    
     if (!q.questionText.trim() && q.options.every(opt => !opt.trim())) {
       continue;
     }

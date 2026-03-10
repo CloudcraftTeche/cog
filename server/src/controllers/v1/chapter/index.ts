@@ -17,21 +17,21 @@ import {
 const transporter = createEmailTransporter();
 
 
-// Helper function to convert content items URLs to signed URLs
+
 const convertContentItemsToSignedUrls = (contentItems: any[]) => {
   return contentItems.map((item) => {
     const itemCopy = { ...item };
     if ((item.type === "video" || item.type === "pdf" || item.type === "mixed") && item.url) {
       if (isCloudinaryUrl(item.url) && item.publicId) {
         const resourceType = item.type === "pdf" ? "raw" : "video";
-        itemCopy.url = getSignedUrl(item.publicId, resourceType, 86400); // 24 hours
+        itemCopy.url = getSignedUrl(item.publicId, resourceType, 86400); 
       }
     }
     return itemCopy;
   });
 };
 
-// Helper function to convert submission URLs to signed URLs
+
 const convertSubmissionsToSignedUrls = (submissions: any[]) => {
   return submissions.map((submission) => {
     const submissionCopy = { ...submission };
@@ -656,7 +656,7 @@ export const getChapterHandler = async (
       (u) => u._id?.toString() === chapter.unitId.toString(),
     );
 
-    // Convert content items and submissions to signed URLs
+    
     const convertedContentItems = convertContentItemsToSignedUrls(chapter.contentItems || []);
     
     const convertedStudentProgress = chapter.studentProgress?.map((progress) => ({

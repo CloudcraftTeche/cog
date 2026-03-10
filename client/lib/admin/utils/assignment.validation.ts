@@ -6,7 +6,7 @@ export const validateAssignmentForm = (
 ): IValidationError[] => {
   const errors: IValidationError[] = [];
 
-  // Title validation
+  
   if (!form.title || form.title?.trim().length === 0) {
     errors.push({ field: "title", message: "Title is required" });
   } else if (form.title.length < 3) {
@@ -15,19 +15,19 @@ export const validateAssignmentForm = (
     errors.push({ field: "title", message: "Title cannot exceed 200 characters" });
   }
 
-  // Description validation
+  
   if (!form.description || form.description.trim().length === 0) {
     errors.push({ field: "description", message: "Description is required" });
   } else if (form.description.length < 10) {
     errors.push({ field: "description", message: "Description must be at least 10 characters" });
   }
 
-  // Grade validation
+  
   if (!form.gradeIds || form.gradeIds.length === 0) {
     errors.push({ field: "gradeIds", message: "Please select at least one grade" });
   }
 
-  // Date validation
+  
   if (!form.startDate) {
     errors.push({ field: "startDate", message: "Start date is required" });
   }
@@ -44,7 +44,7 @@ export const validateAssignmentForm = (
     }
   }
 
-  // Content validation
+  
   if (form.contentType === "video" && !form.videoFile) {
     errors.push({ field: "videoFile", message: "Video file is required" });
   }
@@ -57,7 +57,7 @@ export const validateAssignmentForm = (
     errors.push({ field: "textContent", message: "Text content is required" });
   }
 
-  // File size validation
+  
   if (form.videoFile && form.videoFile.size > MAX_FILE_SIZE_BYTES) {
     errors.push({ 
       field: "videoFile", 
@@ -72,7 +72,7 @@ export const validateAssignmentForm = (
     });
   }
 
-  // Marks validation
+  
   if (form.totalMarks !== undefined && form.totalMarks < 0) {
     errors.push({ field: "totalMarks", message: "Total marks cannot be negative" });
   }
@@ -89,7 +89,7 @@ export const validateAssignmentForm = (
     errors.push({ field: "passingMarks", message: "Passing marks cannot exceed total marks" });
   }
 
-  // Questions validation
+  
   if (!form.questions || form.questions.length === 0) {
     errors.push({ field: "questions", message: "At least one question is required" });
   } else {

@@ -1,4 +1,4 @@
-// lib/utils/announcement.ts
+
 import { Announcement, FilterType, AnnouncementsFilters } from "@/types/teacher/announcement";
 
 export const formatDate = (dateString: string | null | undefined): string => {
@@ -50,7 +50,7 @@ export const filterAnnouncements = (
 
   let filtered = [...announcements];
 
-  // Search filter
+  
   if (filters.searchQuery?.trim()) {
     const query = filters.searchQuery.toLowerCase();
     filtered = filtered.filter(
@@ -60,7 +60,7 @@ export const filterAnnouncements = (
     );
   }
 
-  // Type filter
+  
   if (filters.filterType === "pinned") {
     filtered = filtered.filter((a) => a.isPinned === true);
   } else if (filters.filterType !== "all") {

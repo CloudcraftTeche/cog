@@ -1,4 +1,4 @@
-// components/chapters/ChapterContent.tsx
+
 import React from 'react';
 import {
   Card,

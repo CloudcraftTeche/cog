@@ -1,4 +1,4 @@
-// components/dashboard/ChaptersSection.tsx
+
 import React from 'react';
 import type { Chapter } from '@/types/student/todo.types';
 

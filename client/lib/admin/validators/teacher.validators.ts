@@ -1,7 +1,7 @@
 import { FormErrors, TeacherFormData } from "@/types/admin/teacher.types";
 
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; 
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 export const validateProfilePicture = (file: File): string | null => {
@@ -19,14 +19,14 @@ export const validateProfilePicture = (file: File): string | null => {
 export const validateTeacherForm = (formData: TeacherFormData): FormErrors => {
   const errors: FormErrors = {};
 
-  // Name validation
+  
   if (!formData.name.trim()) {
     errors.name = "Name is required";
   } else if (formData.name.length < 3) {
     errors.name = "Name must be at least 3 characters";
   }
 
-  // Email validation
+  
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!formData.email.trim()) {
     errors.email = "Email is required";
@@ -34,7 +34,7 @@ export const validateTeacherForm = (formData: TeacherFormData): FormErrors => {
     errors.email = "Invalid email format";
   }
 
-  // Phone validation
+  
   const phoneRegex = /^[0-9]{10}$/;
   if (!formData.phone.trim()) {
     errors.phone = "Phone number is required";
@@ -42,12 +42,12 @@ export const validateTeacherForm = (formData: TeacherFormData): FormErrors => {
     errors.phone = "Phone number must be 10 digits";
   }
 
-  // Gender validation
+  
   if (!formData.gender) {
     errors.gender = "Gender is required";
   }
 
-  // Date of Birth validation
+  
   if (!formData.dateOfBirth) {
     errors.dateOfBirth = "Date of birth is required";
   } else {
@@ -59,12 +59,12 @@ export const validateTeacherForm = (formData: TeacherFormData): FormErrors => {
     }
   }
 
-  // Grade validation
+  
   if (!formData.gradeId) {
     errors.gradeId = "Grade assignment is required";
   }
 
-  // Address validation
+  
   if (!formData.address.city.trim()) {
     errors["address.city"] = "City is required";
   }

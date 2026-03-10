@@ -137,6 +137,7 @@ export interface UseAssignmentsParams {
   status?: string;
   page?: number;
   limit?: number;
+  grade: string | undefined;
 }
 
 export interface UseSubmissionsParams {

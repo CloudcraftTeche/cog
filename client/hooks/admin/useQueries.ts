@@ -1,4 +1,3 @@
-// hooks/queries/useQueries.ts
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +5,6 @@ import api from "@/lib/api";
 import { Query, Statistics, User, Filters } from "@/types/admin/query.types";
 import { toast } from "sonner";
 
-// ===== QUERY KEYS =====
 export const queryKeys = {
   all: ["queries"] as const,
   lists: () => [...queryKeys.all, "list"] as const,
@@ -19,7 +17,6 @@ export const queryKeys = {
   superAdmins: () => ["superadmins"] as const,
 };
 
-// ===== QUERIES LIST =====
 export const useQueries = (filters: Filters, page: number, limit = 10) => {
   return useQuery({
     queryKey: queryKeys.list(filters, page),
@@ -35,12 +32,11 @@ export const useQueries = (filters: Filters, page: number, limit = 10) => {
       const { data } = await api.get(`/queries/received?${params}`);
       return data;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
     retry: 2,
   });
 };
 
-// ===== QUERY STATISTICS =====
 export const useQueryStatistics = () => {
   return useQuery({
     queryKey: queryKeys.statistics(),
@@ -48,12 +44,11 @@ export const useQueryStatistics = () => {
       const { data } = await api.get("/queries/statistics/overview");
       return data.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 2,
   });
 };
 
-// ===== QUERY DETAIL =====
 export const useQueryDetail = (queryId: string | null) => {
   return useQuery({
     queryKey: queryKeys.detail(queryId || ""),
@@ -63,11 +58,10 @@ export const useQueryDetail = (queryId: string | null) => {
       return data.data;
     },
     enabled: !!queryId,
-    staleTime: 1 * 60 * 1000, // 1 minute
+    staleTime: 1 * 60 * 1000,
   });
 };
 
-// ===== TEACHERS LIST =====
 export const useTeachers = () => {
   return useQuery({
     queryKey: queryKeys.teachers(),
@@ -75,11 +69,10 @@ export const useTeachers = () => {
       const { data } = await api.get("/teachers");
       return data.data;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes - teachers don't change often
+    staleTime: 10 * 60 * 1000,
   });
 };
 
-// ===== SUPER ADMINS LIST =====
 export const useSuperAdmins = () => {
   return useQuery({
     queryKey: queryKeys.superAdmins(),
@@ -91,7 +84,6 @@ export const useSuperAdmins = () => {
   });
 };
 
-// ===== ADD RESPONSE MUTATION =====
 export const useAddResponse = () => {
   const queryClient = useQueryClient();
 
@@ -109,7 +101,6 @@ export const useAddResponse = () => {
       return data;
     },
     onSuccess: (_, { queryId }) => {
-      // Invalidate both the detail and list queries
       queryClient.invalidateQueries({ queryKey: queryKeys.detail(queryId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       toast.success("Response added successfully");
@@ -120,7 +111,6 @@ export const useAddResponse = () => {
   });
 };
 
-// ===== UPDATE STATUS MUTATION =====
 export const useUpdateQueryStatus = () => {
   const queryClient = useQueryClient();
 
@@ -149,7 +139,6 @@ export const useUpdateQueryStatus = () => {
   });
 };
 
-// ===== ASSIGN QUERY MUTATION =====
 export const useAssignQuery = () => {
   const queryClient = useQueryClient();
 
@@ -177,7 +166,6 @@ export const useAssignQuery = () => {
   });
 };
 
-// ===== ESCALATE QUERY MUTATION =====
 export const useEscalateQuery = () => {
   const queryClient = useQueryClient();
 

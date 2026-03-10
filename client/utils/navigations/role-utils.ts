@@ -1,4 +1,4 @@
-// lib/utils/role-utils.ts
+
 import { UserRole } from "@/types/auth/auth";
 
 const roleColorMap: Record<UserRole, string> = {

@@ -1,4 +1,4 @@
-// lib/utils/submission.utils.ts
+
 
 export const getScoreColor = (score: number): string => {
   if (score >= 90) return "text-green-600";

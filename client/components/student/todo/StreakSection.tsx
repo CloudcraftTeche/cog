@@ -1,4 +1,4 @@
-// components/dashboard/StreakSection.tsx
+
 import { StreakData } from '@/types/student/todo.types';
 import React from 'react';
 

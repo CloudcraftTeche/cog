@@ -1,4 +1,3 @@
-// hooks/useUploadChapter.ts
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";

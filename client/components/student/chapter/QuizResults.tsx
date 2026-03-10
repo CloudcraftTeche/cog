@@ -1,4 +1,4 @@
-// components/chapters/QuizResults.tsx
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -22,7 +22,7 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6 mt-4 sm:mt-6">
-      {/* Score Display */}
+      {}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border-2 border-indigo-200">
         <div className="flex flex-col items-center gap-4">
           <h3 className="text-lg font-semibold text-gray-800">Your Results</h3>
@@ -53,7 +53,7 @@ export const QuizResults: React.FC<QuizResultsProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
         <Button
           variant="outline"

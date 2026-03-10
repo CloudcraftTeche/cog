@@ -102,7 +102,7 @@ async function runMigration() {
     const db = mongoose.connection.db;
     
     if (db) {
-      // Drop ALL email-related indexes from users collection
+      
       const indexes = await db.collection("users").indexes();
       console.log(`   Found ${indexes.length} existing indexes`);
       
@@ -124,7 +124,7 @@ async function runMigration() {
         }
       }
       
-      // Also drop composite indexes that might conflict
+      
       const compositeIndexes = indexes.filter(idx => 
         idx.name && 
         idx.name !== "_id_" && 
@@ -144,7 +144,7 @@ async function runMigration() {
       }
     }
 
-    // Now sync indexes
+    
     console.log("\n   Synchronizing indexes...");
     await Promise.all([
       User.syncIndexes(),

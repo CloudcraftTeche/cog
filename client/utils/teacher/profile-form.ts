@@ -1,7 +1,7 @@
 import { Gender, Teacher } from "@/types/teacher/profile";
 
 export const teacherFormUtils = {
-  // Handle text input changes
+  
   handleInputChange: (
     field: string,
     value: string,
@@ -24,19 +24,19 @@ export const teacherFormUtils = {
     };
   },
 
-  // Handle gender change
+  
   handleGenderChange: (value: Gender | null, teacher: Teacher): Teacher => ({
     ...teacher,
     gender: value,
   }),
 
-  // Handle date change
+  
   handleDateChange: (value: string, teacher: Teacher): Teacher => ({
     ...teacher,
     dateOfBirth: value || null,
   }),
 
-  // Add specialization
+  
   addSpecialization: (
     specialization: string,
     teacher: Teacher
@@ -51,7 +51,7 @@ export const teacherFormUtils = {
     };
   },
 
-  // Remove specialization
+  
   removeSpecialization: (index: number, teacher: Teacher): Teacher => ({
     ...teacher,
     specializations: teacher.specializations.filter((_, i) => i !== index),

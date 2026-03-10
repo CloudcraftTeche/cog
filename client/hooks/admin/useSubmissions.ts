@@ -10,12 +10,10 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Fetch submissions
   const {
     data: submissionsData,
     isLoading,
@@ -32,7 +30,6 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
     enabled: !!assignmentId,
   });
 
-  // Grade submission mutation
   const gradeMutation = useMutation({
     mutationFn: ({
       submissionId,

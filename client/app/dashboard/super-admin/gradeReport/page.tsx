@@ -182,10 +182,11 @@ export default function GradeCompletionReport() {
                       <p className="text-sm font-medium text-slate-600 mb-1">
                         Teachers:
                       </p>
-                      <p className="text-slate-800">
+                       <p className="text-slate-800">
                         {grade.teachers && grade.teachers.length > 0
-                          ? grade.teachers.join(", ")
+                          ? grade.teachers?.map((teacher) => teacher?.name).join(", ")
                           : "No teachers assigned"}
+                         
                       </p>
                     </div>
                     {}

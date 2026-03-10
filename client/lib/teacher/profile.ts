@@ -36,7 +36,7 @@ export const GENDER_OPTIONS: Array<{ value: Gender; label: string }> = [
 ];
 
 export const FILE_VALIDATION = {
-  MAX_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_SIZE: 5 * 1024 * 1024, 
   ALLOWED_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"],
 } as const;
 

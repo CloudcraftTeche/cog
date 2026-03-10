@@ -1,4 +1,4 @@
-// hooks/use-announcement-filters.ts
+
 
 import { AnnouncementFilters, IAnnouncement } from "@/types/student/announcement.types";
 import { useMemo, useState } from "react";
@@ -14,7 +14,7 @@ export function useAnnouncementFilters(announcements: IAnnouncement[] | undefine
 
     let filtered = [...announcements];
 
-    // Search filter
+    
     if (filters.search) {
       filtered = filtered.filter(
         (a) =>
@@ -23,7 +23,7 @@ export function useAnnouncementFilters(announcements: IAnnouncement[] | undefine
       );
     }
 
-    // Type filter
+    
     if (filters.filterType === "pinned") {
       filtered = filtered.filter((a) => a.isPinned);
     } else if (filters.filterType !== "all") {
@@ -33,7 +33,7 @@ export function useAnnouncementFilters(announcements: IAnnouncement[] | undefine
     return filtered;
   }, [announcements, filters]);
 
-  // Separate pinned and regular announcements
+  
   const pinnedAnnouncements = filteredAnnouncements.filter((a) => a.isPinned);
   const regularAnnouncements = filteredAnnouncements.filter((a) => !a.isPinned);
 

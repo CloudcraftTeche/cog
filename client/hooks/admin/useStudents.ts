@@ -1,4 +1,3 @@
-// hooks/queries/useStudents.ts
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,7 +12,6 @@ import {
 import { prepareFormData, parseBackendErrors } from "@/utils/admin/student.utils";
 import { toast } from "sonner";
 
-// ===== QUERY KEYS =====
 export const studentKeys = {
   all: ["students"] as const,
   lists: () => [...studentKeys.all, "list"] as const,
@@ -25,7 +23,6 @@ export const studentKeys = {
   grades: () => ["grades", "all"] as const,
 };
 
-// ===== STUDENTS LIST QUERY =====
 export const useStudents = (params: StudentListParams) => {
   return useQuery({
     queryKey: studentKeys.list(params),
@@ -38,12 +35,11 @@ export const useStudents = (params: StudentListParams) => {
         totalPages: Math.ceil(data.total / params.limit),
       };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
     retry: 2,
   });
 };
 
-// ===== STUDENT DETAIL QUERY =====
 export const useStudent = (id: string | null) => {
   return useQuery({
     queryKey: studentKeys.detail(id || ""),
@@ -57,7 +53,6 @@ export const useStudent = (id: string | null) => {
   });
 };
 
-// ===== STUDENT PROGRESS QUERY =====
 export const useStudentProgress = (id: string | null) => {
   return useQuery({
     queryKey: studentKeys.progress(id || ""),
@@ -67,11 +62,10 @@ export const useStudentProgress = (id: string | null) => {
       return data.data;
     },
     enabled: !!id,
-    staleTime: 1 * 60 * 1000, // 1 minute - progress changes frequently
+    staleTime: 1 * 60 * 1000,
   });
 };
 
-// ===== GRADES QUERY =====
 export const useGrades = () => {
   return useQuery({
     queryKey: studentKeys.grades(),
@@ -79,11 +73,10 @@ export const useGrades = () => {
       const { data } = await api.get("/grades/all");
       return data.data || [];
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes - grades don't change often
+    staleTime: 10 * 60 * 1000,
   });
 };
 
-// ===== CREATE STUDENT MUTATION =====
 export const useCreateStudent = () => {
   const queryClient = useQueryClient();
 
@@ -110,7 +103,6 @@ export const useCreateStudent = () => {
         error.response?.data?.message || "Failed to create student";
       toast.error(errorMessage);
 
-      // Return backend errors for form handling
       if (error.response?.data?.errors) {
         return parseBackendErrors(error.response.data.errors);
       }
@@ -118,7 +110,6 @@ export const useCreateStudent = () => {
   });
 };
 
-// ===== UPDATE STUDENT MUTATION =====
 export const useUpdateStudent = () => {
   const queryClient = useQueryClient();
 
@@ -155,7 +146,6 @@ export const useUpdateStudent = () => {
   });
 };
 
-// ===== DELETE STUDENT MUTATION =====
 export const useDeleteStudent = () => {
   const queryClient = useQueryClient();
 
@@ -173,18 +163,15 @@ export const useDeleteStudent = () => {
   });
 };
 
-// ===== BULK FETCH STUDENTS WITH PROGRESS =====
 export const useBulkStudentsWithProgress = (params: StudentListParams) => {
   return useQuery({
     queryKey: [...studentKeys.list(params), "withProgress"],
     queryFn: async () => {
-      // Fetch students
       const studentsResponse = await api.get("/students", {
         params: { ...params, limit: 100 },
       });
       const students = studentsResponse.data.data;
 
-      // Fetch progress for each student
       const studentsWithProgress = await Promise.all(
         students.map(async (student: Student) => {
           try {
@@ -206,7 +193,7 @@ export const useBulkStudentsWithProgress = (params: StudentListParams) => {
 
       return studentsWithProgress;
     },
-    enabled: false, // Only run when manually triggered
-    staleTime: 0, // Don't cache - always fresh for export
+    enabled: false,
+    staleTime: 0,
   });
 };

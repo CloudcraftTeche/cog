@@ -1,4 +1,4 @@
-// components/admin/chapters/SubmissionsList.tsx
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

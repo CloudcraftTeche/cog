@@ -1,4 +1,4 @@
-// types/query.types.ts
+
 export type QueryStatus = 'open' | 'in_progress' | 'resolved' | 'escalated' | 'closed';
 export type QueryPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type QueryType = 'general' | 'academic' | 'disciplinary' | 'doctrinal' | 'technical';

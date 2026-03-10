@@ -1,5 +1,5 @@
-// ===== VALIDATORS =====
-// lib/validators/grade.validators.ts
+
+
 
 import { GradeFormData, ValidationErrors } from "@/types/admin/grade.types";
 
@@ -8,7 +8,7 @@ export const validateGradeForm = (
 ): ValidationErrors => {
   const errors: ValidationErrors = {};
 
-  // Validate grade name
+  
   if (!formData.grade.trim()) {
     errors.grade = "Grade is required";
   } else if (
@@ -18,12 +18,12 @@ export const validateGradeForm = (
     errors.grade = "Grade must be between 1-50 characters";
   }
 
-  // Validate description
+  
   if (formData.description && formData.description.length > 500) {
     errors.description = "Description must not exceed 500 characters";
   }
 
-  // Validate academic year
+  
   if (formData.academicYear) {
     const yearRegex = /^\d{4}-\d{4}$/;
     if (!yearRegex.test(formData.academicYear)) {
@@ -39,7 +39,7 @@ export const validateGradeForm = (
     }
   }
 
-  // Validate units
+  
   if (formData.units.length > 0) {
     const hasInvalidUnit = formData.units.some((unit) => {
       if (!unit.name.trim()) return true;

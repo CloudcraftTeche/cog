@@ -56,7 +56,7 @@ export default function ContentUploadSection({
     const updated = [...contentItems];
     updated[index] = { ...updated[index], [field]: value };
     
-    // Clear previous content when changing type
+    
     if (field === "type") {
       updated[index].textContent = undefined;
       updated[index].videoUrl = undefined;
@@ -70,7 +70,7 @@ export default function ContentUploadSection({
     if (file) {
       const updated = [...contentItems];
       
-      // Validate file type
+      
       const item = updated[index];
       if (item.type === "video") {
         if (!file.type.startsWith("video/")) {
@@ -84,15 +84,15 @@ export default function ContentUploadSection({
         }
       }
       
-      // Validate file size (100MB max)
-      const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+      
+      const maxSize = 100 * 1024 * 1024; 
       if (file.size > maxSize) {
         toast.error("File size must be less than 100MB");
         return;
       }
       
       updated[index].file = file;
-      // Clear videoUrl if file is uploaded
+      
       updated[index].videoUrl = undefined;
       setContentItems(updated);
       toast.success(`File "${file.name}" attached`);

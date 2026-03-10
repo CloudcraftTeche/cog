@@ -1,4 +1,3 @@
-// hooks/admin/use-teacher-form.ts
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -61,7 +60,6 @@ export const useCreateTeacherForm = () => {
       return { ...prev, [field]: value };
     });
 
-    // Clear error for this field
     setErrors((prev) => {
       const newErrors = { ...prev };
       delete newErrors[field];
@@ -129,7 +127,6 @@ export const useEditTeacherForm = (teacherId: string) => {
 
   const updateMutation = useUpdateTeacher();
 
-  // Sync form data when teacher data is loaded
   useState(() => {
     if (formData) {
       setCurrentFormData(formData);
@@ -156,7 +153,6 @@ export const useEditTeacherForm = (teacherId: string) => {
       return { ...prev, [field]: value };
     });
 
-    // Clear error for this field
     setErrors((prev) => {
       const newErrors = { ...prev };
       delete newErrors[field];

@@ -492,7 +492,7 @@ export default function AdminTeacherAttendanceDashboard() {
           </div>
         )}
 
-        {/* ── Statistics ───────────────────────────────────────────────────── */}
+        {}
         {selectedView === "stats" && (
           <div className="space-y-8">
             <h2 className="text-3xl font-bold text-gray-800">

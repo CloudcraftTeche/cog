@@ -1,4 +1,4 @@
-// components/admin/chapters/ChaptersList.tsx
+
 "use client";
 
 import { ChevronDown, ChevronUp, GraduationCap, BookOpen } from "lucide-react";

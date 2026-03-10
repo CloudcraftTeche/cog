@@ -1,4 +1,4 @@
-// components/chapters/ContentRenderer.tsx
+
 import React from 'react';
 import { FileText, Film, File } from 'lucide-react';
 import type { ContentItem } from '@/types/student/chapter.types';

@@ -1,4 +1,4 @@
-// components/queries/QueryFilters.tsx
+
 import React from 'react';
 import { Search } from 'lucide-react';
 import { QueryFilters } from '@/types/student/query.types';

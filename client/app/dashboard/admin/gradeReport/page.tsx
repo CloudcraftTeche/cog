@@ -77,6 +77,8 @@ export default function GradeCompletionReport() {
       </div>
     );
   }
+  console.log(grades);
+  
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {}
@@ -184,8 +186,9 @@ export default function GradeCompletionReport() {
                       </p>
                       <p className="text-slate-800">
                         {grade.teachers && grade.teachers.length > 0
-                          ? grade.teachers.join(", ")
+                          ? grade.teachers?.map((teacher) => teacher?.name).join(", ")
                           : "No teachers assigned"}
+                         
                       </p>
                     </div>
                     {}

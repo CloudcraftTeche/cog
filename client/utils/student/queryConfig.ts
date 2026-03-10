@@ -1,4 +1,4 @@
-// utils/queryConfig.tsx
+
 import { PriorityConfig, QueryPriority, QueryStatus, StatusConfig } from '@/types/student/query.types';
 import {
   AlertCircle,

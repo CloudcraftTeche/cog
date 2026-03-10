@@ -1,4 +1,4 @@
-// components/announcements/AnnouncementSkeleton.tsx
+
 "use client";
 
 export const AnnouncementSkeleton = () => {

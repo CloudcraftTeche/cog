@@ -1,4 +1,4 @@
-// hooks/use-student.ts
+
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -8,14 +8,14 @@ import {
   StudentUpdatePayload,
 } from "@/types/student/student.types";
 import { createFormDataFromStudent } from "@/utils/student/student-utils";
-// Query Keys
+
 export const studentKeys = {
   all: ["students"] as const,
   details: () => [...studentKeys.all, "detail"] as const,
   detail: (id: string) => [...studentKeys.details(), id] as const,
 };
 
-// Fetch student by ID
+
 export function useStudent(studentId: string | undefined) {
   return useQuery({
     queryKey: studentKeys.detail(studentId ?? ""),
@@ -25,11 +25,11 @@ export function useStudent(studentId: string | undefined) {
       return response.data;
     },
     enabled: !!studentId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 }
 
-// Update student
+
 export function useUpdateStudent(studentId: string | undefined) {
   const queryClient = useQueryClient();
 

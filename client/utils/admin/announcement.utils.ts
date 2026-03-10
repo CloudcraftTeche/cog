@@ -1,4 +1,4 @@
-// lib/utils/announcement.utils.ts
+
 
 export const getTypeColor = (type: string): string => {
   switch (type) {

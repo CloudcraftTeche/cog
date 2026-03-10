@@ -7,7 +7,7 @@ export const validateStudentForm = (
 ): FormErrors => {
   const errors: FormErrors = {};
 
-  // Name validation
+  
   if (!formData.name.trim()) {
     errors.name = "Name is required";
   } else if (formData.name.trim().length < 2) {
@@ -16,7 +16,7 @@ export const validateStudentForm = (
     errors.name = "Name must not exceed 100 characters";
   }
 
-  // Email validation
+  
   if (!formData.email.trim()) {
     errors.email = "Email is required";
   } else {
@@ -26,7 +26,7 @@ export const validateStudentForm = (
     }
   }
 
-  // Roll number validation (optional)
+  
   if (formData.rollNumber && formData.rollNumber.trim()) {
     if (
       formData.rollNumber.trim().length < 1 ||
@@ -36,7 +36,7 @@ export const validateStudentForm = (
     }
   }
 
-  // Grade validation
+  
   if (!formData.gradeId || !formData.gradeId.trim()) {
     errors.gradeId = "Grade is required";
   } else {
@@ -46,7 +46,7 @@ export const validateStudentForm = (
     }
   }
 
-  // Gender validation
+  
   if (!formData.gender) {
     errors.gender = "Gender is required";
   } else if (
@@ -55,7 +55,7 @@ export const validateStudentForm = (
     errors.gender = "Please select a valid gender";
   }
 
-  // Date of birth validation
+  
   if (!formData.dateOfBirth) {
     errors.dateOfBirth = "Date of birth is required";
   } else {
@@ -77,7 +77,7 @@ export const validateStudentForm = (
     }
   }
 
-  // Parent contact validation
+  
   if (!formData.parentContact.trim()) {
     errors.parentContact = "Parent contact is required";
   } else {
@@ -88,7 +88,7 @@ export const validateStudentForm = (
     }
   }
 
-  // Address validation
+  
   if (!formData.address.street.trim()) {
     errors["address.street"] = "Street address is required";
   }
@@ -106,7 +106,7 @@ export const validateStudentForm = (
 };
 
 export const validateProfilePicture = (file: File): string | null => {
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 5 * 1024 * 1024; 
   const allowedTypes = [
     "image/jpeg",
     "image/jpg",

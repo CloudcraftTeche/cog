@@ -1,4 +1,3 @@
-// hooks/use-teacher-chapters.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -14,7 +13,6 @@ import {
   ChapterResponse,
 } from "@/types/admin/teacher-chapter.types";
 
-// Query Keys
 export const teacherChapterKeys = {
   all: ["teacher-chapters"] as const,
   lists: () => [...teacherChapterKeys.all, "list"] as const,
@@ -28,7 +26,6 @@ export const gradeKeys = {
   lists: () => [...gradeKeys.all, "list"] as const,
 };
 
-// Fetch Grades
 export function useGrades() {
   return useQuery({
     queryKey: gradeKeys.lists(),
@@ -42,11 +39,10 @@ export function useGrades() {
         return gradeA - gradeB;
       });
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-// Fetch Teacher Chapters List
 export function useTeacherChapters(params: FetchChaptersParams = {}) {
   return useQuery({
     queryKey: teacherChapterKeys.list(params),
@@ -63,11 +59,10 @@ export function useTeacherChapters(params: FetchChaptersParams = {}) {
       
       return data.data || [];
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
   });
 }
 
-// Fetch Single Teacher Chapter
 export function useTeacherChapter(id: string) {
   return useQuery({
     queryKey: teacherChapterKeys.detail(id),
@@ -80,7 +75,6 @@ export function useTeacherChapter(id: string) {
   });
 }
 
-// Create Teacher Chapter
 export function useCreateTeacherChapter() {
   const queryClient = useQueryClient();
 
@@ -106,7 +100,6 @@ export function useCreateTeacherChapter() {
   });
 }
 
-// Update Teacher Chapter
 export function useUpdateTeacherChapter(id: string) {
   const queryClient = useQueryClient();
 
@@ -133,7 +126,6 @@ export function useUpdateTeacherChapter(id: string) {
   });
 }
 
-// Delete Teacher Chapter
 export function useDeleteTeacherChapter() {
   const queryClient = useQueryClient();
 

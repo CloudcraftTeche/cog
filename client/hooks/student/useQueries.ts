@@ -1,4 +1,4 @@
-// hooks/useQueries.ts
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type {
@@ -9,7 +9,7 @@ import type {
   CreateQueryData,
 } from '@/types/student/query.types';
 
-// Query Keys
+
 export const queryKeys = {
   all: ['queries'] as const,
   lists: () => [...queryKeys.all, 'list'] as const,
@@ -17,7 +17,7 @@ export const queryKeys = {
   recipients: () => [...queryKeys.all, 'recipients'] as const,
 };
 
-// Fetch queries list
+
 export const useQueriesList = (params: QueryListParams) => {
   return useQuery({
     queryKey: queryKeys.list(params),
@@ -43,11 +43,11 @@ export const useQueriesList = (params: QueryListParams) => {
         totalPages: data.totalPages ?? 1,
       };
     },
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000, 
   });
 };
 
-// Fetch recipients
+
 export const useRecipients = () => {
   return useQuery({
     queryKey: queryKeys.recipients(),
@@ -60,11 +60,11 @@ export const useRecipients = () => {
 
       return data.data ?? { teachers: [], admins: [], superAdmins: [] };
     },
-    staleTime: 300000, // 5 minutes - recipients don't change often
+    staleTime: 300000, 
   });
 };
 
-// Create query mutation
+
 export const useCreateQuery = () => {
   const queryClient = useQueryClient();
 
@@ -99,13 +99,13 @@ export const useCreateQuery = () => {
       return data.data;
     },
     onSuccess: () => {
-      // Invalidate all query lists to refetch
+      
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
     },
   });
 };
 
-// Add rating mutation
+
 export const useAddRating = () => {
   const queryClient = useQueryClient();
 

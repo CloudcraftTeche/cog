@@ -1,4 +1,4 @@
-// components/chapters/SubmissionForm.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, FileText, Video, File, XCircle } from 'lucide-react';

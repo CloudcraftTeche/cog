@@ -1,4 +1,4 @@
-// components/announcements/AnnouncementSkeleton.tsx
+
 
 export function AnnouncementSkeleton() {
   return (

@@ -1,4 +1,4 @@
-// components/chapters/ChapterSubmission.tsx
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -136,7 +136,7 @@ export const ChapterSubmission: React.FC<ChapterSubmissionProps> = ({
       </CardHeader>
 
       <CardContent className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
-        {/* Quiz Questions */}
+        {}
         <QuizSection
           questions={chapter.questions}
           selectedAnswers={selectedAnswers}
@@ -144,7 +144,7 @@ export const ChapterSubmission: React.FC<ChapterSubmissionProps> = ({
           onAnswerChange={onAnswerChange}
         />
 
-        {/* Submission Section - Only show if not submitted */}
+        {}
         {!submitted && (
           <SubmissionForm
             submissionType={submissionType}
@@ -158,7 +158,7 @@ export const ChapterSubmission: React.FC<ChapterSubmissionProps> = ({
           />
         )}
 
-        {/* Error Display */}
+        {}
         {error && (
           <Alert variant="destructive">
             <XCircle className="h-4 w-4" />
@@ -166,7 +166,7 @@ export const ChapterSubmission: React.FC<ChapterSubmissionProps> = ({
           </Alert>
         )}
 
-        {/* Submit Button or Results */}
+        {}
         {!submitted ? (
           <Button
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"

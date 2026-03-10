@@ -1,4 +1,4 @@
-// components/admin/chapters/SharedComponents.tsx
+
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileCheck, AlertCircle } from "lucide-react";
 import { ContentItem } from "@/types/admin/chapter.types";
 
-// Error Display Component
+
 interface ErrorDisplayProps {
   title: string;
   message: string;
@@ -36,7 +36,7 @@ export function ErrorDisplay({ title, message, onRetry }: ErrorDisplayProps) {
   );
 }
 
-// Chapter Header Component
+
 interface ChapterHeaderProps {
   title: string;
   description: string;
@@ -140,7 +140,7 @@ export function ChapterHeader({
   );
 }
 
-// Empty Submissions Component
+
 export function EmptySubmissions() {
   return (
     <Card className="shadow-xl rounded-3xl border-0">

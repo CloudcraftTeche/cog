@@ -1,4 +1,4 @@
-// components/dashboard/ActivityCalendar.tsx
+
 import { CalendarDay } from '@/types/student/todo.types';
 import { getIntensityColor } from '@/utils/student/todoFilters';
 import React from 'react';

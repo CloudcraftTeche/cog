@@ -1,4 +1,4 @@
-// components/student/profile/ProfileHeader.tsx
+
 "use client";
 
 import { RefObject } from "react";

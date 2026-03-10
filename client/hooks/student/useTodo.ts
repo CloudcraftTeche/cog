@@ -1,4 +1,4 @@
-// hooks/useTodo.ts
+
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type {
@@ -8,7 +8,7 @@ import type {
   AssignmentQueryParams,
 } from '@/types/student/todo.types';
 
-// Query Keys
+
 export const todoKeys = {
   all: ['todo'] as const,
   overview: () => [...todoKeys.all, 'overview'] as const,
@@ -18,7 +18,7 @@ export const todoKeys = {
     [...todoKeys.assignments(), params] as const,
 };
 
-// Fetch overview data
+
 export const useOverview = () => {
   return useQuery({
     queryKey: todoKeys.overview(),
@@ -33,11 +33,11 @@ export const useOverview = () => {
 
       return data.data;
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 60000, 
   });
 };
 
-// Fetch streak data
+
 export const useStreak = () => {
   return useQuery({
     queryKey: todoKeys.streak(),
@@ -52,11 +52,11 @@ export const useStreak = () => {
 
       return data.data;
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 60000, 
   });
 };
 
-// Fetch all assignments
+
 export const useAssignments = (params: AssignmentQueryParams) => {
   return useQuery({
     queryKey: todoKeys.assignmentsList(params),
@@ -77,6 +77,6 @@ export const useAssignments = (params: AssignmentQueryParams) => {
 
       return data.data ?? [];
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 60000, 
   });
 };

@@ -1,4 +1,4 @@
-// components/admin/teacher-chapters/TeacherChapterGroups.tsx
+
 
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, GraduationCap, BookOpen } from "lucide-react";

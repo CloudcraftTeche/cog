@@ -1,4 +1,4 @@
-// components/announcements/AnnouncementModal.tsx
+
 "use client";
 
 import { IAnnouncement } from "@/types/student/announcement.types";

@@ -17,7 +17,7 @@ export function useTeacherQuery(teacherId: string | null | undefined) {
     return teacherUtils.formatTeacherData(response.data.data);
   }, [teacherId]);
 
-  // Fetch query
+  
   const teacherQuery = useQuery({
     queryKey: TEACHER_QUERY_KEYS.detail(teacherId || ""),
     queryFn: fetchTeacher,

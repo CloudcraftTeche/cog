@@ -31,12 +31,12 @@ import {
 } from "@/lib/admin/utils/submission.utils";
 import { ISubmission } from "@/types/admin/assignment.types";
 
-// Export types for use in pages
+
 export type { ISubmission };
 
-// ============================================================================
-// HEADER COMPONENT
-// ============================================================================
+
+
+
 
 interface SubmissionHeaderProps {
   searchTerm: string;
@@ -78,9 +78,9 @@ export const SubmissionHeader = ({
   );
 };
 
-// ============================================================================
-// SUBMISSION TYPE ICON
-// ============================================================================
+
+
+
 
 interface SubmissionTypeIconProps {
   type: string;
@@ -101,9 +101,9 @@ export const SubmissionTypeIcon = ({
   }
 };
 
-// ============================================================================
-// GRADING FORM
-// ============================================================================
+
+
+
 
 interface GradingFormProps {
   submissionId: string;
@@ -208,9 +208,9 @@ export const GradingForm = ({
   );
 };
 
-// ============================================================================
-// SUBMISSION CONTENT
-// ============================================================================
+
+
+
 
 interface SubmissionContentProps {
   submissionType: "text" | "video" | "pdf";
@@ -289,9 +289,9 @@ export const SubmissionContent = ({
   );
 };
 
-// ============================================================================
-// GRADING DISPLAY
-// ============================================================================
+
+
+
 
 interface GradingDisplayProps {
   score?: number;
@@ -361,9 +361,9 @@ export const GradingDisplay = ({
   );
 };
 
-// ============================================================================
-// SUBMISSION ANSWERS
-// ============================================================================
+
+
+
 
 interface SubmissionAnswersProps {
   answers: any[];
@@ -406,9 +406,9 @@ export const SubmissionAnswers = ({
   );
 };
 
-// ============================================================================
-// SUBMISSION CARD
-// ============================================================================
+
+
+
 
 interface SubmissionCardProps {
   submission: ISubmission;
@@ -548,9 +548,9 @@ export const SubmissionCard = ({
   );
 };
 
-// ============================================================================
-// PAGINATION
-// ============================================================================
+
+
+
 
 interface PaginationProps {
   currentPage: number;
@@ -641,9 +641,9 @@ export const Pagination = ({
   );
 };
 
-// ============================================================================
-// EMPTY STATES
-// ============================================================================
+
+
+
 
 export const NoSubmissionsState = () => {
   return (

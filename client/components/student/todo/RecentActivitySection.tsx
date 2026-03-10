@@ -1,4 +1,4 @@
-// components/dashboard/RecentActivitySection.tsx
+
 import React from 'react';
 import type { Activity } from '@/types/student/todo.types';
 

@@ -1,4 +1,4 @@
-// utils/chapter.utils.ts
+
 import { Chapter, Grade, Unit } from "@/types/admin/chapter.types";
 
 export const filterChaptersBySearch = (

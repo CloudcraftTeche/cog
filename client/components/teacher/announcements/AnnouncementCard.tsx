@@ -1,4 +1,4 @@
-// components/announcements/AnnouncementCard.tsx
+
 "use client";
 
 import { useMemo } from "react";

@@ -1,4 +1,3 @@
-// hooks/useEditChapter.ts
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -40,7 +39,6 @@ export const useEditChapter = (chapterId: string) => {
     chapterId
   );
 
-  // Populate form when chapter data is loaded
   useEffect(() => {
     if (chapter) {
       setFormState({
@@ -100,7 +98,7 @@ export const useEditChapter = (chapterId: string) => {
     const validationErrors = validateChapterForm(
       formState.title,
       formState.description,
-      [formState.selectedGradeId], // Convert to array for validation
+      [formState.selectedGradeId],
       formState.selectedUnitId,
       formState.chapterNumber,
       formState.contentItems,

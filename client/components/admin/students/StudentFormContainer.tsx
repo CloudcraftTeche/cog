@@ -64,7 +64,7 @@ export const StudentFormContainer = ({
     error: studentError,
   } = useStudent(mode === "edit" ? studentId || null : null);
 
-  // Mutations
+  
   const createMutation = useCreateStudent();
   const updateMutation = useUpdateStudent();
 
@@ -72,7 +72,7 @@ export const StudentFormContainer = ({
     createMutation.isPending || updateMutation.isPending;
   const isLoadingData = mode === "edit" && (isLoadingStudent || isLoadingGrades);
 
-  // Load student data for edit mode
+  
   useEffect(() => {
     if (mode === "edit" && student && grades.length > 0) {
       setFormData({

@@ -1,4 +1,4 @@
-// hooks/useChapters.ts
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type {
@@ -10,13 +10,13 @@ import type {
   Grade,
 } from '@/types/student/chapter.types';
 
-// Helper to get current user grade
+
 const getCurrentUserGrade = async (): Promise<Grade> => {
   const { data } = await api.get('/auth/me');
   return data.data.gradeId;
 };
 
-// Query Keys
+
 export const chapterKeys = {
   all: ['chapters'] as const,
   lists: () => [...chapterKeys.all, 'list'] as const,
@@ -26,7 +26,7 @@ export const chapterKeys = {
   grade: () => [...chapterKeys.all, 'grade'] as const,
 };
 
-// Fetch chapters list
+
 export const useChaptersList = (params: ChapterQueryParams) => {
   return useQuery({
     queryKey: chapterKeys.list(params),
@@ -48,11 +48,11 @@ export const useChaptersList = (params: ChapterQueryParams) => {
         totalPages: data.totalPages ?? 1,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 60000, 
   });
 };
 
-// Fetch single chapter
+
 export const useChapter = (chapterId: string | null) => {
   return useQuery({
     queryKey: chapterKeys.detail(chapterId ?? ''),
@@ -68,11 +68,11 @@ export const useChapter = (chapterId: string | null) => {
       return data.data;
     },
     enabled: !!chapterId,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000, 
   });
 };
 
-// Start chapter mutation
+
 export const useStartChapter = () => {
   const queryClient = useQueryClient();
 
@@ -91,7 +91,7 @@ export const useStartChapter = () => {
   });
 };
 
-// Submit chapter mutation
+
 export const useSubmitChapter = () => {
   const queryClient = useQueryClient();
 
@@ -138,7 +138,7 @@ export const useSubmitChapter = () => {
   });
 };
 
-// Complete chapter mutation
+
 export const useCompleteChapter = () => {
   const queryClient = useQueryClient();
 
@@ -171,11 +171,11 @@ export const useCompleteChapter = () => {
   });
 };
 
-// Get current user grade
+
 export const useCurrentGrade = () => {
   return useQuery({
     queryKey: chapterKeys.grade(),
     queryFn: getCurrentUserGrade,
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000, 
   });
 };

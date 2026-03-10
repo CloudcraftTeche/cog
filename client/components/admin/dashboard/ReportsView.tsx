@@ -173,7 +173,7 @@ export const ReportsView = ({
 
   return (
     <div className="space-y-10">
-      {/* Priority Statistics */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <PriorityStatsCard
           icon={AlertTriangle}
@@ -201,7 +201,7 @@ export const ReportsView = ({
         />
       </div>
 
-      {/* Recent Announcements */}
+      {}
       <div className="relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-200/50 to-cyan-200/50 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
         <div className="relative bg-white/95 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-blue-100/50">
@@ -222,7 +222,7 @@ export const ReportsView = ({
         </div>
       </div>
 
-      {/* Recent Queries */}
+      {}
       <div className="relative group">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-200/50 to-pink-200/50 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
         <div className="relative bg-white/95 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-purple-100/50">

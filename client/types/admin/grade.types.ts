@@ -1,5 +1,5 @@
-// ===== TYPES =====
-// lib/types/grade.types.ts
+
+
 
 export interface Unit {
   _id?: string;
@@ -14,7 +14,7 @@ export interface Grade {
   description?: string;
   units?: Unit[];
   students?: string[];
-  teachers?: string[];
+  teachers?: Teacher[];
   isActive?: boolean;
   academicYear?: string;
   createdAt: string;

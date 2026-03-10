@@ -1,4 +1,4 @@
-// types/teacher-chapter.types.ts
+
 
 export interface Grade {
   _id: string;

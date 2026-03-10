@@ -1,4 +1,3 @@
-// hooks/useAssignments.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { assignmentService } from "@/lib/admin/api/assignment.service";
@@ -16,7 +15,6 @@ export const ASSIGNMENT_QUERY_KEYS = {
 export const useAssignments = (params?: UseAssignmentsParams) => {
   const queryClient = useQueryClient();
 
-  // Fetch assignments
   const {
     data: assignmentsData,
     isLoading,
@@ -27,7 +25,6 @@ export const useAssignments = (params?: UseAssignmentsParams) => {
     queryFn: () => assignmentService.getAssignments(params),
   });
 
-  // Fetch grades
   const {
     data: grades = [],
     isLoading: isLoadingGrades,
@@ -36,7 +33,12 @@ export const useAssignments = (params?: UseAssignmentsParams) => {
     queryFn: assignmentService.getGrades,
   });
 
-  // Delete assignment mutation
+  const filteredAssignments = params?.grade && params.grade !== "all"
+    ? (assignmentsData?.data || []).filter(
+        (a) => a.gradeId._id === params.grade
+      )
+    : assignmentsData?.data || [];
+
   const deleteMutation = useMutation({
     mutationFn: assignmentService.deleteAssignment,
     onSuccess: () => {
@@ -47,7 +49,7 @@ export const useAssignments = (params?: UseAssignmentsParams) => {
   });
 
   return {
-    assignments: assignmentsData?.data || [],
+    assignments: filteredAssignments,
     pagination: assignmentsData?.pagination,
     grades,
     loading: isLoading,
@@ -59,7 +61,6 @@ export const useAssignments = (params?: UseAssignmentsParams) => {
   };
 };
 
-// Hook for single assignment
 export const useAssignment = (id: string) => {
   const {
     data: assignment,
@@ -78,7 +79,6 @@ export const useAssignment = (id: string) => {
   };
 };
 
-// Hook for creating assignment
 export const useCreateAssignment = () => {
   const queryClient = useQueryClient();
 
@@ -108,7 +108,6 @@ export const useCreateAssignment = () => {
   };
 };
 
-// Hook for updating assignment
 export const useUpdateAssignment = (id: string) => {
   const queryClient = useQueryClient();
 

@@ -1,4 +1,4 @@
-// lib/utils/student.utils.ts
+
 
 import {
   Student,
@@ -9,9 +9,7 @@ import {
 } from "@/types/admin/student.types";
 import * as XLSX from "xlsx";
 
-/**
- * Get initials from full name
- */
+
 export const getInitials = (name: string): string => {
   if (!name) return "S";
   return name
@@ -34,9 +32,7 @@ export const formatDate = (date?: string): string => {
   });
 };
 
-/**
- * Calculate age from date of birth
- */
+
 export const calculateAge = (birthDate: string): string => {
   if (!birthDate) return "";
   const today = new Date();
@@ -65,9 +61,7 @@ export const getCardGradient = (index: number): string => {
   return gradients[index % gradients.length];
 };
 
-/**
- * Format address to string
- */
+
 export const formatAddress = (
   address?: {
     street?: string;
@@ -88,9 +82,7 @@ export const formatAddress = (
   return parts.length > 0 ? parts.join(", ").trim() : "N/A";
 };
 
-/**
- * Prepare Excel export data
- */
+
 export const prepareExcelData = (
   students: Array<{ student: Student; progress: StudentProgress | null }>,
   grades: Grade[]
@@ -140,39 +132,35 @@ export const prepareExcelData = (
   return { summary: summaryData, detailed: detailedData };
 };
 
-/**
- * Export students data to Excel
- */
+
 export const exportStudentsToExcel = (
   summaryData: ExcelExportData[],
   detailedData: DetailedExcelData[]
 ): void => {
   const wb = XLSX.utils.book_new();
 
-  // Summary sheet
+  
   const summaryWs = XLSX.utils.json_to_sheet(summaryData);
   XLSX.utils.book_append_sheet(wb, summaryWs, "Students Summary");
 
-  // Detailed progress sheet
+  
   if (detailedData.length > 0) {
     const detailedWs = XLSX.utils.json_to_sheet(detailedData);
     XLSX.utils.book_append_sheet(wb, detailedWs, "Detailed Progress");
   }
 
-  // Generate filename with timestamp
+  
   const timestamp = new Date().toISOString().split("T")[0];
   const filename = `students_progress_${timestamp}.xlsx`;
 
-  // Download file
+  
   XLSX.writeFile(wb, filename);
 };
 
 
 
 
-/**
- * Scroll to first error field
- */
+
 export const scrollToError = (errors: Record<string, string>): void => {
   const firstErrorField = Object.keys(errors)[0];
   const element = document.getElementById(

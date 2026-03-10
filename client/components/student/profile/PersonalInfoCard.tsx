@@ -1,4 +1,4 @@
-// components/student/profile/PersonalInfoCard.tsx
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

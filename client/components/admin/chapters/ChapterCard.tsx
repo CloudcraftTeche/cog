@@ -82,7 +82,7 @@ export default function ChapterCard({
 
   const displayUnitName = unitName || chapter.unitName || "N/A";
 
-  // Get content type info from contentItems or fallback to old contentType
+  
   const getContentTypeInfo = () => {
     if (chapter.contentItems && chapter.contentItems.length > 0) {
       const types = chapter.contentItems.map(item => item.type);
@@ -105,7 +105,7 @@ export default function ChapterCard({
         }
       }
     }
-    // Fallback to old contentType
+    
     return chapter.contentType === "video" 
       ? { label: "Video", color: "red" }
       : { label: "Text", color: "blue" };

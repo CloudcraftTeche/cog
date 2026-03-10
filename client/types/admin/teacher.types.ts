@@ -1,5 +1,5 @@
-// ===== TYPES =====
-// lib/types/teacher.types.ts
+
+
 
 export interface IAddress {
   street?: string;

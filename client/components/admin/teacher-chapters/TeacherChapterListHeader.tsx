@@ -1,4 +1,4 @@
-// components/admin/teacher-chapters/TeacherChapterEmptyState.tsx
+
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export function TeacherChapterListHeader({ onCreateClick }: TeacherChapterListHe
   );
 }
 
-// components/admin/teacher-chapters/TeacherChapterSearch.tsx
+
 
 
 interface TeacherChapterSearchProps {
@@ -64,7 +64,7 @@ export function TeacherChapterSearch({ searchTerm, onSearchChange }: TeacherChap
   );
 }
 
-// components/admin/teacher-chapters/TeacherChapterLoading.tsx
+
 
 export function TeacherChapterLoading() {
   return (

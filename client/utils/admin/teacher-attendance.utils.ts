@@ -1,10 +1,8 @@
-// lib/utils/teacher-attendance.utils.ts
+
 
 import { ITeacherAttendance } from "@/types/admin/teacher-attendance.types";
 
-/**
- * Format date to specified format
- */
+
 export const formatDate = (date: Date, formatStr: string): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -22,9 +20,7 @@ export const formatDate = (date: Date, formatStr: string): string => {
   return date.toDateString();
 };
 
-/**
- * Format time from date
- */
+
 export const formatTime = (date: Date): string => {
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
@@ -33,16 +29,12 @@ export const formatTime = (date: Date): string => {
   });
 };
 
-/**
- * Format date and time together
- */
+
 export const formatDateTime = (date: Date): string => {
   return `${formatDate(date, "dd-MM-yyyy")} ${formatTime(date)}`;
 };
 
-/**
- * Convert teacher attendance records to CSV format
- */
+
 export const convertTeacherAttendanceToCSV = (
   data: ITeacherAttendance[]
 ): string => {
@@ -83,9 +75,7 @@ export const convertTeacherAttendanceToCSV = (
   return csvRows.join("\n");
 };
 
-/**
- * Download CSV file
- */
+
 export const downloadCSV = (csvData: string, filename: string): void => {
   const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
@@ -99,9 +89,7 @@ export const downloadCSV = (csvData: string, filename: string): void => {
   window.URL.revokeObjectURL(url);
 };
 
-/**
- * Generate filename for teacher attendance export
- */
+
 export const generateTeacherAttendanceFilename = (
   status?: string,
   startDate?: Date,
@@ -122,20 +110,16 @@ export const generateTeacherAttendanceFilename = (
   return `teacher-attendance-${today}.csv`;
 };
 
-/**
- * Calculate attendance percentage
- */
+
 export const calculateAttendanceRate = (
   present: number,
   total: number
 ): number => {
   if (total === 0) return 0;
-  return Math.round((present / total) * 100 * 10) / 10; // Round to 1 decimal
+  return Math.round((present / total) * 100 * 10) / 10; 
 };
 
-/**
- * Get status color class for UI
- */
+
 export const getStatusColorClass = (
   status: string
 ): { bg: string; text: string } => {
@@ -157,9 +141,7 @@ export const getStatusColorClass = (
   );
 };
 
-/**
- * Get status gradient class for buttons
- */
+
 export const getStatusGradient = (status: string): string => {
   const gradients: Record<string, string> = {
     present: "from-green-500 to-green-700",
@@ -171,9 +153,7 @@ export const getStatusGradient = (status: string): string => {
   return gradients[status.toLowerCase()] || "from-gray-500 to-gray-700";
 };
 
-/**
- * Check if date is today
- */
+
 export const isToday = (date: Date): boolean => {
   const today = new Date();
   return (
@@ -183,9 +163,7 @@ export const isToday = (date: Date): boolean => {
   );
 };
 
-/**
- * Check if date is in the past
- */
+
 export const isPastDate = (date: Date): boolean => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -194,9 +172,7 @@ export const isPastDate = (date: Date): boolean => {
   return checkDate < today;
 };
 
-/**
- * Check if date is in the future
- */
+
 export const isFutureDate = (date: Date): boolean => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -205,9 +181,7 @@ export const isFutureDate = (date: Date): boolean => {
   return checkDate > today;
 };
 
-/**
- * Get date range for common periods
- */
+
 export const getDateRange = (
   period: "today" | "week" | "month" | "year"
 ): { startDate: Date; endDate: Date } => {
@@ -220,7 +194,7 @@ export const getDateRange = (
 
   switch (period) {
     case "today":
-      // Already set
+      
       break;
     case "week":
       startDate.setDate(today.getDate() - 7);
@@ -236,9 +210,7 @@ export const getDateRange = (
   return { startDate, endDate };
 };
 
-/**
- * Group attendance records by date
- */
+
 export const groupByDate = (
   records: ITeacherAttendance[]
 ): Record<string, ITeacherAttendance[]> => {
@@ -255,9 +227,7 @@ export const groupByDate = (
   );
 };
 
-/**
- * Group attendance records by teacher
- */
+
 export const groupByTeacher = (
   records: ITeacherAttendance[]
 ): Record<string, ITeacherAttendance[]> => {
@@ -274,9 +244,7 @@ export const groupByTeacher = (
   );
 };
 
-/**
- * Calculate statistics from attendance records
- */
+
 export const calculateStats = (
   records: ITeacherAttendance[]
 ): {
@@ -304,17 +272,13 @@ export const calculateStats = (
   };
 };
 
-/**
- * Validate date string format
- */
+
 export const isValidDateString = (dateString: string): boolean => {
   const date = new Date(dateString);
   return !isNaN(date.getTime());
 };
 
-/**
- * Get week number of the year
- */
+
 export const getWeekNumber = (date: Date): number => {
   const d = new Date(
     Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
@@ -325,23 +289,17 @@ export const getWeekNumber = (date: Date): number => {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 };
 
-/**
- * Get month name from date
- */
+
 export const getMonthName = (date: Date, format: "short" | "long" = "long"): string => {
   return date.toLocaleString("en-US", { month: format });
 };
 
-/**
- * Get day name from date
- */
+
 export const getDayName = (date: Date, format: "short" | "long" = "long"): string => {
   return date.toLocaleString("en-US", { weekday: format });
 };
 
-/**
- * Parse date string safely
- */
+
 export const parseDate = (dateString: string): Date | null => {
   if (!isValidDateString(dateString)) {
     return null;
@@ -349,9 +307,7 @@ export const parseDate = (dateString: string): Date | null => {
   return new Date(dateString);
 };
 
-/**
- * Get relative time string (e.g., "2 hours ago")
- */
+
 export const getRelativeTime = (date: Date): string => {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
