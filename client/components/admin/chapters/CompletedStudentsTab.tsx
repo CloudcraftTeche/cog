@@ -132,7 +132,7 @@ export default function CompletedStudentsTab({ students, questionsCount, highest
                   <div className="flex items-center justify-end gap-3">
                     <span className="text-4xl">{getGradeEmoji(student.score, questionsCount)}</span>
                     <Badge className={`text-2xl font-bold px-4 py-2 rounded-2xl shadow-lg ${getScoreColor(student.score, questionsCount)}`}>
-                      {student.score}/{questionsCount}
+                      {student.score} %
                     </Badge>
                   </div>
                   {student.score === highestScore && highestScore > 0 && student.score === questionsCount && (
