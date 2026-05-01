@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 interface TeacherListHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSearchSubmit: () => void;
   onAddNew: () => void;
   totalTeachers?: number;
 }
@@ -14,6 +15,7 @@ interface TeacherListHeaderProps {
 export function TeacherListHeader({
   searchQuery,
   onSearchChange,
+  onSearchSubmit,
   onAddNew,
   totalTeachers = 0,
 }: TeacherListHeaderProps) {
@@ -33,16 +35,27 @@ export function TeacherListHeader({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-300" />
-            <Input
-              type="text"
-              placeholder="Search teachers..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-11 pr-4 py-3 bg-white/10 border-2 border-white/20 text-white placeholder:text-purple-200 rounded-xl focus:bg-white/20 focus:border-white/40 backdrop-blur-sm w-full sm:w-64"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-300 pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search teachers..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
+                className="pl-11 pr-4 py-3 bg-white/10 border-2 border-white/20 text-white placeholder:text-purple-200 rounded-xl focus:bg-white/20 focus:border-white/40 backdrop-blur-sm w-full sm:w-52"
+              />
+            </div>
+            <Button
+              onClick={onSearchSubmit}
+              className="bg-white/20 hover:bg-white/30 text-white border-2 border-white/30 hover:border-white/50 rounded-xl px-5 py-3 font-semibold backdrop-blur-sm transition-all duration-300"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
           </div>
+
           <Button
             onClick={onAddNew}
             className="bg-white text-purple-600 hover:bg-purple-50 rounded-xl px-6 py-3 font-bold shadow-lg hover:shadow-xl transition-all duration-300"
