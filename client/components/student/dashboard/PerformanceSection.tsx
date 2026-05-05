@@ -1,4 +1,4 @@
-import { PerformanceData } from '@/hooks/useStudentDashboard';
+import { PerformanceData } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface PerformanceSectionProps {
   data: PerformanceData[];

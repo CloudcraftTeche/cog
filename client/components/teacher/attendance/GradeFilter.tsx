@@ -1,5 +1,5 @@
 "use client";
-import { gradeService } from "@/utils/attendanceGrade.service";
+import { gradeService } from "@/utils/teacher/attendanceGrade.service";
 import { useState, useEffect } from "react";
 interface Grade {
   _id: string;

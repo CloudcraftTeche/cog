@@ -1,4 +1,4 @@
-import { AttendanceRecord } from '@/hooks/useStudentDashboard';
+import { AttendanceRecord } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface AttendanceSectionProps {
   records: AttendanceRecord[];

@@ -1,4 +1,4 @@
-import { ChapterProgressByUnit } from '@/hooks/useStudentDashboard';
+import { ChapterProgressByUnit } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface ChaptersSectionProps {
   units: ChapterProgressByUnit[];

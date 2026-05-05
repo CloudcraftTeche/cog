@@ -8,14 +8,12 @@
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/server.js",
     "lint": "tsc --noEmit",
-    "migrate":"ts-node src/migrations/addCascadingDeletes.migration.ts"
+    "migrate": "ts-node src/migrations/addCascadingDeletes.migration.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "amqplib": "^0.10.9",
-    "bad-words": "^4.0.0",
     "bad-words-next": "^3.1.1",
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
@@ -32,7 +30,6 @@
     "multer": "^2.0.1",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.5",
-    "redis": "^5.8.2",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

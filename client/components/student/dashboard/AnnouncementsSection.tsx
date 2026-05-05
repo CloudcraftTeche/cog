@@ -1,4 +1,4 @@
-import { Announcement } from '@/hooks/useStudentDashboard';
+import { Announcement } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface AnnouncementsSectionProps {
   announcements: Announcement[];

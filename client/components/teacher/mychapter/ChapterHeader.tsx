@@ -1,7 +1,7 @@
 import { CheckCircle, BookOpen, Play, FileText, Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TeacherChapter } from "@/utils/teacherChapter.service";
+import { TeacherChapter } from "@/utils/chapter/teacherChapter.service";
 interface ChapterHeaderProps {
   chapter: TeacherChapter & {
     chapterIndex?: number;

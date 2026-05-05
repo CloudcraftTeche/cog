@@ -1,6 +1,6 @@
 import { BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Unit } from "@/utils/studentChapter.service";
+import { Unit } from "@/utils/chapter/studentChapter.service";
 interface UnitHeaderProps {
   unit: Unit;
   chapterCount: number;

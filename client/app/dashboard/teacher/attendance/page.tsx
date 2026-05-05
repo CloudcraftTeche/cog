@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { format } from "date-fns";
-import { IStudent, studentService } from "@/utils/attendanceStudent.service";
+import { IStudent, studentService } from "@/utils/student/attendanceStudent.service";
 import {
   attendanceService,
   AttendanceStatus,
   IAttendance,
-} from "@/utils/teacherAttendance.service";
+} from "@/utils/teacherAttendace/teacherAttendance.service";
 import AttendanceNav from "@/components/teacher/attendance/AttendanceNav";
 import GradeFilter from "@/components/teacher/attendance/GradeFilter";
 import MarkAttendanceView from "@/components/teacher/attendance/MarkAttendanceView";

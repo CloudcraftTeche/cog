@@ -3,7 +3,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { chapterService, TeacherChapter } from "@/utils/teacherChapter.service";
+import { chapterService, TeacherChapter } from "@/utils/chapter/teacherChapter.service";
 import ErrorState from "@/components/teacher/mychapter/ErrorState";
 import LoadingState from "@/components/teacher/mychapter/LoadingState";
 import ChapterHeader from "@/components/teacher/mychapter/ChapterHeader";

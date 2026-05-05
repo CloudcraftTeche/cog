@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TeacherChapter } from "@/utils/teacherChapter.service";
+import { TeacherChapter } from "@/utils/chapter/teacherChapter.service";
 interface ChapterContentProps {
   chapter: TeacherChapter;
 }

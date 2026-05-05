@@ -1,4 +1,4 @@
-import { AssignmentStats } from '@/hooks/useStudentDashboard';
+import { AssignmentStats } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface AssignmentsSectionProps {
   stats: AssignmentStats;

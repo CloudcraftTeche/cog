@@ -1,7 +1,7 @@
 import React from "react";
 import { Clock, Check, CheckCheck } from "lucide-react";
 import { IMessage } from "@/types/chat.types";
-import { formatTime } from "@/utils/chatHelpers";
+import { formatTime } from "@/utils/chat/chatHelpers";
 
 interface MessageBubbleProps {
   message: IMessage;

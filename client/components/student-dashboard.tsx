@@ -1,5 +1,5 @@
 "use client";
-import { useDashboard } from "@/hooks/useStudentDashboard";
+import { useDashboard } from "@/hooks/student/useStudentDashboard";
 import { LoadingSpinner } from "./student/dashboard/LoadingSpinner";
 import { ErrorAlert } from "./student/dashboard/ErrorAlert";
 import { DashboardHeader } from "./student/dashboard/DashboardHeader";

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import AttendanceTable from "./AttendanceTable";
-import { attendanceService, IAttendance } from "@/utils/teacherAttendance.service";
+import { attendanceService, IAttendance } from "@/utils/teacherAttendace/teacherAttendance.service";
 
 export default function HistoryView() {
   const { user } = useAuth();

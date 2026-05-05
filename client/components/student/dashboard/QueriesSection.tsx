@@ -1,4 +1,4 @@
-import { QueryStatus } from '@/hooks/useStudentDashboard';
+import { QueryStatus } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface QueriesSectionProps {
   queries: QueryStatus[];

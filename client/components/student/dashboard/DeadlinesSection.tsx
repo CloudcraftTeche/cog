@@ -1,4 +1,4 @@
-import { Deadline } from '@/hooks/useStudentDashboard';
+import { Deadline } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface DeadlinesSectionProps {
   deadlines: Deadline[];

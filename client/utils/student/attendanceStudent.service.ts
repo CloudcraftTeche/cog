@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { IAttendance } from "./teacherAttendance.service";
+import { IAttendance } from "../teacherAttendace/teacherAttendance.service";
 export interface IStudentAttendanceResponse {
   records: IAttendance[];
   stats: {

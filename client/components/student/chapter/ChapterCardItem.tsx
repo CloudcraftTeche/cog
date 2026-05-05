@@ -2,7 +2,7 @@ import { Play, FileText, Lock, CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { Chapter } from "@/utils/studentChapter.service";
+import { Chapter } from "@/utils/chapter/studentChapter.service";
 
 interface ChapterCardItemProps {
   chapter: Chapter;

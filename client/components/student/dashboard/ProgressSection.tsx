@@ -1,4 +1,4 @@
-import { Overview } from '@/hooks/useStudentDashboard';
+import { Overview } from '@/hooks/student/useStudentDashboard';
 import React from 'react';
 interface ProgressSectionProps {
   overview: Overview;

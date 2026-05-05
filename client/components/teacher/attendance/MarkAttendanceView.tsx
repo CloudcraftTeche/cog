@@ -1,11 +1,11 @@
 "use client";
 import { format } from "date-fns";
 import { Calendar } from "lucide-react";
-import { IStudent } from "@/utils/attendanceStudent.service";
+import { IStudent } from "@/utils/student/attendanceStudent.service";
 import {
   AttendanceStatus,
   IAttendance,
-} from "@/utils/teacherAttendance.service";
+} from "@/utils/teacherAttendace/teacherAttendance.service";
 import StudentAttendanceCard from "./StudentAttendanceCard";
 
 interface MarkAttendanceViewProps {

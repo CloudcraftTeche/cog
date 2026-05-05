@@ -1,6 +1,6 @@
 "use client";
-import { IStudent } from "@/utils/attendanceStudent.service";
-import { AttendanceStatus } from "@/utils/teacherAttendance.service";
+import { IStudent } from "@/utils/student/attendanceStudent.service";
+import { AttendanceStatus } from "@/utils/teacherAttendace/teacherAttendance.service";
 interface StudentAttendanceCardProps {
   student: IStudent;
   currentStatus: AttendanceStatus | null;

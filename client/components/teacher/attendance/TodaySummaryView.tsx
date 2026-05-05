@@ -1,5 +1,5 @@
 "use client";
-import { IAttendance } from "@/utils/teacherAttendance.service";
+import { IAttendance } from "@/utils/teacherAttendace/teacherAttendance.service";
 import StatsCard from "./StatsCard";
 import AttendanceTable from "./AttendanceTable";
 interface TodaySummaryViewProps {

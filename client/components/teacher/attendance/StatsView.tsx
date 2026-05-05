@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import StatsCard from "./StatsCard";
-import { attendanceService } from "@/utils/teacherAttendance.service";
+import { attendanceService } from "@/utils/teacherAttendace/teacherAttendance.service";
 export default function StatsView() {
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);

@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Loader2, Target, ArrowRight } from "lucide-react";
-import { Question, TeacherChapter } from "@/utils/teacherChapter.service";
+import { Question, TeacherChapter } from "@/utils/chapter/teacherChapter.service";
 interface QuizSectionProps {
   chapter: TeacherChapter;
   selectedAnswers: Record<number, string>;

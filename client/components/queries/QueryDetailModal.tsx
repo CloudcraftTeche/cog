@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, Send, AlertTriangle } from "lucide-react";
-import { formatDateTime, formatStatusLabel } from "@/utils/query.utils";
+import { formatDateTime, formatStatusLabel } from "@/utils/query/query.utils";
 import { QueryDetailModalProps } from "@/types/admin/query.types";
 
 const QueryDetailModal: React.FC<QueryDetailModalProps> = ({

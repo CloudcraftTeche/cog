@@ -6,7 +6,7 @@ import {
   formatDate,
   formatStatusLabel,
   truncateText,
-} from "@/utils/query.utils";
+} from "@/utils/query/query.utils";
 import { QueryCardProps } from "@/types/admin/query.types";
 
 const QueryCard: React.FC<QueryCardProps> = ({
