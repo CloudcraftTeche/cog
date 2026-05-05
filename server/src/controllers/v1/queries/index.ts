@@ -9,7 +9,7 @@ import { Response, NextFunction } from "express";
 export const createQuery = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
@@ -19,11 +19,14 @@ export const createQuery = async (
     if (!student) {
       throw new ApiError(404, "Student not found");
     }
-    const recipient = await Promise.race([
+    const [teacher, admin, superAdmin] = await Promise.all([
       Teacher.findOne({ _id: to, gradeId: student.gradeId }),
       Admin.findById(to),
       SuperAdmin.findById(to),
     ]);
+
+    const recipient = teacher || admin || superAdmin;
+
     if (!recipient) {
       throw new ApiError(404, "Recipient not found or not authorized");
     }
@@ -32,7 +35,7 @@ export const createQuery = async (
       for (const file of req.files) {
         const result: any = await uploadToCloudinary(
           file.buffer,
-          "queries/attachments"
+          "queries/attachments",
         );
         attachments.push({
           url: result.secure_url,
@@ -70,7 +73,7 @@ export const createQuery = async (
 export const getStudentQueries = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
@@ -105,7 +108,7 @@ export const getStudentQueries = async (
 export const getReceivedQueries = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
@@ -141,7 +144,7 @@ export const getReceivedQueries = async (
 export const getQueryById = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -178,7 +181,7 @@ export const getQueryById = async (
 export const addResponse = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -204,7 +207,7 @@ export const addResponse = async (
       for (const file of req.files) {
         const result: any = await uploadToCloudinary(
           file.buffer,
-          "queries/response-attachments"
+          "queries/response-attachments",
         );
         attachments.push({
           url: result.secure_url,
@@ -244,7 +247,7 @@ export const addResponse = async (
 export const updateQueryStatus = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -279,7 +282,7 @@ export const updateQueryStatus = async (
 export const assignQuery = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -294,7 +297,7 @@ export const assignQuery = async (
     await query.save();
     const updatedQuery = await Query.findById(id).populate(
       "assignedTo",
-      "name email role"
+      "name email role",
     );
     res.status(200).json({
       success: true,
@@ -308,7 +311,7 @@ export const assignQuery = async (
 export const escalateQuery = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -342,7 +345,7 @@ export const escalateQuery = async (
 export const addSatisfactionRating = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -372,7 +375,7 @@ export const addSatisfactionRating = async (
 export const getQueryStatistics = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
@@ -431,7 +434,7 @@ export const getQueryStatistics = async (
 export const getAvailableRecipients = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
@@ -441,11 +444,11 @@ export const getAvailableRecipients = async (
     }
     const [teachers, admins, superAdmins] = await Promise.all([
       Teacher.find({ gradeId: student.gradeId }).select(
-        "name email profilePictureUrl role gradeId"
+        "name email profilePictureUrl role gradeId",
       ),
       Admin.find({ role: "admin" }).select("name email profilePictureUrl role"),
       SuperAdmin.find({ role: "superAdmin" }).select(
-        "name email profilePictureUrl role"
+        "name email profilePictureUrl role",
       ),
     ]);
     res.status(200).json({

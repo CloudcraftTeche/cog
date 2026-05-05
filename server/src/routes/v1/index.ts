@@ -18,7 +18,7 @@ import teacherAttendaceRoutes from "./teacherAttendance";
 import todoListRoutes from "./todo";
 import dashboard from "./dashboard";
 const router = Router();
-router.get("/", (_, res) => {
+router.get("/health", (_, res) => {
   res.json({
     message: "Welcome to the API",
     status: "ok",
@@ -44,7 +44,6 @@ router.get("/", (_, res) => {
     },
     contact: {
       name: "Support Team",
-      email: "codewithdarshan45@gmail.com",
     },
   });
 });
