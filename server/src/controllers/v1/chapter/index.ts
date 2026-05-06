@@ -1374,19 +1374,24 @@ export const getChapterPendingStudentsHandler = async (
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
+
     const chapter = await Chapter.findOne({ _id: chapterId })
-      .select("studentProgress")
+      .select("studentProgress gradeId")
       .lean();
+
     if (!chapter) {
       throw new ApiError(404, "Chapter not found in this grade");
     }
+
     const completedStudentIds =
       chapter.studentProgress
         ?.filter((p) => p.status === "completed")
         .map((p) => p.studentId) || [];
+
     const [pendingStudents, total] = await Promise.all([
       Student.find({
         role: "student",
+        gradeId: chapter.gradeId,
         _id: { $nin: completedStudentIds },
       })
         .select("name email rollNumber gradeId profilePictureUrl")
@@ -1396,9 +1401,11 @@ export const getChapterPendingStudentsHandler = async (
         .lean(),
       Student.countDocuments({
         role: "student",
+        gradeId: chapter.gradeId,
         _id: { $nin: completedStudentIds },
       }),
     ]);
+
     const pendingWithStatus = pendingStudents.map((student) => {
       const progress = chapter.studentProgress?.find(
         (p) => p.studentId.toString() === student._id.toString(),
@@ -1414,6 +1421,7 @@ export const getChapterPendingStudentsHandler = async (
         startedAt: progress?.startedAt,
       };
     });
+
     res.status(200).json({
       success: true,
       message: "Pending students fetched successfully",
