@@ -1,4 +1,4 @@
-import cloudinary, { uploadToCloudinary } from "../../../config/cloudinary";
+import  { uploadToCloudinary,deleteFromCloudinary } from "../../../config/cloudinary";
 import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { sendTeacherCredentialsEmail } from "../../../lib/mail/sendTeacherCredentialsEmail";
@@ -34,8 +34,8 @@ export const createNewTeacher = async (
     if (req.file) {
       const result: any = await uploadToCloudinary(
         req.file.buffer,
+        req.file.originalname,
         "teacher/profiles",
-        "image"
       );
       profilePictureUrl = result.secure_url;
       profilePicturePublicId = result.public_id;
@@ -86,12 +86,12 @@ export const updateTeacherDetails = async (
     if (!teacher) throw new ApiError(404, "Teacher not found");
     if (req.file) {
       if (teacher.profilePicturePublicId) {
-        await cloudinary.uploader.destroy(teacher.profilePicturePublicId);
+        await deleteFromCloudinary(teacher.profilePicturePublicId, "image");
       }
       const result: any = await uploadToCloudinary(
         req.file.buffer,
+        req.file.originalname,
         "teacher/profiles",
-        "image"
       );
       updates.profilePictureUrl = result.secure_url;
       updates.profilePicturePublicId = result.public_id;
@@ -120,7 +120,7 @@ export const removeTeacher = async (
     if (!teacher) throw new ApiError(404, "Teacher not found");
     await Promise.all([
       teacher.profilePicturePublicId
-        ? cloudinary.uploader.destroy(teacher.profilePicturePublicId)
+        ? deleteFromCloudinary(teacher.profilePicturePublicId, "image")
         : Promise.resolve(),
       teacher.deleteOne(),
       Grade.updateMany(
