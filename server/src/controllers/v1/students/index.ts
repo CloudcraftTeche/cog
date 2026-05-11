@@ -1,4 +1,4 @@
-import cloudinary, { uploadToCloudinary } from "../../../config/cloudinary";
+import  { uploadToCloudinary,deleteFromCloudinary } from "../../../config/cloudinary";
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
@@ -39,6 +39,7 @@ export const registerStudent = async (
     if (req.file) {
       const result: any = await uploadToCloudinary(
         req.file.buffer,
+        req.file.originalname,
         "student/profiles"
       );
       profilePictureUrl = result.secure_url;
@@ -116,10 +117,11 @@ export const modifyStudent = async (
     const oldgradeId = student.gradeId;
     if (req.file) {
       if (student.profilePicturePublicId) {
-        await cloudinary.uploader.destroy(student.profilePicturePublicId);
+        await deleteFromCloudinary(student.profilePicturePublicId, "image");
       }
       const result: any = await uploadToCloudinary(
         req.file.buffer,
+        req.file.originalname,
         "student/profiles"
       );
       updates.profilePictureUrl = result.secure_url;
@@ -209,6 +211,7 @@ export const createStudentByTeacher = async (
     if (req.file) {
       const result: any = await uploadToCloudinary(
         req.file.buffer,
+        req.file.originalname,
         "student/profiles"
       );
       profilePictureUrl = result.secure_url;
@@ -296,10 +299,11 @@ export const updateStudentByTeacher = async (
     }
     if (req.file) {
       if (student.profilePicturePublicId) {
-        await cloudinary.uploader.destroy(student.profilePicturePublicId);
+        await deleteFromCloudinary(student.profilePicturePublicId, "image");
       }
       const result: any = await uploadToCloudinary(
         req.file.buffer,
+        req.file.originalname,
         "student/profiles"
       );
       updates.profilePictureUrl = result.secure_url;

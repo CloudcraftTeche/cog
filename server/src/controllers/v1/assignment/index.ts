@@ -58,13 +58,11 @@ export const createAssignment = async (
     let pdfUrl: string | undefined;
     let pdfPublicId: string | undefined;
     if (req.file) {
-      const resourceType = contentType === "video" ? "video" : "raw";
       const filename = req.file.originalname;
       const uploadResult: any = await uploadToCloudinary(
         req.file.buffer,
+        filename,
         "assignments",
-        resourceType,
-        filename
       );
       if (contentType === "video") {
         videoUrl = uploadResult.secure_url;
@@ -143,13 +141,11 @@ export const createAssignmentForMultipleGrades = async (
     let pdfUrl: string | undefined;
     let pdfPublicId: string | undefined;
     if (req.file) {
-      const resourceType = contentType === "video" ? "video" : "raw";
       const filename = req.file.originalname;
       const uploadResult: any = await uploadToCloudinary(
         req.file.buffer,
+        filename,
         "assignments",
-        resourceType,
-        filename
       );
       if (contentType === "video") {
         videoUrl = uploadResult.secure_url;
@@ -404,17 +400,15 @@ export const updateAssignment = async (
         : JSON.parse(questions);
     }
     if (req.file) {
-      const resourceType = contentType === "video" ? "video" : "raw";
       const filename = req.file.originalname;
       const uploadResult: any = await uploadToCloudinary(
         req.file.buffer,
+        filename,
         "assignments",
-        resourceType,
-        filename
       );
       if (contentType === "video") {
         if (assignment.videoPublicId) {
-          await deleteFromCloudinary(assignment.videoPublicId);
+          await deleteFromCloudinary(assignment.videoPublicId, "video");
         }
         updateData.videoUrl = uploadResult.secure_url;
         updateData.videoPublicId = uploadResult.public_id;
@@ -422,7 +416,7 @@ export const updateAssignment = async (
         updateData.pdfPublicId = undefined;
       } else if (contentType === "pdf") {
         if (assignment.pdfPublicId) {
-          await deleteFromCloudinary(assignment.pdfPublicId);
+          await deleteFromCloudinary(assignment.pdfPublicId, "raw");
         }
         updateData.pdfUrl = uploadResult.secure_url;
         updateData.pdfPublicId = uploadResult.public_id;
@@ -473,10 +467,10 @@ export const deleteAssignment = async (
       throw new ApiError(403, "Only admin and teacher can delete assignments");
     }
     if (assignment.videoPublicId) {
-      await deleteFromCloudinary(assignment.videoPublicId);
+      await deleteFromCloudinary(assignment.videoPublicId, "video");
     }
     if (assignment.pdfPublicId) {
-      await deleteFromCloudinary(assignment.pdfPublicId);
+      await deleteFromCloudinary(assignment.pdfPublicId, "raw");
     }
     await Submission.deleteMany({ assignmentId: assignment._id });
     await Assignment.findByIdAndDelete(assignmentId);

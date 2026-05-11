@@ -35,6 +35,7 @@ export const createQuery = async (
       for (const file of req.files) {
         const result: any = await uploadToCloudinary(
           file.buffer,
+          file?.originalname,
           "queries/attachments",
         );
         attachments.push({
@@ -207,6 +208,7 @@ export const addResponse = async (
       for (const file of req.files) {
         const result: any = await uploadToCloudinary(
           file.buffer,
+          file?.originalname,
           "queries/response-attachments",
         );
         attachments.push({

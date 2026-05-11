@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
-import type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
+import { Readable } from "stream";
+import type { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -7,150 +8,77 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+type CloudinaryResourceType = "image" | "video" | "raw";
+
+const EXTENSION_RESOURCE_MAP: Record<string, CloudinaryResourceType> = {
+  pdf: "raw",
+  jpg: "image", jpeg: "image", png: "image",
+  gif: "image", webp: "image", svg: "image",
+  mp4: "video", mov: "video", avi: "video",
+  mkv: "video", webm: "video",
+};
+
+const resolveResourceType = (filename: string): CloudinaryResourceType => {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  return EXTENSION_RESOURCE_MAP[ext] ?? "raw";
+};
+
+export interface UploadResult {
+  publicId: string;
+  secureUrl: string;
+  bytes: number;
+  resourceType: CloudinaryResourceType;
+}
+
 export const uploadToCloudinary = (
-  buffer: Buffer,
-  folder: string,
-  resourceType: "image" | "video" | "raw" | "auto" = "image",
-  filename?: string,
-): Promise<UploadApiResponse> => {
+buffer: Buffer, originalName: string, folder: string = "uploads", originalname?: any,
+): Promise<UploadResult> => {
+  const resourceType = resolveResourceType(originalName);
+
+  const sanitized = originalName
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+  const publicId = `${folder}/${sanitized}_${Date.now()}`;
+
   return new Promise((resolve, reject) => {
-    let resolvedResourceType = resourceType;
-    if (filename) {
-      const ext = filename.split(".").pop()?.toLowerCase();
-      if (ext === "pdf") resolvedResourceType = "image";
-      else if (["mp4", "mov", "avi", "mkv"].includes(ext || ""))
-        resolvedResourceType = "video";
-      else if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || ""))
-        resolvedResourceType = "image";
-    }
-
-    const uploadOptions: any = {
-      folder,
-      upload_preset: "ml_default",
-      resource_type: resolvedResourceType,
-      timeout: 600000,
-      access_mode: "public",
-      type: "upload",
-      invalidate: true,
-      overwrite: true,
-    };
-
-    const isLargeFile = buffer.length > 10 * 1024 * 1024;
-
-    if (filename) {
-      const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-      uploadOptions.public_id = `${nameWithoutExt}_${Date.now()}`;
-    }
-
-    if (isLargeFile) {
-      uploadOptions.chunk_size = 10000000;
-    }
-
-    if (resolvedResourceType === "video") {
-      uploadOptions.eager_async = true;
-      uploadOptions.eager = [{ streaming_profile: "auto", format: "m3u8" }];
-      uploadOptions.resource_type = "video";
-    }
-
     const uploadStream = cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (
-        error: UploadApiErrorResponse | undefined,
-        result: UploadApiResponse | undefined,
-      ) => {
-        if (error) {
-          console.error("Cloudinary upload error:", error);
-          reject(error);
-        } else if (result) {
-          resolve(result);
-        } else {
-          reject(new Error("Upload failed with no result"));
-        }
+      {
+        resource_type: resourceType,
+        public_id: publicId,
+        ...(resourceType === "video" && {
+          eager_async: true,
+          eager: [{ streaming_profile: "auto", format: "m3u8" }],
+        }),
+      },
+      (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+        if (error) return reject(new Error(`Cloudinary upload failed: ${error.message}`));
+        if (!result?.public_id || !result?.secure_url)
+          return reject(new Error(`Cloudinary response missing fields. Got: ${Object.keys(result ?? {}).join(", ")}`));
+
+        resolve({
+          publicId: result.public_id,
+          secureUrl: result.secure_url,
+          bytes: result.bytes ?? buffer.length,
+          resourceType,
+        });
       },
     );
 
-    if (isLargeFile) {
-      const chunkSize = 5 * 1024 * 1024;
-      let offset = 0;
-
-      const writeChunk = () => {
-        let canContinue = true;
-        while (offset < buffer.length && canContinue) {
-          const end = Math.min(offset + chunkSize, buffer.length);
-          const chunk = buffer.slice(offset, end);
-          offset = end;
-
-          if (offset >= buffer.length) {
-            uploadStream.end(chunk);
-            return;
-          }
-
-          canContinue = uploadStream.write(chunk);
-        }
-
-        if (!canContinue) {
-          uploadStream.once("drain", writeChunk);
-        }
-      };
-
-      writeChunk();
-    } else {
-      uploadStream.end(buffer);
-    }
+    Readable.from(buffer).pipe(uploadStream);
   });
 };
 
 export const deleteFromCloudinary = async (
   publicId: string,
-  resourceType: "image" | "video" | "raw" = "image",
-) => {
-  try {
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType,
-      invalidate: true,
-    });
-    return result;
-  } catch (error) {
-    console.error("Cloudinary delete error:", error);
-    throw error;
-  }
-};
-
-export const getSignedUrl = (
-  publicId: string,
-  resourceType: "image" | "video" | "raw" = "raw",
-  expiresIn: number = 3600,
-): string => {
-  return cloudinary.url(publicId, {
+  resourceType: CloudinaryResourceType = "image",
+): Promise<void> => {
+  const result = await cloudinary.uploader.destroy(publicId, {
     resource_type: resourceType,
-    sign_url: true,
-    type: "upload",
-    expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+    invalidate: true,
   });
-};
 
-export const isCloudinaryUrl = (url: string): boolean => {
-  return url.includes("cloudinary.com");
-};
-
-export const extractPublicIdFromUrl = (
-  url: string,
-  resourceType: "image" | "video" | "raw",
-): string | null => {
-  try {
-    const regex =
-      resourceType === "video"
-        ? /\/video\/upload\/(?:v\d+\/)?(.+)\.\w+$/
-        : resourceType === "raw"
-          ? /\/raw\/upload\/(?:v\d+\/)?(.+)\.\w+$/
-          : /\/image\/upload\/(?:v\d+\/)?(.+)\.\w+$/;
-
-    const match = url.match(regex);
-    return match ? match[1] : null;
-  } catch (error) {
-    console.error("Error extracting public ID:", error);
-    return null;
+  if (result.result !== "ok" && result.result !== "not found") {
+    throw new Error(`Cloudinary delete failed for "${publicId}". Result: ${result.result}`);
   }
 };
-
-export default cloudinary;

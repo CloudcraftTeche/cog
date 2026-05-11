@@ -67,6 +67,7 @@ export const createAnnouncement = async (
       if (type === "image") {
         const result: any = await uploadToCloudinary(
           req.file.buffer,
+          req.file.originalname,
           "announcements/images"
         );
         mediaUrl = result.secure_url;
@@ -74,6 +75,7 @@ export const createAnnouncement = async (
       } else if (type === "video") {
         const result: any = await uploadToCloudinary(
           req.file.buffer,
+          req.file.originalname,
           "announcements/videos"
         );
         mediaUrl = result.secure_url;
@@ -132,6 +134,7 @@ export const updateAnnouncement = async (
       if (type === "image") {
         const result: any = await uploadToCloudinary(
           req.file.buffer,
+          req.file.originalname,
           "announcements/images"
         );
         mediaUrl = result.secure_url;
@@ -139,6 +142,7 @@ export const updateAnnouncement = async (
       } else if (type === "video") {
         const result: any = await uploadToCloudinary(
           req.file.buffer,
+          req.file.originalname,
           "announcements/videos"
         );
         mediaUrl = result.secure_url;

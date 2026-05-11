@@ -57,9 +57,8 @@ export const submitAssignment = async (
             
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
+             filename,
               "submissions/videos",
-              "video",
-              filename
             );
             videoUrl = uploadResult.secure_url;
             videoPublicId = uploadResult.public_id;
@@ -69,9 +68,9 @@ export const submitAssignment = async (
            
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
+              filename,
               "submissions/pdfs",
-              "raw",
-              filename
+          
             );
             pdfUrl = uploadResult.secure_url;
             pdfPublicId = uploadResult.public_id;
@@ -265,7 +264,7 @@ export const modifySubmission = async (
         try {
           if (submissionType === "video") {
             if (submission.videoPublicId) {
-              await deleteFromCloudinary(submission.videoPublicId);
+              await deleteFromCloudinary(submission.videoPublicId, "video");
             }
             console.log(
               `Uploading video (attempt ${attempt + 1}/${
@@ -274,9 +273,9 @@ export const modifySubmission = async (
             );
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
+              filename,
               "submissions/videos",
-              "video",
-              filename
+              
             );
             submission.videoUrl = uploadResult.secure_url;
             submission.videoPublicId = uploadResult.public_id;
@@ -287,7 +286,7 @@ export const modifySubmission = async (
             break;
           } else if (submissionType === "pdf") {
             if (submission.pdfPublicId) {
-              await deleteFromCloudinary(submission.pdfPublicId);
+              await deleteFromCloudinary(submission.pdfPublicId, "raw");
             }
             console.log(
               `Uploading PDF (attempt ${attempt + 1}/${
@@ -296,9 +295,9 @@ export const modifySubmission = async (
             );
             const uploadResult: any = await uploadToCloudinary(
               req.file.buffer,
+              filename,
               "submissions/pdfs",
-              "raw",
-              filename
+           
             );
             submission.pdfUrl = uploadResult.secure_url;
             submission.pdfPublicId = uploadResult.public_id;
@@ -334,10 +333,10 @@ export const modifySubmission = async (
     if (submissionType === "text" && textContent !== undefined) {
       submission.textContent = textContent;
       if (submission.videoPublicId) {
-        await deleteFromCloudinary(submission.videoPublicId);
+        await deleteFromCloudinary(submission.videoPublicId, "video");
       }
       if (submission.pdfPublicId) {
-        await deleteFromCloudinary(submission.pdfPublicId);
+        await deleteFromCloudinary(submission.pdfPublicId, "raw");
       }
       submission.videoUrl = undefined;
       submission.videoPublicId = undefined;
@@ -374,10 +373,10 @@ export const removeSubmission = async (
     const submission = await Submission.findById(submissionId);
     if (!submission) throw new ApiError(404, "Submission not found");
     if (submission.videoPublicId) {
-      await deleteFromCloudinary(submission.videoPublicId);
+      await deleteFromCloudinary(submission.videoPublicId, "video");
     }
     if (submission.pdfPublicId) {
-      await deleteFromCloudinary(submission.pdfPublicId);
+      await deleteFromCloudinary(submission.pdfPublicId, "raw");
     }
     await Submission.findByIdAndDelete(submissionId);
     res.json({
