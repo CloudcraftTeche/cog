@@ -1,17 +1,16 @@
-
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Plus } from "lucide-react";
-
 import { Input } from "@/components/ui/input";
-import { Search, Users } from "lucide-react";
+import { Search, Users, X } from "lucide-react";
 
 interface TeacherChapterListHeaderProps {
   onCreateClick: () => void;
 }
 
-export function TeacherChapterListHeader({ onCreateClick }: TeacherChapterListHeaderProps) {
+export function TeacherChapterListHeader({
+  onCreateClick,
+}: TeacherChapterListHeaderProps) {
   return (
     <div className="mb-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 text-white shadow-2xl">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -40,31 +39,54 @@ export function TeacherChapterListHeader({ onCreateClick }: TeacherChapterListHe
   );
 }
 
-
-
-
 interface TeacherChapterSearchProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  onSearch: () => void;
+  onClear: () => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-export function TeacherChapterSearch({ searchTerm, onSearchChange }: TeacherChapterSearchProps) {
+export function TeacherChapterSearch({
+  searchTerm,
+  onSearchChange,
+  onSearch,
+  onClear,
+  onKeyDown,
+}: TeacherChapterSearchProps) {
   return (
-    <div className="max-w-xl mx-auto mb-8">
-      <div className="relative group">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-blue-500 transition-colors" />
-        <Input
-          placeholder="Search teacher chapters..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-12 pr-4 py-6 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all shadow-lg bg-white"
-        />
+    <div className="max-w-2xl mx-auto mb-8">
+      <div className="flex gap-3">
+        <div className="relative group flex-1">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-blue-500 transition-colors z-10" />
+          <Input
+            placeholder="Search teacher chapters..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            className="pl-12 pr-10 py-6 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all shadow-lg bg-white"
+          />
+          {searchTerm && (
+            <button
+              onClick={onClear}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <Button
+          onClick={onSearch}
+          className="px-6 py-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+        >
+          <Search className="h-5 w-5 mr-2" />
+          Search
+        </Button>
       </div>
     </div>
   );
 }
-
-
 
 export function TeacherChapterLoading() {
   return (
@@ -77,14 +99,15 @@ export function TeacherChapterLoading() {
   );
 }
 
-
-
 interface TeacherChapterEmptyStateProps {
   searchTerm?: string;
   onCreateClick: () => void;
 }
 
-export function TeacherChapterEmptyState({ searchTerm, onCreateClick }: TeacherChapterEmptyStateProps) {
+export function TeacherChapterEmptyState({
+  searchTerm,
+  onCreateClick,
+}: TeacherChapterEmptyStateProps) {
   return (
     <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50 rounded-3xl overflow-hidden">
       <CardContent className="p-12 text-center">

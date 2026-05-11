@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/auth/useAuth";import {
+import {
   useDeleteTeacherChapter,
   useGrades,
   useTeacherChapters,
@@ -12,21 +12,39 @@ import {
   TeacherChapterSearch,
 } from "@/components/admin/teacher-chapters/TeacherChapterListHeader";
 import { TeacherChapterGroups } from "@/components/admin/teacher-chapters/TeacherChapterGroups";
+
 const ITEMS_PER_PAGE = 100;
+
 export default function AdminTeacherChaptersPage() {
   const router = useRouter();
-  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
+
   const { data: grades = [], isLoading: gradesLoading } = useGrades();
   const { data: chapters = [], isLoading: chaptersLoading } =
     useTeacherChapters({
       page: 1,
       limit: ITEMS_PER_PAGE,
-      search: searchTerm || undefined,
+      search: searchQuery || undefined,
     });
+
   const { mutate: deleteChapter } = useDeleteTeacherChapter();
+
+  const handleSearch = () => {
+    setSearchQuery(searchTerm);
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
+    setSearchQuery("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
   const toggleGrade = (gradeId: string) => {
     const newExpanded = new Set(expandedGrades);
     if (newExpanded.has(gradeId)) {
@@ -36,6 +54,7 @@ export default function AdminTeacherChaptersPage() {
     }
     setExpandedGrades(newExpanded);
   };
+
   const toggleUnit = (unitKey: string) => {
     const newExpanded = new Set(expandedUnits);
     if (newExpanded.has(unitKey)) {
@@ -45,6 +64,7 @@ export default function AdminTeacherChaptersPage() {
     }
     setExpandedUnits(newExpanded);
   };
+
   const handleDeleteChapter = (chapterId: string) => {
     const chapter = chapters.find((c) => c._id === chapterId);
     if (!chapter) return;
@@ -55,16 +75,20 @@ export default function AdminTeacherChaptersPage() {
       deleteChapter(chapterId);
     }
   };
+
   const handleViewStatistics = (chapterId: string) => {
     router.push(`/dashboard/admin/teacher-chapters/${chapterId}/statistics`);
   };
+
   const handleEdit = (chapterId: string) => {
     router.push(`/dashboard/admin/teacher-chapters/edit/${chapterId}`);
   };
+
   const isLoading = gradesLoading || chaptersLoading;
   if (isLoading) {
     return <LoadingState text="Teacher Chapters" />;
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
@@ -76,11 +100,14 @@ export default function AdminTeacherChaptersPage() {
         <TeacherChapterSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          onSearch={handleSearch}
+          onClear={handleClear}
+          onKeyDown={handleKeyDown}
         />
         <TeacherChapterGroups
           grades={grades}
           chapters={chapters}
-          searchTerm={searchTerm}
+          searchTerm={searchQuery}
           expandedGrades={expandedGrades}
           expandedUnits={expandedUnits}
           onToggleGrade={toggleGrade}

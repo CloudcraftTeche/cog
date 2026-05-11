@@ -6,6 +6,7 @@ import { Student } from "../../../models/user/Student.model";
 import { Teacher } from "../../../models/user/Teacher.model";
 import { ApiError } from "../../../utils/ApiError";
 import { Response, NextFunction } from "express";
+
 export const createQuery = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -15,10 +16,12 @@ export const createQuery = async (
     const userId = req.user?._id;
     const { to, subject, content, queryType, priority, isSensitive, tags } =
       req.body;
+
     const student = await Student.findById(userId);
     if (!student) {
       throw new ApiError(404, "Student not found");
     }
+
     const [teacher, admin, superAdmin] = await Promise.all([
       Teacher.findOne({ _id: to, gradeId: student.gradeId }),
       Admin.findById(to),
@@ -26,10 +29,10 @@ export const createQuery = async (
     ]);
 
     const recipient = teacher || admin || superAdmin;
-
     if (!recipient) {
       throw new ApiError(404, "Recipient not found or not authorized");
     }
+
     const attachments = [];
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files) {
@@ -46,6 +49,7 @@ export const createQuery = async (
         });
       }
     }
+
     const query = await Query.create({
       from: userId,
       to,
@@ -59,9 +63,11 @@ export const createQuery = async (
       status: "open",
       lastActivity: new Date(),
     });
+
     const populatedQuery = await Query.findById(query._id)
       .populate("from", "name email profilePictureUrl")
       .populate("to", "name email role");
+
     res.status(201).json({
       success: true,
       message: "Query created successfully",
@@ -71,6 +77,7 @@ export const createQuery = async (
     next(err);
   }
 };
+
 export const getStudentQueries = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -79,12 +86,15 @@ export const getStudentQueries = async (
   try {
     const userId = req.user?._id;
     const { page = 1, limit = 10, status, queryType } = req.query;
+
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
+
     const filter: any = { from: userId };
     if (status) filter.status = status;
     if (queryType) filter.queryType = queryType;
+
     const [queries, total] = await Promise.all([
       Query.find(filter)
         .populate("to", "name email role profilePictureUrl")
@@ -94,6 +104,7 @@ export const getStudentQueries = async (
         .limit(limitNum),
       Query.countDocuments(filter),
     ]);
+
     res.status(200).json({
       success: true,
       total,
@@ -106,6 +117,7 @@ export const getStudentQueries = async (
     next(err);
   }
 };
+
 export const getReceivedQueries = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -114,22 +126,30 @@ export const getReceivedQueries = async (
   try {
     const userId = req.user?._id;
     const { page = 1, limit = 10, status, queryType, priority } = req.query;
+
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
-    const filter: any = { to: userId };
+
+    const filter: any = {
+      $or: [{ to: userId }, { assignedTo: userId }],
+    };
+
     if (status) filter.status = status;
     if (queryType) filter.queryType = queryType;
     if (priority) filter.priority = priority;
+
     const [queries, total] = await Promise.all([
       Query.find(filter)
         .populate("from", "name email rollNumber gradeId profilePictureUrl")
-        .populate("assignedTo", "name email")
+        .populate("to", "name email role profilePictureUrl")
+        .populate("assignedTo", "name email role")
         .sort({ priority: -1, lastActivity: -1 })
         .skip(skip)
         .limit(limitNum),
       Query.countDocuments(filter),
     ]);
+
     res.status(200).json({
       success: true,
       total,
@@ -142,6 +162,7 @@ export const getReceivedQueries = async (
     next(err);
   }
 };
+
 export const getQueryById = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -151,26 +172,32 @@ export const getQueryById = async (
     const { id } = req.params;
     const userId = req.user?._id;
     const userRole = req.user?.role;
+
     const query = await Query.findById(id)
       .populate("from", "name email rollNumber gradeId profilePictureUrl")
       .populate("to", "name email role profilePictureUrl")
       .populate("assignedTo", "name email role")
       .populate("responses.from", "name email role profilePictureUrl")
       .populate("escalatedFrom", "name email role");
+
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
+
     const isAdmin =
       userRole === "admin" ||
       userRole === "superAdmin" ||
       userRole === "teacher";
+
     const isInvolved =
       query.from._id.toString() === userId?.toString() ||
       query.to._id.toString() === userId?.toString() ||
-      query.assignedTo?._id.toString() === userId?.toString();
+      query.assignedTo?._id?.toString() === userId?.toString();
+
     if (!isAdmin && !isInvolved) {
       throw new ApiError(403, "Not authorized to view this query");
     }
+
     res.status(200).json({
       success: true,
       data: query,
@@ -179,6 +206,7 @@ export const getQueryById = async (
     next(err);
   }
 };
+
 export const addResponse = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -188,21 +216,26 @@ export const addResponse = async (
     const { id } = req.params;
     const userId = req.user?._id;
     const { content, responseType } = req.body;
+
     const query = await Query.findById(id)
       .populate("from", "name email rollNumber gradeId profilePictureUrl")
       .populate("to", "name email role profilePictureUrl")
       .populate("assignedTo", "name email role")
       .populate("responses.from", "name email role profilePictureUrl")
       .populate("escalatedFrom", "name email role");
+
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
+
     const isAuthorized =
-      query.to.toString() === userId?.toString() ||
-      query.assignedTo?.toString() === userId?.toString();
+      query.to._id.toString() === userId?.toString() ||
+      query.assignedTo?._id?.toString() === userId?.toString();
+
     if (!isAuthorized) {
       throw new ApiError(403, "Not authorized to respond to this query");
     }
+
     const attachments = [];
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files) {
@@ -219,6 +252,7 @@ export const addResponse = async (
         });
       }
     }
+
     query.responses.push({
       from: userId,
       content,
@@ -226,17 +260,20 @@ export const addResponse = async (
       responseType: responseType || "reply",
       createdAt: new Date(),
     } as any);
+
     if (query.status === "open") {
       query.status = "in_progress";
     }
     query.lastActivity = new Date();
     await query.save();
+
     const updatedQuery = await Query.findById(id)
       .populate("from", "name email rollNumber gradeId profilePictureUrl")
       .populate("to", "name email role profilePictureUrl")
       .populate("assignedTo", "name email role")
       .populate("responses.from", "name email role profilePictureUrl")
       .populate("escalatedFrom", "name email role");
+
     res.status(200).json({
       success: true,
       message: "Response added successfully",
@@ -246,6 +283,7 @@ export const addResponse = async (
     next(err);
   }
 };
+
 export const updateQueryStatus = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -255,16 +293,23 @@ export const updateQueryStatus = async (
     const { id } = req.params;
     const userId = req.user?._id;
     const { status, resolvedBy } = req.body;
-    const query = await Query.findById(id);
+
+    const query = await Query.findById(id)
+      .populate("to", "name email role")
+      .populate("assignedTo", "name email role");
+
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
+
     const isAuthorized =
-      query.to.toString() === userId?.toString() ||
-      query.assignedTo?.toString() === userId?.toString();
+      query.to._id.toString() === userId?.toString() ||
+      query.assignedTo?._id?.toString() === userId?.toString();
+
     if (!isAuthorized) {
       throw new ApiError(403, "Not authorized to update this query");
     }
+
     query.status = status;
     if (status === "resolved" || status === "closed") {
       query.resolvedAt = new Date();
@@ -272,6 +317,7 @@ export const updateQueryStatus = async (
     }
     query.lastActivity = new Date();
     await query.save();
+
     res.status(200).json({
       success: true,
       message: "Query status updated successfully",
@@ -281,6 +327,7 @@ export const updateQueryStatus = async (
     next(err);
   }
 };
+
 export const assignQuery = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -289,18 +336,22 @@ export const assignQuery = async (
   try {
     const { id } = req.params;
     const { assignedTo } = req.body;
+
     const query = await Query.findById(id);
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
+
     query.assignedTo = assignedTo;
     query.status = "in_progress";
     query.lastActivity = new Date();
     await query.save();
-    const updatedQuery = await Query.findById(id).populate(
-      "assignedTo",
-      "name email role",
-    );
+
+    const updatedQuery = await Query.findById(id)
+      .populate("from", "name email rollNumber gradeId profilePictureUrl")
+      .populate("to", "name email role profilePictureUrl")
+      .populate("assignedTo", "name email role");
+
     res.status(200).json({
       success: true,
       message: "Query assigned successfully",
@@ -310,6 +361,7 @@ export const assignQuery = async (
     next(err);
   }
 };
+
 export const escalateQuery = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -319,22 +371,30 @@ export const escalateQuery = async (
     const { id } = req.params;
     const userId = req.user?._id;
     const { to, escalationReason } = req.body;
-    const query = await Query.findById(id);
+
+    const query = await Query.findById(id)
+      .populate("to", "name email role")
+      .populate("assignedTo", "name email role");
+
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
+
     const isAuthorized =
-      query.to.toString() === userId?.toString() ||
-      query.assignedTo?.toString() === userId?.toString();
+      query.to._id.toString() === userId?.toString() ||
+      query.assignedTo?._id?.toString() === userId?.toString();
+
     if (!isAuthorized) {
       throw new ApiError(403, "Not authorized to escalate this query");
     }
+
     query.status = "escalated";
     query.escalatedFrom = query.to;
     query.to = to;
     query.escalationReason = escalationReason;
     query.lastActivity = new Date();
     await query.save();
+
     res.status(200).json({
       success: true,
       message: "Query escalated successfully",
@@ -344,6 +404,7 @@ export const escalateQuery = async (
     next(err);
   }
 };
+
 export const addSatisfactionRating = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -353,18 +414,23 @@ export const addSatisfactionRating = async (
     const { id } = req.params;
     const userId = req.user?._id;
     const { rating } = req.body;
+
     const query = await Query.findById(id);
     if (!query) {
       throw new ApiError(404, "Query not found");
     }
+
     if (query.from.toString() !== userId?.toString()) {
       throw new ApiError(403, "Only query creator can add rating");
     }
+
     if (query.status !== "resolved" && query.status !== "closed") {
       throw new ApiError(400, "Can only rate resolved or closed queries");
     }
+
     query.satisfactionRating = rating;
     await query.save();
+
     res.status(200).json({
       success: true,
       message: "Rating added successfully",
@@ -374,6 +440,7 @@ export const addSatisfactionRating = async (
     next(err);
   }
 };
+
 export const getQueryStatistics = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -382,10 +449,13 @@ export const getQueryStatistics = async (
   try {
     const userId = req.user?._id;
     const userRole = req.user?.role;
+
     const filter: any = {};
+
     if (userRole === "teacher") {
-      filter.to = userId;
+      filter.$or = [{ to: userId }, { assignedTo: userId }];
     }
+
     const [
       totalQueries,
       openQueries,
@@ -414,6 +484,7 @@ export const getQueryStatistics = async (
         { $group: { _id: "$queryType", count: { $sum: 1 } } },
       ]),
     ]);
+
     res.status(200).json({
       success: true,
       data: {
@@ -433,6 +504,7 @@ export const getQueryStatistics = async (
     next(err);
   }
 };
+
 export const getAvailableRecipients = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -440,10 +512,12 @@ export const getAvailableRecipients = async (
 ): Promise<void> => {
   try {
     const userId = req.user?._id;
+
     const student = await Student.findById(userId);
     if (!student) {
       throw new ApiError(404, "Student not found");
     }
+
     const [teachers, admins, superAdmins] = await Promise.all([
       Teacher.find({ gradeId: student.gradeId }).select(
         "name email profilePictureUrl role gradeId",
@@ -453,6 +527,7 @@ export const getAvailableRecipients = async (
         "name email profilePictureUrl role",
       ),
     ]);
+
     res.status(200).json({
       success: true,
       data: {

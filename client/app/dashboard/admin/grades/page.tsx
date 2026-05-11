@@ -47,7 +47,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+
 export default function GradesPage() {
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [modalState, setModalState] = useState({
@@ -69,6 +71,7 @@ export default function GradesPage() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
     {},
   );
+
   const {
     data: gradesData,
     isLoading,
@@ -77,6 +80,7 @@ export default function GradesPage() {
   const createMutation = useCreateGrade();
   const updateMutation = useUpdateGrade();
   const deleteMutation = useDeleteGrade();
+
   const grades = gradesData?.data || [];
   const pagination = gradesData?.meta || {
     page: 1,
@@ -84,6 +88,22 @@ export default function GradesPage() {
     total: 0,
     totalPages: 1,
   };
+
+  const handleSearch = () => {
+    setPage(1);
+    setSearchQuery(searchInput);
+  };
+
+  const handleClear = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setPage(1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
   const resetForm = () => {
     setFormData({
       grade: "",
@@ -95,10 +115,12 @@ export default function GradesPage() {
     setValidationErrors({});
     setEditingGrade(null);
   };
+
   const handleOpenAdd = () => {
     resetForm();
     setModalState((prev) => ({ ...prev, add: true }));
   };
+
   const handleOpenEdit = (grade: Grade) => {
     setEditingGrade(grade);
     setFormData({
@@ -111,44 +133,43 @@ export default function GradesPage() {
     setValidationErrors({});
     setModalState((prev) => ({ ...prev, edit: true }));
   };
+
   const handleOpenView = (grade: Grade) => {
     setViewingGrade(grade);
     setModalState((prev) => ({ ...prev, view: true }));
   };
+
   const handleAddGrade = async () => {
     const errors = validateGradeForm(formData);
     setValidationErrors(errors);
-    if (hasValidationErrors(errors)) {
-      return;
-    }
+    if (hasValidationErrors(errors)) return;
     await createMutation.mutateAsync(formData);
     setModalState((prev) => ({ ...prev, add: false }));
     resetForm();
   };
+
   const handleUpdateGrade = async () => {
     if (!editingGrade) return;
     const errors = validateGradeForm(formData);
     setValidationErrors(errors);
-    if (hasValidationErrors(errors)) {
-      return;
-    }
-    await updateMutation.mutateAsync({
-      id: editingGrade._id,
-      formData,
-    });
+    if (hasValidationErrors(errors)) return;
+    await updateMutation.mutateAsync({ id: editingGrade._id, formData });
     setModalState((prev) => ({ ...prev, edit: false }));
     resetForm();
   };
+
   const handleDeleteGrade = async (id: string) => {
     await deleteMutation.mutateAsync(id);
     setModalState((prev) => ({ ...prev, delete: false, deleteId: null }));
   };
+
   const addUnit = () => {
     setFormData((prev) => ({
       ...prev,
       units: [...prev.units, { name: "", description: "" }],
     }));
   };
+
   const updateUnit = (index: number, field: keyof Unit, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -157,22 +178,22 @@ export default function GradesPage() {
       ),
     }));
   };
+
   const removeUnit = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       units: prev.units.filter((_, i) => i !== index),
     }));
   };
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setPage(1);
-  };
+
   const handlePrevPage = () => {
     if (page > 1) setPage(page - 1);
   };
+
   const handleNextPage = () => {
     if (page < pagination.totalPages) setPage(page + 1);
   };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -180,6 +201,7 @@ export default function GradesPage() {
       </div>
     );
   }
+
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -190,9 +212,9 @@ export default function GradesPage() {
       </div>
     );
   }
+
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {}
       <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-8 mb-8 rounded-3xl shadow-2xl">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
@@ -204,19 +226,38 @@ export default function GradesPage() {
           </p>
         </div>
       </div>
+
       <div className="container mx-auto px-4 md:px-6 pb-8">
-        {}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-          <div className="relative w-full md:max-w-md">
-            <Input
-              type="text"
-              placeholder="Search grades..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="pl-12 pr-4 py-3 h-12 border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 rounded-xl"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+          <div className="flex items-center gap-2 w-full md:max-w-lg">
+            <div className="relative flex-1">
+              <Input
+                type="text"
+                placeholder="Search grades..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="pl-12 pr-10 py-3 h-12 border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 rounded-xl"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              {searchInput && (
+                <button
+                  onClick={handleClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              onClick={handleSearch}
+              className="h-12 px-5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl shadow-lg hover:shadow-xl"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
           </div>
+
           <Button
             onClick={handleOpenAdd}
             className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 h-12 rounded-xl shadow-lg hover:shadow-xl"
@@ -225,7 +266,7 @@ export default function GradesPage() {
             Add New Grade
           </Button>
         </div>
-        {}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {grades.length === 0 ? (
             <div className="col-span-full text-center py-16">
@@ -322,7 +363,7 @@ export default function GradesPage() {
             })
           )}
         </div>
-        {}
+
         {pagination.totalPages > 1 && (
           <div className="flex justify-center items-center space-x-4 mt-8">
             <Button
@@ -346,7 +387,7 @@ export default function GradesPage() {
             </Button>
           </div>
         )}
-        {}
+
         <Dialog
           open={modalState.add || modalState.edit}
           onOpenChange={(open) => {
@@ -452,7 +493,11 @@ export default function GradesPage() {
                   Active Status
                 </Label>
                 <span
-                  className={`text-xs px-2 py-1 rounded-full ${formData.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    formData.isActive
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
                 >
                   {formData.isActive ? "Active" : "Inactive"}
                 </span>
@@ -553,7 +598,7 @@ export default function GradesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        {}
+
         <Dialog
           open={modalState.view}
           onOpenChange={(open) => {
@@ -648,7 +693,7 @@ export default function GradesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        {}
+
         <Dialog
           open={modalState.delete}
           onOpenChange={(open) => {
