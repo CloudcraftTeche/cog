@@ -172,7 +172,7 @@ export const getTeacherChaptersHandler = async (
       TeacherChapter.find(filter)
         .sort({ unitId: 1, chapterNumber: 1 })
         .skip(skip)
-        .limit(limit)
+        // .limit(limit) // Commenting out pagination to ensure teachers see all chapters in their grade and can track progress without missing any chapters due to pagination
         .populate("gradeId", "grade")
         .lean(),
       TeacherChapter.countDocuments(filter),
