@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/auth/useAuth";import {
+import {
   useDeleteTeacherChapter,
   useGrades,
   useTeacherChapters,
@@ -15,8 +15,8 @@ import { TeacherChapterGroups } from "@/components/admin/teacher-chapters/Teache
 const ITEMS_PER_PAGE = 100;
 export default function SuperAdminTeacherChaptersPage() {
   const router = useRouter();
-  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
   const { data: grades = [], isLoading: gradesLoading } = useGrades();
@@ -24,9 +24,23 @@ export default function SuperAdminTeacherChaptersPage() {
     useTeacherChapters({
       page: 1,
       limit: ITEMS_PER_PAGE,
-      search: searchTerm || undefined,
+      search: searchQuery || undefined,
     });
   const { mutate: deleteChapter } = useDeleteTeacherChapter();
+
+  const handleSearch = () => {
+    setSearchQuery(searchTerm);
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
+    setSearchQuery("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
   const toggleGrade = (gradeId: string) => {
     const newExpanded = new Set(expandedGrades);
     if (newExpanded.has(gradeId)) {
@@ -76,11 +90,14 @@ export default function SuperAdminTeacherChaptersPage() {
         <TeacherChapterSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          onSearch={handleSearch}
+          onClear={handleClear}
+          onKeyDown={handleKeyDown}
         />
         <TeacherChapterGroups
           grades={grades}
           chapters={chapters}
-          searchTerm={searchTerm}
+          searchTerm={searchQuery}
           expandedGrades={expandedGrades}
           expandedUnits={expandedUnits}
           onToggleGrade={toggleGrade}
