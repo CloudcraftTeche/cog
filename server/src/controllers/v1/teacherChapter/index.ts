@@ -149,7 +149,8 @@ export const getTeacherChaptersHandler = async (
     const skip = (page - 1) * limit;
     const userId = req.userId;
     const admin = await User.findById(userId).select("role");
-    const isAdmin = admin && (admin.role === "admin" || admin.role === "superAdmin");
+    const isAdmin =
+      admin && (admin.role === "admin" || admin.role === "superAdmin");
     const filter: any = {};
     if (isAdmin) {
       if (gradeId) {
@@ -171,8 +172,8 @@ export const getTeacherChaptersHandler = async (
     const [chapters, total] = await Promise.all([
       TeacherChapter.find(filter)
         .sort({ unitId: 1, chapterNumber: 1 })
-        .skip(skip)
-        .limit(limit)
+        // .skip(skip)
+        // .limit(limit)
         .populate("gradeId", "grade")
         .lean(),
       TeacherChapter.countDocuments(filter),
