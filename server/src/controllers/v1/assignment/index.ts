@@ -207,6 +207,7 @@ export const getAllAssignments = async (
     const search = (req.query.search as string)?.trim() || "";
     const status = req.query.status as string;
     const grade = req.query.grade as string;
+    let effectiveGrade: string | undefined = grade || undefined;
     const filter: any = {};
     if (search) {
       filter.title = { $regex: search, $options: "i" };
@@ -220,20 +221,23 @@ export const getAllAssignments = async (
     if (role === "teacher") {
       const teacher = await Teacher.findById(req.userId).select("gradeId");
       if (!teacher) throw new ApiError(404, "Teacher not found");
-      const grade = await Grade.findById(teacher.gradeId).select("_id");
-      if (!grade) throw new ApiError(404, "Grade not found");
-      filter.gradeId = grade._id;
+      const teacherGrade = await Grade.findById(teacher.gradeId).select("_id");
+      if (!teacherGrade) throw new ApiError(404, "Grade not found");
+      filter.gradeId = teacherGrade._id;
+      effectiveGrade = teacherGrade._id.toString();
     } else if (role === "student") {
       const student = await Student.findById(req.userId).select("gradeId");
       if (!student) throw new ApiError(404, "Student not found");
       if (student.gradeId) {
         filter.gradeId = student.gradeId;
+        effectiveGrade = student.gradeId.toString();
       } else {
+        effectiveGrade = undefined;
         return res.json({
           success: true,
           data: [],
           pagination: { total: 0, page, limit, totalPages: 0 },
-          filters: { search, status },
+          filters: { search, status, grade: effectiveGrade },
         });
       }
     }
@@ -268,7 +272,7 @@ export const getAllAssignments = async (
         limit,
         totalPages: Math.ceil(total / limit),
       },
-      filters: { search, status },
+      filters: { search, status, grade: effectiveGrade },
     });
   } catch (err) {
     next(err);
