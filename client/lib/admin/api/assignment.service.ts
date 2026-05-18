@@ -15,6 +15,7 @@ export const assignmentService = {
     page?: number;
     limit?: number;
     status?: string;
+    grade?: string;
   }) => {
     const response = await api.get<AssignmentsResponse>("/assignments", {
       params: {
@@ -22,6 +23,7 @@ export const assignmentService = {
         page: params?.page || 1,
         limit: params?.limit || 10,
         status: params?.status !== "all" ? params?.status : undefined,
+        grade: params?.grade !== "all" ? params?.grade : undefined,
       },
     });
     return response.data;
