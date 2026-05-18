@@ -206,12 +206,16 @@ export const getAllAssignments = async (
     const skip = (page - 1) * limit;
     const search = (req.query.search as string)?.trim() || "";
     const status = req.query.status as string;
+    const grade = req.query.grade as string;
     const filter: any = {};
     if (search) {
       filter.title = { $regex: search, $options: "i" };
     }
     if (status) {
       filter.status = status;
+    }
+    if (grade) {
+      filter.gradeId = grade;
     }
     if (role === "teacher") {
       const teacher = await Teacher.findById(req.userId).select("gradeId");
