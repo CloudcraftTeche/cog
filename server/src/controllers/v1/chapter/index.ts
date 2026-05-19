@@ -927,7 +927,7 @@ export const getChapterCompletedStudentsHandler = async (
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
-    const chapter = await Chapter.findById(chapterId).select("title chapterNumber studentProgress").lean();
+    const chapter = await Chapter.findById(chapterId).select("title chapterNumber studentProgress gradeId").lean();
     if (!chapter) throw new ApiError(404, "Chapter not found in this grade");
 
     const completedProgress = chapter.studentProgress?.filter((p) => p.status === "completed") || [];
@@ -949,6 +949,7 @@ export const getChapterCompletedStudentsHandler = async (
     const students = await Student.find({
       _id: { $in: completedProgress.map((p) => p.studentId) },
       role: "student",
+      gradeId: chapter.gradeId,
     })
       .select("name email rollNumber gradeId profilePictureUrl")
       .populate("gradeId", "grade")
@@ -1124,20 +1125,26 @@ export const getChapterPendingStudentsHandler = async (
     const limitNum = parseInt(req.query.limit as string) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    const chapter = await Chapter.findById(chapterId).select("studentProgress").lean();
+    const chapter = await Chapter.findById(chapterId).select("studentProgress gradeId").lean();
     if (!chapter) throw new ApiError(404, "Chapter not found in this grade");
 
     const completedStudentIds =
       chapter.studentProgress?.filter((p) => p.status === "completed").map((p) => p.studentId) || [];
 
+    const pendingFilter = {
+      role: "student",
+      gradeId: chapter.gradeId,
+      _id: { $nin: completedStudentIds },
+    };
+
     const [pendingStudents, total] = await Promise.all([
-      Student.find({ role: "student", _id: { $nin: completedStudentIds } })
+      Student.find(pendingFilter)
         .select("name email rollNumber gradeId profilePictureUrl")
         .populate("gradeId", "grade")
         .skip(skip)
         .limit(limitNum)
         .lean(),
-      Student.countDocuments({ role: "student", _id: { $nin: completedStudentIds } }),
+      Student.countDocuments(pendingFilter),
     ]);
 
     res.status(200).json({
