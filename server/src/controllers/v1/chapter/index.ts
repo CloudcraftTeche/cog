@@ -927,7 +927,7 @@ export const getChapterCompletedStudentsHandler = async (
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
 
-    const chapter = await Chapter.findById(chapterId).select("title chapterNumber studentProgress").lean();
+    const chapter = await Chapter.findById(chapterId).select("title chapterNumber studentProgress gradeId").lean();
     if (!chapter) throw new ApiError(404, "Chapter not found in this grade");
 
     const completedProgress = chapter.studentProgress?.filter((p) => p.status === "completed") || [];
