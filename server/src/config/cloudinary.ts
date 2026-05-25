@@ -26,9 +26,16 @@ const resolveResourceType = (filename: string): CloudinaryResourceType => {
 export interface UploadResult {
   publicId: string;
   secureUrl: string;
-  // Backward-compatible aliases used by older controllers.
-  public_id?: string;
-  secure_url?: string;
+  /**
+   * @deprecated Use `publicId` instead.
+   * Backward-compatible alias used by older controllers.
+   */
+  public_id: string;
+  /**
+   * @deprecated Use `secureUrl` instead.
+   * Backward-compatible alias used by older controllers.
+   */
+  secure_url: string;
   bytes: number;
   resourceType: CloudinaryResourceType;
 }
