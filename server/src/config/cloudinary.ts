@@ -26,6 +26,16 @@ const resolveResourceType = (filename: string): CloudinaryResourceType => {
 export interface UploadResult {
   publicId: string;
   secureUrl: string;
+  /**
+   * @deprecated Use `publicId` instead.
+   * Backward-compatible alias used by older controllers.
+   */
+  public_id: string;
+  /**
+   * @deprecated Use `secureUrl` instead.
+   * Backward-compatible alias used by older controllers.
+   */
+  secure_url: string;
   bytes: number;
   resourceType: CloudinaryResourceType;
 }
@@ -59,6 +69,8 @@ buffer: Buffer, originalName: string, folder: string = "uploads", originalname?:
         resolve({
           publicId: result.public_id,
           secureUrl: result.secure_url,
+          public_id: result.public_id, // Backward compatibility
+          secure_url: result.secure_url, // Backward compatibility
           bytes: result.bytes ?? buffer.length,
           resourceType,
         });
