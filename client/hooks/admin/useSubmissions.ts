@@ -47,6 +47,8 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
     },
   });
 
+  const firstSubmissionAssignment = submissionsData?.data?.[0]?.assignment;
+
   return {
     submissions: submissionsData?.data || [],
     pagination: submissionsData?.pagination,
@@ -62,5 +64,11 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
     },
     isGrading: gradeMutation.isPending,
     refetch,
+    assignmentInfo: firstSubmissionAssignment
+      ? {
+          description: firstSubmissionAssignment.description,
+          textContent: firstSubmissionAssignment.textContent,
+        }
+      : null,
   };
 };
