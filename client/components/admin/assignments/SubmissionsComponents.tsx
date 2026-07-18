@@ -8,6 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   ChevronDown,
   ChevronRight,
   Clock,
@@ -51,6 +56,8 @@ export const SubmissionHeader = ({
   assignmentDescription,
   assignmentTextContent,
 }: SubmissionHeaderProps) => {
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+
   return (
     <div className="mb-6 sm:mb-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -67,19 +74,33 @@ export const SubmissionHeader = ({
         </div>
       </div>
 
-      {(assignmentDescription || assignmentTextContent) && (
-        <div className="mb-4 sm:mb-6 bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm p-3 sm:p-4 lg:p-5">
-          {assignmentDescription && (
-            <p className="text-gray-600 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
-              {assignmentDescription}
-            </p>
-          )}
-          {assignmentTextContent && (
-            <p className="text-gray-700 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap mt-2">
+      {assignmentTextContent && (
+        <Collapsible
+          open={isDescriptionOpen}
+          onOpenChange={setIsDescriptionOpen}
+          className="mb-4 sm:mb-6 bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm"
+        >
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-2 p-3 sm:p-4 lg:p-5 text-left"
+            >
+              <span className="font-medium text-gray-800 text-sm sm:text-base">
+                Assignment Description
+              </span>
+              {isDescriptionOpen ? (
+                <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 flex-shrink-0" />
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <p className="text-gray-700 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap px-3 sm:px-4 lg:px-5 pb-3 sm:pb-4 lg:pb-5">
               {assignmentTextContent}
             </p>
-          )}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       <div className="w-full max-w-full sm:max-w-md">
