@@ -41,11 +41,15 @@ export type { ISubmission };
 interface SubmissionHeaderProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  assignmentDescription?: string;
+  assignmentTextContent?: string;
 }
 
 export const SubmissionHeader = ({
   searchTerm,
   onSearchChange,
+  assignmentDescription,
+  assignmentTextContent,
 }: SubmissionHeaderProps) => {
   return (
     <div className="mb-6 sm:mb-8">
@@ -62,6 +66,21 @@ export const SubmissionHeader = ({
           </p>
         </div>
       </div>
+
+      {(assignmentDescription || assignmentTextContent) && (
+        <div className="mb-4 sm:mb-6 bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm p-3 sm:p-4 lg:p-5">
+          {assignmentDescription && (
+            <p className="text-gray-600 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+              {assignmentDescription}
+            </p>
+          )}
+          {assignmentTextContent && (
+            <p className="text-gray-700 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap mt-2">
+              {assignmentTextContent}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="w-full max-w-full sm:max-w-md">
         <div className="relative">

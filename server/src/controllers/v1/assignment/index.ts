@@ -550,6 +550,8 @@ export const getAssignmentSubmissions = async (
           assignment: {
             _id: assignment._id,
             title: assignment.title,
+            description: assignment.description,
+            textContent: assignment.textContent,
             questions: assignment.questions,
           },
         };
@@ -636,7 +638,7 @@ export const getSubmissionsForMyAssignments = async (
           .select("name email profilePictureUrl")
           .lean();
         const assignment = await Assignment.findById(s.assignmentId)
-          .select("_id title questions")
+          .select("_id title description textContent questions")
           .lean();
         return {
           ...s,

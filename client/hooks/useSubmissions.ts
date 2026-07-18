@@ -14,6 +14,10 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [assignmentInfo, setAssignmentInfo] = useState<{
+    description: string;
+    textContent?: string;
+  } | null>(null);
 
   const fetchSubmissions = async () => {
     try {
@@ -28,8 +32,15 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
       });
 
       if (response.data.success) {
-        setSubmissions(response.data.data || []);
+        const data = response.data.data || [];
+        setSubmissions(data);
         setTotalPages(response.data.pagination?.totalPages || 1);
+        if (data[0]?.assignment) {
+          setAssignmentInfo({
+            description: data[0].assignment.description,
+            textContent: data[0].assignment.textContent,
+          });
+        }
       }
     } catch (error: any) {
       console.error("Error fetching submissions:", error);
@@ -92,6 +103,7 @@ export const useSubmissions = ({ assignmentId, limit = 10 }: UseSubmissionsParam
     setCurrentPage,
     gradeSubmission,
     refetch: fetchSubmissions,
+    assignmentInfo,
   };
 };
 

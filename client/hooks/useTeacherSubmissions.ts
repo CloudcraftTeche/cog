@@ -18,6 +18,10 @@ export const useTeacherSubmissions = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [assignmentInfo, setAssignmentInfo] = useState<{
+    description: string;
+    textContent?: string;
+  } | null>(null);
 
   const fetchSubmissions = useCallback(async () => {
     try {
@@ -34,8 +38,15 @@ export const useTeacherSubmissions = ({
       );
 
       if (response.data.success) {
-        setSubmissions(response.data.data || []);
+        const data = response.data.data || [];
+        setSubmissions(data);
         setTotalPages(response.data.pagination?.totalPages || 1);
+        if (data[0]?.assignment) {
+          setAssignmentInfo({
+            description: data[0].assignment.description,
+            textContent: data[0].assignment.textContent,
+          });
+        }
       }
     } catch (error: any) {
       console.error("Error fetching submissions:", error);
@@ -91,5 +102,6 @@ export const useTeacherSubmissions = ({
     setCurrentPage,
     gradeSubmission,
     refetch: fetchSubmissions,
+    assignmentInfo,
   };
 };

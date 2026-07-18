@@ -21,6 +21,7 @@ export default function AdminSubmissionsPage() {
     setSearchTerm,
     setCurrentPage,
     gradeSubmission,
+    assignmentInfo,
   } = useSubmissions({ assignmentId, limit: 10 });
   if (submissions.length === 0 && !loading && searchTerm.trim() === "") {
     return <NoSubmissionsState />;
@@ -31,6 +32,8 @@ export default function AdminSubmissionsPage() {
         <SubmissionHeader
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          assignmentDescription={assignmentInfo?.description}
+          assignmentTextContent={assignmentInfo?.textContent}
         />
         {loading ? (
           <LoadingState />
