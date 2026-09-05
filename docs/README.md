@@ -14,6 +14,7 @@ cog/
 | Document | Contents |
 |---|---|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | High-level system architecture, request flow, and folder responsibilities for both `client` and `server`. |
+| [DATABASE.md](./DATABASE.md) | MongoDB connection lifecycle, Mongoose model relationships, embedded data, indexes, and deletion cleanup. |
 | [COMPONENTS.md](./COMPONENTS.md) | Frontend component organization (`client/components`) and conventions. |
 | [API.md](./API.md) | Backend REST API endpoints, grouped by route module, sourced from `server/src/routes/v1`. |
 | [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) | TanStack Query usage, hooks layer, auth state, and local component state patterns. |
