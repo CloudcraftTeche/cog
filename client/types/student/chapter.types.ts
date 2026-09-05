@@ -90,8 +90,8 @@ export interface SubmitChapterRequest {
 }
 
 export interface CompleteChapterRequest {
-  score?: number;
-  studentId?: string;
+  activityId: string;
+  answers: string[];
 }
 
 export interface CompleteChapterResponse {

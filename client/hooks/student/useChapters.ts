@@ -145,17 +145,17 @@ export const useCompleteChapter = () => {
   return useMutation({
     mutationFn: async ({
       chapterId,
-      score,
-      studentId,
+      activityId,
+      answers,
     }: {
       chapterId: string;
-      score: number;
-      studentId?: string;
+      activityId: string;
+      answers: string[];
     }) => {
       const grade = await getCurrentUserGrade();
       const { data } = await api.post<CompleteChapterResponse>(
         `/chapters/${grade._id}/chapters/${chapterId}/complete`,
-        { score, studentId }
+        { activityId, answers }
       );
 
       if (!data.success) {

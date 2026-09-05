@@ -115,6 +115,7 @@ Source: [server/src/routes/v1/chapter/index.ts](../server/src/routes/v1/chapter/
 | GET | `/:chapterId` |
 | DELETE | `/:gradeId/chapters/:chapterId` |
 | POST | `/:gradeId/chapters/:chapterId/start` |
+| POST | `/:gradeId/chapters/:chapterId/complete` |
 | GET | `/:gradeId/students/:studentId/completed-chapters` |
 | GET | `/:gradeId/chapters/:chapterId/status` |
 | GET | `/:chapterId/completed-students` |

@@ -21,6 +21,7 @@ import {
   sendChapterReminderHandler,
   sendBulkChapterRemindersHandler,
   sendInProgressRemindersHandler,
+  markChapterCompleteHandler,
 } from "../../../controllers/v1/chapter";
 import { authenticate } from "../../../middleware/authenticate";
 import { ApiError } from "../../../utils/ApiError";
@@ -441,6 +442,19 @@ router.get(
   ],
   handleValidationErrors,
   isChapterCompletedHandler
+);
+router.post(
+  "/:gradeId/chapters/:chapterId/complete",
+  authenticate,
+  authorizeRoles("student"),
+  [
+    param("gradeId").isMongoId().withMessage("Invalid grade ID"),
+    param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
+    body("activityId").isString().notEmpty().withMessage("Activity ID is required"),
+    body("answers").isArray({ min: 1 }).withMessage("Activity answers are required"),
+  ],
+  handleValidationErrors,
+  markChapterCompleteHandler
 );
 router.get(
   "/:chapterId/completed-students",

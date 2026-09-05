@@ -869,15 +869,44 @@ export const markChapterCompleteHandler = async (
 ): Promise<void> => {
   try {
     const { gradeId, chapterId } = req.params;
-    const { score, studentId } = req.body;
+    const { activityId, answers } = req.body;
 
     const grade = await Grade.findById(gradeId);
     if (!grade) throw new ApiError(404, "Grade not found");
+    if (Number(String(grade.grade).replace(/[^0-9]/g, "")) !== 1) {
+      throw new ApiError(400, "This activity is only available for Grade 1");
+    }
 
     const chapter = await Chapter.findOne({ _id: chapterId, gradeId });
     if (!chapter) throw new ApiError(404, "Chapter not found");
 
-    const targetStudentId = new mongoose.Types.ObjectId(studentId || req.userId);
+    if (typeof activityId !== "string" || !Array.isArray(answers)) {
+      throw new ApiError(400, "activityId and answers are required");
+    }
+
+    const activityAnswers: Record<string, { type: "scramble" | "matching" | "coloring"; expected: string[] }> = {
+      "grade-1-chapter-1": { type: "scramble", expected: ["LOVE"] },
+      "grade-1-chapter-2": { type: "matching", expected: ["god", "adam"] },
+      "grade-1-chapter-3": { type: "coloring", expected: ["Heart", "Path", "Sun"] },
+      "grade-1-chapter-4": { type: "scramble", expected: ["ENOCH"] },
+      "grade-1-chapter-5": { type: "matching", expected: ["noah", "rain"] },
+      "grade-1-chapter-6": { type: "coloring", expected: ["Star", "Tent", "Sky"] },
+      "grade-1-chapter-7": { type: "scramble", expected: ["LOT"] },
+      "grade-1-chapter-8": { type: "matching", expected: ["hagar", "help"] },
+      "grade-1-chapter-9": { type: "coloring", expected: ["Heart", "Mountain", "Sky"] },
+      "grade-1-chapter-10": { type: "scramble", expected: ["JACOB"] },
+    };
+    const configuredActivity = activityAnswers[activityId];
+    if (!configuredActivity || chapter.chapterNumber !== Number(activityId.match(/chapter-(\d+)$/)?.[1])) {
+      throw new ApiError(400, "Activity does not belong to this chapter");
+    }
+    const normalizedAnswers = answers.map((answer) => String(answer));
+    const isValid = normalizedAnswers.length === configuredActivity.expected.length &&
+      configuredActivity.expected.every((answer) => normalizedAnswers.includes(answer));
+    if (!isValid) throw new ApiError(400, "Activity answers are incorrect");
+
+    const targetStudentId = new mongoose.Types.ObjectId(req.userId);
+    const score = 100;
     const existingProgress = chapter.studentProgress?.find(
       (p) => p.studentId.toString() === targetStudentId.toString(),
     );

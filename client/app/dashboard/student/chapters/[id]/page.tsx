@@ -16,6 +16,8 @@ import {
   calculateQuizScore,
 } from "@/utils/student/chapterUtils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
+import { ChapterActivity } from "@/components/student/activities/ChapterActivity";
+import { getGradeOneActivity } from "@/utils/student/gradeOneActivities";
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
@@ -82,14 +84,16 @@ export default function ChapterDetailPage() {
   if (isError) {
     let errorMessage = "Unable to load chapter. Please try again later.";
     if (error instanceof Error) {
-      const axiosError = error as any;
-      if (axiosError.response?.status === 403) {
+      const response = (error as Error & {
+        response?: { status?: number; data?: { message?: string } };
+      }).response;
+      if (response?.status === 403) {
         errorMessage =
           "You must complete previous chapters to access this chapter.";
-      } else if (axiosError.response?.status === 404) {
+      } else if (response?.status === 404) {
         errorMessage = "Chapter not found.";
-      } else if (axiosError.response?.data?.message) {
-        errorMessage = axiosError.response.data.message;
+      } else if (response?.data?.message) {
+        errorMessage = response.data.message;
       } else {
         errorMessage = error.message;
       }
@@ -108,6 +112,10 @@ export default function ChapterDetailPage() {
       />
     );
   }
+  const gradeOneActivity = getGradeOneActivity(
+    chapter.gradeId.grade,
+    chapter.chapterNumber
+  );
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -119,6 +127,13 @@ export default function ChapterDetailPage() {
         <ChapterHeader chapter={chapter} />
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
+          {gradeOneActivity && !submitted && (
+            <ChapterActivity
+              chapterId={chapter._id}
+              config={gradeOneActivity}
+              onBack={() => router.push(`/dashboard/student/chapters/${chapter._id}`)}
+            />
+          )}
           {chapter.questions && chapter.questions.length > 0 && (
             <ChapterSubmission
               chapter={chapter}
