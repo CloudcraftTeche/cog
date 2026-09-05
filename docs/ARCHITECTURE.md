@@ -43,6 +43,12 @@ flowchart LR
 | `utils/` | Shared helper functions (e.g. JWT signing/verification used by `middleware/authenticate.ts`). |
 | `@types/` | Custom/ambient TypeScript type declarations. |
 
+## Database Structure
+
+MongoDB is accessed through one shared Mongoose connection established before the HTTP server starts. Models use `ObjectId` references for independently queried records such as grades, assignments, and submissions, while grades, chapters, and other parent documents embed closely owned data such as units, content items, questions, and progress records. User roles use Mongoose discriminators, so student and teacher data shares the `users` collection with the common user account fields.
+
+See [DATABASE.md](./DATABASE.md) for the database connection lifecycle, collection relationships, validation/indexing strategy, and cascading deletion behavior.
+
 ## Authentication & Authorization Flow
 
 Implemented in [server/src/middleware/authenticate.ts](../server/src/middleware/authenticate.ts) and [server/src/middleware/authorizeRoles.ts](../server/src/middleware/authorizeRoles.ts):
