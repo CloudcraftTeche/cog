@@ -11,6 +11,12 @@ export interface StudentProgress {
   startedAt?: Date;
   completedAt?: Date;
   score?: number;
+  activityProgress?: {
+    activityId: string;
+    score: number;
+    total: number;
+    completedAt?: Date;
+  }[];
 }
 
 export interface ContentItem {

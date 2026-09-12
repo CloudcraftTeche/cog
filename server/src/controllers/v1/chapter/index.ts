@@ -654,7 +654,9 @@ export const submitChapterHandler = async (
   try {
     const { gradeId, chapterId } = req.params;
     const { submissionType, score: providedScore, studentId: targetStudentId } = req.body;
-    const studentId = new mongoose.Types.ObjectId(targetStudentId || req.userId);
+    const studentId = new mongoose.Types.ObjectId(
+      req.userRole === "student" ? req.userId : targetStudentId || req.userId,
+    );
 
     let answers: any[] = [];
     if (req.body.answers) {
@@ -880,6 +882,13 @@ export const markChapterCompleteHandler = async (
     const chapter = await Chapter.findOne({ _id: chapterId, gradeId });
     if (!chapter) throw new ApiError(404, "Chapter not found");
 
+    const sessionProgress = chapter.studentProgress?.find(
+      (progress) => progress.studentId.toString() === req.userId,
+    );
+    if (!sessionProgress || sessionProgress.status === "locked") {
+      throw new ApiError(403, "Start this chapter before completing an activity");
+    }
+
     if (typeof activityId !== "string" || !Array.isArray(answers)) {
       throw new ApiError(400, "activityId and answers are required");
     }
@@ -895,6 +904,8 @@ export const markChapterCompleteHandler = async (
       "grade-1-chapter-8": { type: "matching", expected: ["hagar", "help"] },
       "grade-1-chapter-9": { type: "coloring", expected: ["Heart", "Mountain", "Sky"] },
       "grade-1-chapter-10": { type: "scramble", expected: ["JACOB"] },
+      "grade-1-chapter-18-scramble": { type: "scramble", expected: ["BABYLON", "FURNACE"] },
+      "grade-1-chapter-18-matching": { type: "matching", expected: ["babylon", "nebuchadnezzar", "three-young-men", "fiery-furnace"] },
     };
     const configuredActivity = activityAnswers[activityId];
     if (!configuredActivity || chapter.chapterNumber !== Number(activityId.match(/chapter-(\d+)$/)?.[1])) {
@@ -906,23 +917,42 @@ export const markChapterCompleteHandler = async (
     if (!isValid) throw new ApiError(400, "Activity answers are incorrect");
 
     const targetStudentId = new mongoose.Types.ObjectId(req.userId);
-    const score = 100;
+    const score = configuredActivity.expected.filter((answer) => normalizedAnswers.includes(answer)).length;
+    const total = configuredActivity.expected.length;
     const existingProgress = chapter.studentProgress?.find(
       (p) => p.studentId.toString() === targetStudentId.toString(),
     );
 
     if (existingProgress) {
-      existingProgress.status = "completed";
-      existingProgress.completedAt = new Date();
-      if (score !== undefined) existingProgress.score = score;
+      const activityProgress = existingProgress.activityProgress ?? [];
+      const previousActivity = activityProgress.find((item) => item.activityId === activityId);
+      if (previousActivity) {
+        previousActivity.score = score;
+        previousActivity.total = total;
+        previousActivity.completedAt = new Date();
+      } else {
+        activityProgress.push({ activityId, score, total, completedAt: new Date() });
+      }
+      existingProgress.activityProgress = activityProgress;
+      const completedActivityCount = activityProgress.filter((item) => item.completedAt).length;
+      const requiredActivityCount = chapter.chapterNumber === 18 ? 2 : 1;
+      if (completedActivityCount >= requiredActivityCount) {
+        existingProgress.status = "completed";
+        existingProgress.completedAt = new Date();
+        existingProgress.score = Math.round(
+          (activityProgress.reduce((sum, item) => sum + item.score, 0) /
+            activityProgress.reduce((sum, item) => sum + item.total, 0)) * 100,
+        );
+      }
     } else {
       if (!chapter.studentProgress) chapter.studentProgress = [];
       chapter.studentProgress.push({
         studentId: targetStudentId,
-        status: "completed",
+        status: chapter.chapterNumber === 18 ? "in_progress" : "completed",
         startedAt: new Date(),
-        completedAt: new Date(),
-        score: score !== undefined ? score : undefined,
+        completedAt: chapter.chapterNumber === 18 ? undefined : new Date(),
+        score: chapter.chapterNumber === 18 ? undefined : score,
+        activityProgress: [{ activityId, score, total, completedAt: new Date() }],
       } as any);
     }
 
@@ -934,9 +964,11 @@ export const markChapterCompleteHandler = async (
       data: {
         chapterId: chapter._id,
         studentId: targetStudentId,
-        status: "completed",
+        status: existingProgress?.status || (chapter.chapterNumber === 18 ? "in_progress" : "completed"),
         completedAt: existingProgress?.completedAt || new Date(),
         score,
+        activityScore: score,
+        activityTotal: total,
       },
     });
   } catch (err) {

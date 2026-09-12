@@ -19,7 +19,16 @@ export function ScrambleGame({ config, onComplete }: Props) {
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const question = config.questions[questionIndex];
   const letters = useMemo(
-    () => question.word.split("").sort(() => Math.random() - 0.5),
+    () => {
+      const source = question.scrambled ?? question.word;
+      const shuffled = source.split("");
+      if (!question.scrambled) {
+        while (shuffled.join("") === question.word && shuffled.length > 1) {
+          shuffled.push(shuffled.shift()!);
+        }
+      }
+      return shuffled;
+    },
     [question],
   );
 
