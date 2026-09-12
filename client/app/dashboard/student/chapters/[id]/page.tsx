@@ -17,7 +17,7 @@ import {
 } from "@/utils/student/chapterUtils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
 import { ChapterActivity } from "@/components/student/activities/ChapterActivity";
-import { getGradeOneActivity } from "@/utils/student/gradeOneActivities";
+import { getGradeOneActivities } from "@/utils/student/gradeOneActivities";
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
@@ -112,7 +112,7 @@ export default function ChapterDetailPage() {
       />
     );
   }
-  const gradeOneActivity = getGradeOneActivity(
+  const gradeOneActivities = getGradeOneActivities(
     chapter.gradeId.grade,
     chapter.chapterNumber
   );
@@ -127,12 +127,21 @@ export default function ChapterDetailPage() {
         <ChapterHeader chapter={chapter} />
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
-          {gradeOneActivity && !submitted && (
-            <ChapterActivity
-              chapterId={chapter._id}
-              config={gradeOneActivity}
-              onBack={() => router.push(`/dashboard/student/chapters/${chapter._id}`)}
-            />
+          {gradeOneActivities.length > 0 && !submitted && (
+            <section className="space-y-4">
+              <div className="rounded-3xl bg-sky-50 p-5">
+                <h2 className="text-xl font-black text-slate-900">Interactive Activities</h2>
+                <p className="mt-1 text-slate-600">Complete both activities to finish this chapter.</p>
+              </div>
+              {gradeOneActivities.map((activity) => (
+                <ChapterActivity
+                  key={activity.id}
+                  chapterId={chapter._id}
+                  config={activity}
+                  onBack={() => router.push(`/dashboard/student/chapters/${chapter._id}`)}
+                />
+              ))}
+            </section>
           )}
           {chapter.questions && chapter.questions.length > 0 && (
             <ChapterSubmission

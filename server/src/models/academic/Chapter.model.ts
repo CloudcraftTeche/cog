@@ -23,6 +23,12 @@ export interface IQuizAnswer {
   selectedAnswer: string | null;
   isCorrect: boolean;
 }
+export interface IActivityProgress {
+  activityId: string;
+  score: number;
+  total: number;
+  completedAt: Date;
+}
 
 export interface IChapter {
   _id: Types.ObjectId;
@@ -44,6 +50,7 @@ export interface IChapter {
     score?: number;
     submissions?: IStudentSubmission[];
     quizAnswers?: IQuizAnswer[];
+    activityProgress?: IActivityProgress[];
   }[];
   createdAt: Date;
   updatedAt: Date;
@@ -178,6 +185,15 @@ const StudentProgressSchema = new Schema(
     },
     submissions: {
       type: [StudentSubmissionSchema],
+      default: [],
+    },
+    activityProgress: {
+      type: [{
+        activityId: { type: String, required: true },
+        score: { type: Number, required: true, min: 0 },
+        total: { type: Number, required: true, min: 1 },
+        completedAt: { type: Date, default: Date.now, required: true },
+      }],
       default: [],
     },
   },

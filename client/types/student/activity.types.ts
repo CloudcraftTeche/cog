@@ -4,6 +4,7 @@ export interface ScrambleQuestion {
   id: string;
   word: string;
   hint: string;
+  scrambled?: string;
 }
 
 export interface MatchingPair {
@@ -43,6 +44,13 @@ export interface ChapterActivityConfig {
   title: string;
   description: string;
   activity: ActivityConfig;
+}
+
+export interface ActivityProgress {
+  activityId: string;
+  score: number;
+  total: number;
+  completedAt?: Date;
 }
 
 export interface ActivityResult {
