@@ -885,7 +885,7 @@ export const markChapterCompleteHandler = async (
     const sessionProgress = chapter.studentProgress?.find(
       (progress) => progress.studentId.toString() === req.userId,
     );
-    if (!sessionProgress || sessionProgress.status === "locked") {
+    if (!sessionProgress || sessionProgress.status !== "in_progress") {
       throw new ApiError(403, "Start this chapter before completing an activity");
     }
 
