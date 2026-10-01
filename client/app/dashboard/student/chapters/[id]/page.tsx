@@ -131,7 +131,7 @@ export default function ChapterDetailPage() {
             <section className="space-y-4">
               <div className="rounded-3xl bg-sky-50 p-5">
                 <h2 className="text-xl font-black text-slate-900">Interactive Activities</h2>
-                <p className="mt-1 text-slate-600">Complete both activities to finish this chapter.</p>
+                <p className="mt-1 text-slate-600">{gradeOneActivities.length === 1 ? "Complete this activity to finish this chapter." : "Complete all activities to finish this chapter."}</p>
               </div>
               {gradeOneActivities.map((activity) => (
                 <ChapterActivity
