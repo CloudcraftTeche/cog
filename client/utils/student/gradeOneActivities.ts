@@ -51,7 +51,7 @@ export const gradeOneChapter18Activities: ChapterActivityConfig[] = [
     activity: {
       type: 'scramble',
       questions: [
-        { id: 'grade-1-chapter-18-q1', word: 'BABYLON', scrambled: 'NEBALOBY', hint: 'A city where the Israelites were taken captive.' },
+        { id: 'grade-1-chapter-18-q1', word: 'BABYLON', scrambled: 'NOBALBY', hint: 'A city where the Israelites were taken captive.' },
         { id: 'grade-1-chapter-18-q2', word: 'FURNACE', scrambled: 'NEAFRUC', hint: 'A very hot place of fire.' },
       ],
     },
