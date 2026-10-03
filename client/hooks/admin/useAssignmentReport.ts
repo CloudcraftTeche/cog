@@ -92,6 +92,7 @@ export const useExportAssignmentReport = () => {
           ? new Date(r.submittedAt).toLocaleDateString()
           : "",
         Attachment: r.attachmentUrl || "",
+        "Text Response": r.textResponse || "",
       }));
       const ws = XLSX.utils.json_to_sheet(excelRows);
       ws["!cols"] = [
@@ -104,6 +105,7 @@ export const useExportAssignmentReport = () => {
         { wch: 20 },
         { wch: 20 },
         { wch: 40 },
+        { wch: 60 },
       ];
       const attachmentCol = 8;
       rows.forEach((r, idx) => {

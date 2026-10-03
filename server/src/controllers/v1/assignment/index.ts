@@ -738,6 +738,7 @@ export const getAssignmentReport = async (
       assignmentCreatedAt: Date | undefined;
       submittedAt: Date | null;
       attachmentUrl: string | null;
+      textResponse: string | null;
     };
     let rows: ReportRow[] = [];
     assignments.forEach((assignment) => {
@@ -762,6 +763,7 @@ export const getAssignmentReport = async (
           assignmentCreatedAt: assignment.createdAt,
           submittedAt: submission?.submittedAt ?? null,
           attachmentUrl: submission?.videoUrl || submission?.pdfUrl || null,
+          textResponse: submission?.textContent || null,
         });
       });
     });

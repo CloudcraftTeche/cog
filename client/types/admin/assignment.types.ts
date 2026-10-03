@@ -159,6 +159,7 @@ export interface IAssignmentReportRow {
   assignmentCreatedAt: string;
   submittedAt: string | null;
   attachmentUrl: string | null;
+  textResponse: string | null;
 }
 
 export interface AssignmentReportResponse {

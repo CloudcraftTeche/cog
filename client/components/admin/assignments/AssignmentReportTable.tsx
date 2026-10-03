@@ -38,8 +38,19 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { assignmentService } from "@/lib/admin/api/assignment.service";
 import { ASSIGNMENT_QUERY_KEYS } from "@/hooks/admin/useAssignments";
+import { IAssignmentReportRow } from "@/types/admin/assignment.types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+const TEXT_PREVIEW_LIMIT = 60;
 
 export function AssignmentReportTable() {
+  const [textModal, setTextModal] = useState<IAssignmentReportRow | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [gradeFilter, setGradeFilter] = useState("all");
@@ -191,6 +202,7 @@ export function AssignmentReportTable() {
                   <TableHead>Created</TableHead>
                   <TableHead>Submitted</TableHead>
                   <TableHead>Attachment</TableHead>
+                  <TableHead>Text Response</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,6 +258,24 @@ export function AssignmentReportTable() {
                         "-"
                       )}
                     </TableCell>
+                    <TableCell className="max-w-[240px] truncate">
+                      {row.textResponse ? (
+                        row.textResponse.length > TEXT_PREVIEW_LIMIT ? (
+                          <button
+                            type="button"
+                            onClick={() => setTextModal(row)}
+                            title="Click to view full text"
+                            className="block w-full truncate text-left text-indigo-600 hover:underline"
+                          >
+                            {row.textResponse}
+                          </button>
+                        ) : (
+                          <span>{row.textResponse}</span>
+                        )
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -292,6 +322,18 @@ export function AssignmentReportTable() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!textModal} onOpenChange={(o) => !o && setTextModal(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{textModal?.studentName}</DialogTitle>
+            <DialogDescription>{textModal?.assignmentName}</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap break-words text-sm text-slate-700">
+            {textModal?.textResponse}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
