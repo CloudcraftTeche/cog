@@ -10,7 +10,7 @@ import { Student } from "../../../models/user/Student.model";
 import { Teacher } from "../../../models/user/Teacher.model";
 import { User } from "../../../models/user/User.model";
 import { ApiError } from "../../../utils/ApiError";
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 const getUserRole = async (userId: string) => {
   const user = await User.findById(userId).select("role");
   return user?.role || null;
@@ -652,6 +652,146 @@ export const getSubmissionsForMyAssignments = async (
       data: populatedSubs,
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
       filters: { gradeStatus, search },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+export const getAssignmentReport = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const showAll = req.query.limit === "all";
+    const limit = showAll
+      ? 0
+      : Math.max(parseInt(req.query.limit as string) || 10, 1);
+    const search = (req.query.search as string)?.trim().toLowerCase() || "";
+    const gradeId = req.query.grade as string;
+    const status = req.query.status as string;
+
+    const assignmentFilter: any = {};
+    if (gradeId) assignmentFilter.gradeId = gradeId;
+
+    const assignments = await Assignment.find(assignmentFilter)
+      .select("title gradeId totalMarks createdAt")
+      .populate<{ gradeId: { _id: any; grade: string } }>("gradeId", "grade")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (assignments.length === 0) {
+      res.json({
+        success: true,
+        data: [],
+        pagination: {
+          total: 0,
+          page,
+          limit: showAll ? 0 : limit,
+          totalPages: 0,
+        },
+      });
+      return;
+    }
+
+    const gradeIds = [
+      ...new Set(
+        assignments
+          .map((a) => (a.gradeId as any)?._id?.toString())
+          .filter(Boolean)
+      ),
+    ];
+    const assignmentIds = assignments.map((a) => a._id);
+
+    const [students, submissions] = await Promise.all([
+      Student.find({ gradeId: { $in: gradeIds } })
+        .select("name email gradeId")
+        .lean(),
+      Submission.find({ assignmentId: { $in: assignmentIds } }).lean(),
+    ]);
+
+    const submissionMap = new Map<string, (typeof submissions)[number]>();
+    submissions.forEach((sub) => {
+      submissionMap.set(`${sub.assignmentId}_${sub.studentId}`, sub);
+    });
+
+    const studentsByGrade = new Map<string, typeof students>();
+    students.forEach((s) => {
+      const key = s.gradeId?.toString();
+      if (!key) return;
+      if (!studentsByGrade.has(key)) studentsByGrade.set(key, []);
+      studentsByGrade.get(key)!.push(s);
+    });
+
+    type ReportRow = {
+      studentId: string;
+      studentName: string;
+      gradeId: string;
+      gradeName: string;
+      assignmentId: string;
+      assignmentName: string;
+      status: "completed" | "pending";
+      marks: number | null;
+      totalMarks: number | null;
+      feedback: string | null;
+      assignmentCreatedAt: Date | undefined;
+      submittedAt: Date | null;
+      attachmentUrl: string | null;
+    };
+    let rows: ReportRow[] = [];
+    assignments.forEach((assignment) => {
+      const grade = assignment.gradeId as any;
+      const gId = grade?._id?.toString();
+      const gradeStudents = studentsByGrade.get(gId) || [];
+      gradeStudents.forEach((student) => {
+        const submission = submissionMap.get(
+          `${assignment._id}_${student._id}`
+        );
+        rows.push({
+          studentId: student._id.toString(),
+          studentName: student.name,
+          gradeId: gId,
+          gradeName: grade?.grade || "",
+          assignmentId: assignment._id.toString(),
+          assignmentName: assignment.title,
+          status: submission ? "completed" : "pending",
+          marks: submission?.score ?? null,
+          totalMarks: assignment.totalMarks ?? null,
+          feedback: submission?.feedback ?? null,
+          assignmentCreatedAt: assignment.createdAt,
+          submittedAt: submission?.submittedAt ?? null,
+          attachmentUrl: submission?.videoUrl || submission?.pdfUrl || null,
+        });
+      });
+    });
+
+    if (search) {
+      rows = rows.filter(
+        (r) =>
+          r.studentName?.toLowerCase().includes(search) ||
+          r.assignmentName?.toLowerCase().includes(search) ||
+          r.gradeName?.toLowerCase().includes(search)
+      );
+    }
+    if (status === "completed" || status === "pending") {
+      rows = rows.filter((r) => r.status === status);
+    }
+
+    const total = rows.length;
+    const paginatedRows = showAll
+      ? rows
+      : rows.slice((page - 1) * limit, (page - 1) * limit + limit);
+
+    res.json({
+      success: true,
+      data: paginatedRows,
+      pagination: {
+        total,
+        page: showAll ? 1 : page,
+        limit: showAll ? total : limit,
+        totalPages: showAll ? 1 : Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     next(err);

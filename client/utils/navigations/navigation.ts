@@ -14,6 +14,7 @@ import {
   BookMarked,
   Book,
   School2Icon,
+  FileSpreadsheet,
 } from "lucide-react";
 import { NavItem, NavConfig } from "@/types/navigation";
 
@@ -26,6 +27,7 @@ const adminNavItems: NavItem[] = [
   { name: "Grades", href: "/dashboard/admin/grades", icon: SchoolIcon },
   { name: "GradeReports", href: "/dashboard/admin/gradeReport", icon: School2Icon },
   { name: "Assignments", href: "/dashboard/admin/assignments", icon: Upload },
+  { name: "Assignment Report", href: "/dashboard/admin/assignments/report", icon: FileSpreadsheet },
   { name: "Teacher-Chapters", href: "/dashboard/admin/teacher-chapters", icon: BookMarked },
   { name: "Chat", href: "/dashboard/admin/chat", icon: MessageCircleMore },
   { name: "Queries", href: "/dashboard/admin/queries", icon: BadgeHelpIcon },
@@ -41,6 +43,7 @@ const superAdminNavItems: NavItem[] = [
   { name: "Grades", href: "/dashboard/super-admin/grades", icon: SchoolIcon },
   { name: "GradeReports", href: "/dashboard/admin/gradeReport", icon: School2Icon },
   { name: "Assignments", href: "/dashboard/super-admin/assignments", icon: Upload },
+  { name: "Assignment Report", href: "/dashboard/super-admin/assignments/report", icon: FileSpreadsheet },
   { name: "Teacher-Chapters", href: "/dashboard/super-admin/teacher-chapters", icon: BookMarked },
   { name: "Chat", href: "/dashboard/super-admin/chat", icon: MessageCircleMore },
   { name: "Queries", href: "/dashboard/super-admin/queries", icon: BadgeHelpIcon },

@@ -145,5 +145,32 @@ export interface UseSubmissionsParams {
   limit?: number;
 }
 
+export interface IAssignmentReportRow {
+  studentId: string;
+  studentName: string;
+  gradeId: string;
+  gradeName: string;
+  assignmentId: string;
+  assignmentName: string;
+  status: "completed" | "pending";
+  marks: number | null;
+  totalMarks: number | null;
+  feedback: string | null;
+  assignmentCreatedAt: string;
+  submittedAt: string | null;
+  attachmentUrl: string | null;
+}
+
+export interface AssignmentReportResponse {
+  success: boolean;
+  data: IAssignmentReportRow[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export const MAX_FILE_SIZE_MB = 25;
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;

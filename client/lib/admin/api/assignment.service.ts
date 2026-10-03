@@ -6,6 +6,7 @@ import {
   IGrade,
   SubmissionsResponse,
   GradeSubmissionDTO,
+  AssignmentReportResponse,
 } from "@/types/admin/assignment.types";
 
 export const assignmentService = {
@@ -123,6 +124,29 @@ export const assignmentService = {
     const response = await api.put(
       `/submissions/${submissionId}/grade`,
       gradeData
+    );
+    return response.data;
+  },
+
+  
+  getAssignmentReport: async (params?: {
+    search?: string;
+    page?: number;
+    limit?: number | "all";
+    grade?: string;
+    status?: string;
+  }) => {
+    const response = await api.get<AssignmentReportResponse>(
+      "/assignments/report/all",
+      {
+        params: {
+          search: params?.search?.trim() || undefined,
+          page: params?.page || 1,
+          limit: params?.limit || 10,
+          grade: params?.grade !== "all" ? params?.grade : undefined,
+          status: params?.status !== "all" ? params?.status : undefined,
+        },
+      }
     );
     return response.data;
   },

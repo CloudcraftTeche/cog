@@ -12,6 +12,7 @@ import {
   getAssignmentSubmissions,
   updateAssignment,
   getSubmissionsForMyAssignments,
+  getAssignmentReport,
 } from "../../../controllers/v1/assignment";
 import { upload } from "../../../middleware/upload";
 import { authorizeRoles } from "../../../middleware/authorizeRoles";
@@ -102,6 +103,26 @@ router.get(
   ],
   validate,
   getAllAssignments
+);
+router.get(
+  "/report/all",
+  authenticate,
+  authorizeRoles("admin", "superAdmin"),
+  [
+    query("page").optional().isInt({ min: 1 }).withMessage("Page must be >= 1"),
+    query("limit")
+      .optional()
+      .custom((value) => value === "all" || (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 2000))
+      .withMessage("Limit must be 1-2000 or 'all'"),
+    query("search").optional().trim(),
+    query("grade").optional().isMongoId().withMessage("Invalid grade ID"),
+    query("status")
+      .optional()
+      .isIn(["completed", "pending"])
+      .withMessage("Invalid status"),
+  ],
+  validate,
+  getAssignmentReport
 );
 router.get(
   "/grade/:gradeId",
