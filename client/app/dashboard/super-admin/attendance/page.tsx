@@ -11,6 +11,14 @@ import {
   useRefreshAttendance,
 } from "@/hooks/admin/useAttendance";
 import {
+  useTeacherAttendanceStats,
+  useTeacherAttendanceHeatmap,
+  useTeacherAttendanceRecords,
+  useTeacherAttendanceReport,
+  useExportTeacherAttendance,
+  useRefreshTeacherAttendance,
+} from "@/hooks/admin/useTeacherAttendance";
+import {
   validateAttendanceStatus,
   validateDateRange,
 } from "@/lib/admin/validators/attendance.validators";
@@ -19,6 +27,12 @@ import {
   downloadCSV,
   generateExportFilename,
 } from "@/utils/admin/export.utils";
+import {
+  convertTeacherAttendanceToCSV,
+  convertTeacherReportToCSV,
+  generateTeacherAttendanceFilename,
+} from "@/utils/admin/teacher-attendance.utils";
+import { AttendanceAudience } from "@/types/admin/attendance.types";
 import { LoadingState } from "@/components/shared/LoadingComponent";
 import ErrorState from "@/components/teacher/mychapter/ErrorState";
 import {
@@ -26,9 +40,11 @@ import {
   AttendancePieChart,
   AttendanceTable,
   AttendanceTrendChart,
+  AudienceToggle,
   ExportSection,
   Navigation,
   StatsSection,
+  TeacherReportTable,
 } from "@/components/admin/attendance/AttendanceComponents";
 export default function SuperAdminAttendancePage() {
   const {
@@ -49,9 +65,39 @@ export default function SuperAdminAttendancePage() {
   const exportMutation = useExportAttendance();
   const refreshMutation = useRefreshAttendance();
   const [selectedView, setSelectedView] = useState("overview");
+  const [audience, setAudience] = useState<AttendanceAudience>("students");
+  const [reportStartDate, setReportStartDate] = useState("");
+  const [reportEndDate, setReportEndDate] = useState("");
+  const isTeachers = audience === "teachers";
+  const {
+    data: teacherStats,
+    isLoading: teacherStatsLoading,
+    error: teacherStatsError,
+  } = useTeacherAttendanceStats();
+  const { data: teacherHeatmapData = [], error: teacherHeatmapError } =
+    useTeacherAttendanceHeatmap();
+  const { data: teacherRecords = [], error: teacherRecordsError } =
+    useTeacherAttendanceRecords(50);
+  const {
+    data: teacherReport = [],
+    isLoading: teacherReportLoading,
+    error: teacherReportError,
+  } = useTeacherAttendanceReport({
+    startDate: reportStartDate,
+    endDate: reportEndDate,
+  });
+  const teacherExportMutation = useExportTeacherAttendance();
+  const teacherRefreshMutation = useRefreshTeacherAttendance();
+  const activeStats = isTeachers ? teacherStats : stats;
+  const activeHeatmap = isTeachers ? teacherHeatmapData : heatmapData;
+  const activeRefresh = isTeachers ? teacherRefreshMutation : refreshMutation;
   const isLoading = statsLoading && heatmapLoading && recordsLoading;
-  const error =
-    statsError?.message || heatmapError?.message || recordsError?.message;
+  const error = isTeachers
+    ? teacherStatsError?.message ||
+      teacherHeatmapError?.message ||
+      teacherRecordsError?.message ||
+      teacherReportError?.message
+    : statsError?.message || heatmapError?.message || recordsError?.message;
   const handleExport = async (
     status: string,
     startDate?: string,
@@ -68,6 +114,29 @@ export default function SuperAdminAttendancePage() {
         toast.error(dateError.message);
         return;
       }
+    }
+    if (isTeachers) {
+      try {
+        const start = startDate && endDate ? new Date(startDate) : undefined;
+        const end = startDate && endDate ? new Date(endDate) : undefined;
+        const data = await teacherExportMutation.mutateAsync({
+          status,
+          startDate: start,
+          endDate: end,
+        });
+        if (!data || data.length === 0) {
+          toast.error("No data available for export");
+          return;
+        }
+        downloadCSV(
+          convertTeacherAttendanceToCSV(data),
+          generateTeacherAttendanceFilename(status, start, end),
+        );
+        toast.success(`Exported ${data.length} records successfully`);
+      } catch (error) {
+        console.error("Export error:", error);
+      }
+      return;
     }
     try {
       const data = await exportMutation.mutateAsync({
@@ -87,8 +156,23 @@ export default function SuperAdminAttendancePage() {
       console.error("Export error:", error);
     }
   };
+  const handleReportExport = () => {
+    if (teacherReport.length === 0) {
+      toast.error("No data available for export");
+      return;
+    }
+    const range =
+      reportStartDate && reportEndDate
+        ? `${reportStartDate}-to-${reportEndDate}`
+        : new Date().toISOString().split("T")[0];
+    downloadCSV(
+      convertTeacherReportToCSV(teacherReport),
+      `teacher-attendance-report-${range}.csv`,
+    );
+    toast.success(`Exported report for ${teacherReport.length} teachers`);
+  };
   const handleRefresh = () => {
-    refreshMutation.mutate();
+    activeRefresh.mutate();
   };
   if (isLoading) {
     return <LoadingState text="Attendance" />;
@@ -103,24 +187,32 @@ export default function SuperAdminAttendancePage() {
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {selectedView === "overview" && (
           <>
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <AudienceToggle
+                audience={audience}
+                onAudienceChange={setAudience}
+              />
               <button
                 onClick={handleRefresh}
-                disabled={refreshMutation.isPending}
+                disabled={activeRefresh.isPending}
                 className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow disabled:opacity-50"
               >
                 <RefreshCw
                   size={18}
-                  className={refreshMutation.isPending ? "animate-spin" : ""}
+                  className={activeRefresh.isPending ? "animate-spin" : ""}
                 />
                 Refresh
               </button>
             </div>
-            <StatsSection stats={stats ?? null} isLoading={statsLoading} />
+            <StatsSection
+              stats={activeStats ?? null}
+              isLoading={isTeachers ? teacherStatsLoading : statsLoading}
+              variant={audience}
+            />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <AttendancePieChart
                 data={
-                  stats?.todayAttendance || {
+                  activeStats?.todayAttendance || {
                     present: 0,
                     absent: 0,
                     late: 0,
@@ -128,14 +220,37 @@ export default function SuperAdminAttendancePage() {
                   }
                 }
               />
-              <AttendanceTrendChart data={heatmapData} />
+              <AttendanceTrendChart data={activeHeatmap} />
             </div>
-            <ExportSection onExport={handleExport} />
+            {isTeachers && (
+              <TeacherReportTable
+                rows={teacherReport}
+                isLoading={teacherReportLoading}
+                startDate={reportStartDate}
+                endDate={reportEndDate}
+                onStartDateChange={setReportStartDate}
+                onEndDateChange={setReportEndDate}
+                onExport={handleReportExport}
+              />
+            )}
+            <ExportSection
+              key={audience}
+              onExport={handleExport}
+              title={
+                isTeachers
+                  ? "Export Teacher Attendance Data"
+                  : "Export Attendance Data"
+              }
+            />
           </>
         )}
         {selectedView === "heatmap" && (
           <>
-            <AttendanceHeatmap data={heatmapData} />
+            <AudienceToggle
+              audience={audience}
+              onAudienceChange={setAudience}
+            />
+            <AttendanceHeatmap data={activeHeatmap} />
             <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg">
               <h3 className="text-lg font-semibold mb-4 text-gray-800">
                 Legend
@@ -162,7 +277,22 @@ export default function SuperAdminAttendancePage() {
           </>
         )}
         {selectedView === "records" && (
-          <AttendanceTable records={recentRecords} />
+          <>
+            <AudienceToggle
+              audience={audience}
+              onAudienceChange={setAudience}
+            />
+            <AttendanceTable
+              key={audience}
+              records={isTeachers ? teacherRecords : recentRecords}
+              title={
+                isTeachers
+                  ? "Recent Teacher Attendance Records"
+                  : "Recent Attendance Records"
+              }
+              variant={audience}
+            />
+          </>
         )}
       </div>
     </div>

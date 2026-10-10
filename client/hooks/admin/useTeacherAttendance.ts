@@ -6,7 +6,9 @@ import {
   AttendanceStatus,
   TeacherAttendanceStats,
   TeacherAttendanceHeatmapData,
+  TeacherAttendanceReportRow,
 } from "@/types/admin/teacher-attendance.types";
+import { AttendanceRecord } from "@/types/admin/attendance.types";
 import { toast } from "sonner";
 export const teacherAttendanceKeys = {
   all: ["teacherAttendance"] as const,
@@ -32,6 +34,9 @@ export const teacherAttendanceKeys = {
     endDate?: Date;
     gradeId?: string;
   }) => [...teacherAttendanceKeys.all, "export", filters] as const,
+  records: () => [...teacherAttendanceKeys.all, "records"] as const,
+  report: (filters: { startDate?: string; endDate?: string }) =>
+    [...teacherAttendanceKeys.all, "report", filters] as const,
 };
 
 export const useTeachers = (params: any) => {
@@ -73,6 +78,52 @@ export const useTeacherAttendanceHeatmap = () => {
     },
     staleTime: 5 * 60 * 1000,
     retry: 2,
+  });
+};
+export const useTeacherAttendanceRecords = (limit = 50) => {
+  return useQuery({
+    queryKey: [...teacherAttendanceKeys.records(), limit],
+    queryFn: async (): Promise<AttendanceRecord[]> => {
+      const { data } = await api.get("/teacher-attendance/export");
+      return data?.slice(0, limit) || [];
+    },
+    staleTime: 3 * 60 * 1000,
+    retry: 2,
+  });
+};
+export const useTeacherAttendanceReport = (
+  filters: { startDate?: string; endDate?: string } = {},
+) => {
+  const { startDate, endDate } = filters;
+  return useQuery({
+    queryKey: teacherAttendanceKeys.report({ startDate, endDate }),
+    queryFn: async (): Promise<TeacherAttendanceReportRow[]> => {
+      const params: Record<string, string> = {};
+      if (startDate && endDate) {
+        params.startDate = startDate;
+        params.endDate = endDate;
+      }
+      const { data } = await api.get("/teacher-attendance/report", { params });
+      return data || [];
+    },
+    staleTime: 3 * 60 * 1000,
+    retry: 2,
+  });
+};
+export const useRefreshTeacherAttendance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: teacherAttendanceKeys.all,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Data refreshed successfully");
+    },
+    onError: () => {
+      toast.error("Failed to refresh data");
+    },
   });
 };
 export const useTodayTeacherAttendance = () => {

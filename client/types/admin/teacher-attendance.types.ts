@@ -56,3 +56,17 @@ export interface TeacherAttendanceHeatmapData {
   late: number;
   excused: number;
 }
+
+export interface TeacherAttendanceReportRow {
+  _id: string;
+  name: string;
+  email: string;
+  grade?: string;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  attendanceRate: number;
+  lastMarked?: string;
+}

@@ -1,9 +1,9 @@
 
 "use client";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Filter , BarChart3, Calendar, FileSpreadsheet} from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Filter , BarChart3, Calendar, FileSpreadsheet, GraduationCap, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AttendanceHeatmapProps, AttendancePieChartProps, AttendanceTableProps, AttendanceTrendChartProps, ExportSectionProps, NavigationProps, StatsCardsProps, StatsSectionProps } from "@/types/admin/attendance.types";
+import { AttendanceHeatmapProps, AttendancePieChartProps, AttendanceTableProps, AttendanceTrendChartProps, AudienceToggleProps, ExportSectionProps, NavigationProps, StatsCardsProps, StatsSectionProps, TeacherReportTableProps } from "@/types/admin/attendance.types";
 
 
 export function Navigation({ selectedView, onViewChange }: NavigationProps) {
@@ -219,7 +219,7 @@ export function AttendanceHeatmap({ data }: AttendanceHeatmapProps) {
   );
 }
 
-export function ExportSection({ onExport }: ExportSectionProps) {
+export function ExportSection({ onExport, title = "Export Attendance Data" }: ExportSectionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [startDate, setStartDate] = useState("");
@@ -250,7 +250,7 @@ export function ExportSection({ onExport }: ExportSectionProps) {
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold text-gray-800">
-          Export Attendance Data
+          {title}
         </h3>
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -339,7 +339,8 @@ export function ExportSection({ onExport }: ExportSectionProps) {
   );
 }
 
-export function AttendanceTable({ records, title = "Recent Attendance Records" }: AttendanceTableProps) {
+export function AttendanceTable({ records, title = "Recent Attendance Records", variant = "students" }: AttendanceTableProps) {
+  const isTeachers = variant === "teachers";
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const recordsPerPage = 10;
@@ -367,7 +368,7 @@ export function AttendanceTable({ records, title = "Recent Attendance Records" }
         <div className="flex items-center gap-4">
           <input
             type="text"
-            placeholder="Search students..."
+            placeholder={isTeachers ? "Search teachers..." : "Search students..."}
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -385,13 +386,13 @@ export function AttendanceTable({ records, title = "Recent Attendance Records" }
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
+                {isTeachers ? "Teacher" : "Student"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Grade
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Teacher
+                {isTeachers ? "Marked By" : "Teacher"}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date
@@ -420,7 +421,7 @@ export function AttendanceTable({ records, title = "Recent Attendance Records" }
                     {record.gradeId?.grade || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {record.teacherId.name}
+                    {record.teacherId?.name || "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(record.date).toLocaleDateString()}
@@ -489,7 +490,7 @@ export function AttendanceTable({ records, title = "Recent Attendance Records" }
     </div>
   );
 }
-export function StatsSection({ stats, isLoading }: StatsSectionProps) {
+export function StatsSection({ stats, isLoading, variant = "students" }: StatsSectionProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -521,9 +522,13 @@ export function StatsSection({ stats, isLoading }: StatsSectionProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div className="bg-gradient-to-br from-purple-500 to-purple-700 text-white p-6 rounded-3xl shadow-lg">
         <h3 className="text-lg font-semibold mb-2 opacity-90">
-          Total Students
+          {variant === "teachers" ? "Marked Today" : "Total Students"}
         </h3>
-        <p className="text-4xl font-bold">{stats.totalStudents}</p>
+        <p className="text-4xl font-bold">
+          {variant === "teachers"
+            ? stats.todayAttendance.total
+            : stats.totalStudents}
+        </p>
       </div>
 
       <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-3xl shadow-lg">
@@ -550,6 +555,155 @@ export function StatsSection({ stats, isLoading }: StatsSectionProps) {
           {stats.todayAttendance.absent} absent, {stats.todayAttendance.excused}{" "}
           excused
         </p>
+      </div>
+    </div>
+  );
+}
+
+export function AudienceToggle({ audience, onAudienceChange }: AudienceToggleProps) {
+  const options = [
+    { id: "students" as const, label: "Students", icon: Users },
+    { id: "teachers" as const, label: "Teachers", icon: GraduationCap },
+  ];
+
+  return (
+    <div className="flex bg-white rounded-lg shadow-sm p-1">
+      {options.map((option) => {
+        const Icon = option.icon;
+        return (
+          <button
+            key={option.id}
+            onClick={() => onAudienceChange(option.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+              audience === option.id
+                ? "bg-purple-100 text-purple-700 shadow-sm"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Icon size={18} />
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function TeacherReportTable({
+  rows,
+  isLoading,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+  onExport,
+}: TeacherReportTableProps) {
+  const today = new Date().toISOString().split("T")[0];
+  const headers = ["Teacher", "Grade", "Present", "Absent", "Late", "Excused", "Total", "Rate"];
+  return (
+    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+        <h3 className="text-xl font-bold text-gray-800">
+          Teacher Attendance Report
+        </h3>
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => onStartDateChange(e.target.value)}
+              max={endDate || today}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => onEndDateChange(e.target.value)}
+              min={startDate || undefined}
+              max={today}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+          <button
+            onClick={onExport}
+            disabled={isLoading || rows.length === 0}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download size={18} />
+            Export Teacher Report
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              {headers.map((header) => (
+                <th
+                  key={header}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading ? (
+              <tr>
+                <td colSpan={headers.length} className="px-6 py-8 text-center text-gray-500">
+                  Loading report...
+                </td>
+              </tr>
+            ) : rows.length > 0 ? (
+              rows.map((row) => (
+                <tr key={row._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {row.name}
+                    </div>
+                    <div className="text-sm text-gray-500">{row.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {row.grade || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700">
+                    {row.present}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-700">
+                    {row.absent}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-700">
+                    {row.late}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-indigo-700">
+                    {row.excused}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {row.total}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                    {row.total > 0 ? `${row.attendanceRate}%` : "-"}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={headers.length} className="px-6 py-8 text-center text-gray-500">
+                  No teachers found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

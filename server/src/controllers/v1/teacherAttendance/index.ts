@@ -1,6 +1,7 @@
 import { TeacherAttendance } from "../../../models/attendance/TeacherAttendance.schema";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { User } from "../../../models/user/User.model";
+import { Grade } from "../../../models/academic/Grade.model";
 import { Response } from "express";
 import { Types } from "mongoose";
 export const createOrUpdateTeacherAttendance = async (
@@ -234,6 +235,110 @@ export const exportTeacherAttendance = async (
       .lean();
     const filteredRecords = records.filter((r) => r.studentId !== null);
     res.json(filteredRecords);
+  } catch (e: any) {
+    res.status(400).json({ error: e.message });
+  }
+};
+export const getTeacherAttendanceReport = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const startDate = req.query["startDate"];
+    const endDate = req.query["endDate"];
+    const gradeId = req.query["gradeId"];
+    const teacherMatch: any = { role: "teacher" };
+    if (gradeId) {
+      teacherMatch.gradeId = new Types.ObjectId(gradeId as string);
+    }
+    const attendanceMatch: any = {
+      $expr: { $eq: ["$studentId", "$$teacherId"] },
+    };
+    if (startDate && endDate) {
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      attendanceMatch.date = { $gte: start, $lte: end };
+    }
+    const countStatus = (status: string) => ({
+      $sum: { $cond: [{ $eq: ["$status", status] }, 1, 0] },
+    });
+    const report = await User.aggregate([
+      { $match: teacherMatch },
+      {
+        $lookup: {
+          from: TeacherAttendance.collection.name,
+          let: { teacherId: "$_id" },
+          pipeline: [
+            { $match: attendanceMatch },
+            {
+              $group: {
+                _id: null,
+                present: countStatus("present"),
+                absent: countStatus("absent"),
+                late: countStatus("late"),
+                excused: countStatus("excused"),
+                total: { $sum: 1 },
+                lastMarked: { $max: "$date" },
+              },
+            },
+          ],
+          as: "attendance",
+        },
+      },
+      {
+        $lookup: {
+          from: Grade.collection.name,
+          localField: "gradeId",
+          foreignField: "_id",
+          as: "grade",
+        },
+      },
+      {
+        $addFields: {
+          attendance: { $first: "$attendance" },
+          grade: { $first: "$grade" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          grade: "$grade.grade",
+          present: { $ifNull: ["$attendance.present", 0] },
+          absent: { $ifNull: ["$attendance.absent", 0] },
+          late: { $ifNull: ["$attendance.late", 0] },
+          excused: { $ifNull: ["$attendance.excused", 0] },
+          total: { $ifNull: ["$attendance.total", 0] },
+          lastMarked: "$attendance.lastMarked",
+        },
+      },
+      {
+        $addFields: {
+          attendanceRate: {
+            $cond: [
+              { $gt: ["$total", 0] },
+              {
+                $round: [
+                  {
+                    $multiply: [
+                      { $divide: [{ $add: ["$present", "$late"] }, "$total"] },
+                      100,
+                    ],
+                  },
+                  1,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+      { $sort: { name: 1 } },
+    ]);
+    res.json(report);
   } catch (e: any) {
     res.status(400).json({ error: e.message });
   }

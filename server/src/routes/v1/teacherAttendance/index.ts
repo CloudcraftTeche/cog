@@ -7,6 +7,7 @@ import {
   getTeacherAttendanceStats,
   getTodayTeacherAttendance,
   getSpecificTeacherAttendance,
+  getTeacherAttendanceReport,
   getTeacherAttendanceByDate,
 } from "../../../controllers/v1/teacherAttendance";
 import { authenticate } from "../../../middleware/authenticate";
@@ -81,6 +82,18 @@ router.get(
   ],
   handleValidationErrors,
   exportTeacherAttendance
+);
+
+router.get(
+  "/report",
+  authorizeRoles("admin", "superAdmin"),
+  [
+    query("startDate").optional().isISO8601().withMessage("Invalid start date"),
+    query("endDate").optional().isISO8601().withMessage("Invalid end date"),
+    query("gradeId").optional().isMongoId().withMessage("Invalid gradeId"),
+  ],
+  handleValidationErrors,
+  getTeacherAttendanceReport
 );
 
 router.get(
