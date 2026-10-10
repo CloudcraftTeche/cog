@@ -1,3 +1,5 @@
+import { TeacherAttendanceReportRow } from "@/types/admin/teacher-attendance.types";
+
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 
 export interface AttendanceRecord {
@@ -80,11 +82,30 @@ export interface AttendanceHeatmapProps {
 
 export interface ExportSectionProps {
   onExport: (status: string, startDate?: string, endDate?: string) => Promise<void>;
+  title?: string;
 }
 
 export interface AttendanceTableProps {
   records: AttendanceRecord[];
   title?: string;
+  variant?: AttendanceAudience;
+}
+
+export type AttendanceAudience = "students" | "teachers";
+
+export interface AudienceToggleProps {
+  audience: AttendanceAudience;
+  onAudienceChange: (audience: AttendanceAudience) => void;
+}
+
+export interface TeacherReportTableProps {
+  rows: TeacherAttendanceReportRow[];
+  isLoading: boolean;
+  startDate: string;
+  endDate: string;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+  onExport: () => void;
 }
 
 export interface NavigationProps {
@@ -93,6 +114,9 @@ export interface NavigationProps {
 }
 
 export interface StatsSectionProps {
-  stats: AttendanceStats | null;
+  stats:
+    | (Omit<AttendanceStats, "totalStudents"> & { totalStudents?: number })
+    | null;
   isLoading: boolean;
+  variant?: AttendanceAudience;
 }

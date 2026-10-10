@@ -212,6 +212,7 @@ Source: [server/src/routes/v1/teacherAttendance/index.ts](../server/src/routes/v
 | GET | `/stats` |
 | GET | `/heatmap` |
 | GET | `/export` |
+| GET | `/report` |
 | GET | `/teacher/:teacherId` |
 | GET | `/grade/:gradeId` |
 | DELETE | `/:attendanceId` |

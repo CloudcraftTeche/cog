@@ -1,6 +1,9 @@
 
 
-import { ITeacherAttendance } from "@/types/admin/teacher-attendance.types";
+import {
+  ITeacherAttendance,
+  TeacherAttendanceReportRow,
+} from "@/types/admin/teacher-attendance.types";
 
 
 export const formatDate = (date: Date, formatStr: string): string => {
@@ -75,6 +78,47 @@ export const convertTeacherAttendanceToCSV = (
   return csvRows.join("\n");
 };
 
+
+export const convertTeacherReportToCSV = (
+  data: TeacherAttendanceReportRow[]
+): string => {
+  if (data.length === 0) {
+    return "No data to export";
+  }
+
+  const headers = [
+    "Teacher Name",
+    "Email",
+    "Grade",
+    "Present",
+    "Absent",
+    "Late",
+    "Excused",
+    "Total Marked",
+    "Attendance Rate (%)",
+    "Last Marked",
+  ];
+
+  const csvRows = [
+    headers.join(","),
+    ...data.map((row) =>
+      [
+        `"${row.name}"`,
+        `"${row.email}"`,
+        `"${row.grade || "N/A"}"`,
+        row.present,
+        row.absent,
+        row.late,
+        row.excused,
+        row.total,
+        row.attendanceRate,
+        `"${row.lastMarked ? formatDate(new Date(row.lastMarked), "dd-MM-yyyy") : "-"}"`,
+      ].join(",")
+    ),
+  ];
+
+  return csvRows.join("\n");
+};
 
 export const downloadCSV = (csvData: string, filename: string): void => {
   const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
