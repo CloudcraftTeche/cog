@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { StudentCard } from "@/components/teacher/students/StudentCard";
+import { StudentsTable } from "@/components/admin/students/StudentsTable";
 import { DeleteStudentDialog } from "@/components/teacher/students/DeleteStudentDialog";
 import { StudentProgressDialog } from "@/components/teacher/students/StudentProgressDialog";
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 interface Student {
   _id: string;
@@ -57,7 +59,7 @@ export default function TeacherStudentsPage() {
   const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(9);
+  const [limit, setLimit] = useState(20);
 
   const [searchInput, setSearchInput] = useState("");
   const [query, setQuery] = useState("");
@@ -76,7 +78,6 @@ export default function TeacherStudentsPage() {
 
   const [studentProgress, setStudentProgress] = useState<StudentProgress | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   const fetchStudents = async () => {
     try {
@@ -107,16 +108,7 @@ export default function TeacherStudentsPage() {
 
   useEffect(() => {
     fetchStudents();
-  }, [page, query]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".dropdown-container")) setDropdownOpen(null);
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  }, [page, query, limit]);
 
   const commitSearch = () => {
     setPage(1);
@@ -154,15 +146,6 @@ export default function TeacherStudentsPage() {
   };
 
   const totalPages = Math.ceil(totalStudents / limit);
-
-  const cardGradients = [
-    "from-rose-400 to-pink-500",
-    "from-blue-400 to-indigo-500",
-    "from-emerald-400 to-teal-500",
-    "from-amber-400 to-orange-500",
-    "from-purple-400 to-violet-500",
-    "from-cyan-400 to-sky-500",
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-6">
@@ -265,47 +248,64 @@ export default function TeacherStudentsPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {studentsList.map((student, index) => (
-                  <StudentCard
-                    key={student._id}
-                    student={student}
-                    gradient={cardGradients[index % cardGradients.length]}
-                    dropdownOpen={dropdownOpen === student._id}
-                    onDropdownToggle={() =>
-                      setDropdownOpen(dropdownOpen === student._id ? null : student._id)
-                    }
-                    onViewProgress={() => handleViewProgress(student)}
-                    onEdit={() => router.push(`/dashboard/teacher/students/edit/${student._id}`)}
-                    onDelete={() => setDeleteDialog({ open: true, studentId: student._id })}
-                    onCloseDropdown={() => setDropdownOpen(null)}
-                  />
-                ))}
-              </div>
-            )}
+              <>
+                <StudentsTable
+                  students={studentsList}
+                  startIndex={(page - 1) * limit}
+                  onViewProgress={handleViewProgress}
+                  onEdit={(student) => router.push(`/dashboard/teacher/students/edit/${student._id}`)}
+                  onDelete={(student) => setDeleteDialog({ open: true, studentId: student._id })}
+                />
 
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 pt-6">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage((prev) => prev - 1)}
-                  className="px-6 py-3 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </button>
-                <span className="px-6 py-3 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 font-semibold rounded-xl shadow-sm">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => setPage((prev) => prev + 1)}
-                  className="px-6 py-3 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </button>
-              </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                    <span>
+                      Showing {(page - 1) * limit + 1}–{Math.min(page * limit, totalStudents)} of {totalStudents}
+                    </span>
+                    <label className="flex items-center gap-2">
+                      Rows per page
+                      <select
+                        value={limit}
+                        onChange={(e) => {
+                          setLimit(Number(e.target.value));
+                          setPage(1);
+                        }}
+                        className="px-3 py-1.5 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        {PAGE_SIZE_OPTIONS.map((size) => (
+                          <option key={size} value={size}>
+                            {size}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        disabled={page === 1}
+                        onClick={() => setPage((prev) => prev - 1)}
+                        className="px-4 py-2 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </button>
+                      <span className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 font-semibold rounded-xl shadow-sm">
+                        Page {page} of {totalPages}
+                      </span>
+                      <button
+                        disabled={page === totalPages}
+                        onClick={() => setPage((prev) => prev + 1)}
+                        className="px-4 py-2 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </>
         )}

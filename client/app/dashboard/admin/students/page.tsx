@@ -3,18 +3,10 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
-  Mail,
-  Phone,
-  MoreHorizontal,
-  Edit,
-  Trash2,
   Loader2,
   Search,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
-  Award,
-  TrendingUp,
   User,
   FileSpreadsheet,
   X,
@@ -29,8 +21,6 @@ import {
 } from "@/hooks/admin/useStudents";
 import { Student } from "@/types/admin/student.types";
 import {
-  getInitials,
-  getCardGradient,
   prepareExcelData,
   exportStudentsToExcel,
 } from "@/utils/admin/student.utils";
@@ -38,6 +28,9 @@ import {
   DeleteConfirmDialog,
   StudentProgressModal,
 } from "@/components/admin/students/StudentProgressModal";
+import { StudentsTable } from "@/components/admin/students/StudentsTable";
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -47,7 +40,6 @@ export default function StudentsPage() {
   const [query, setQuery] = useState("");
 
   const [selectedGrade, setSelectedGrade] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     studentId: string | null;
@@ -58,7 +50,7 @@ export default function StudentsPage() {
   }>({ open: false, student: null });
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const limit = 6;
+  const [limit, setLimit] = useState(20);
 
   const { data: studentsData, isLoading, isFetching, error } = useStudents({
     query,
@@ -277,146 +269,65 @@ export default function StudentsPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {studentsList.map((student, index) => {
-              const gradient = getCardGradient(index);
-              return (
-                <div
-                  key={student._id}
-                  className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden border border-gray-100"
-                >
-                  <div className={`h-24 bg-gradient-to-r ${gradient} relative`}>
-                    <div className="absolute -bottom-10 left-6">
-                      <div className="h-20 w-20 rounded-2xl bg-white p-1 shadow-xl">
-                        {student.profilePictureUrl ? (
-                          <img
-                            src={student.profilePictureUrl}
-                            alt={student.name}
-                            className="h-full w-full rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className={`h-full w-full rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xl font-bold`}>
-                            {getInitials(student.name)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="absolute top-4 right-4 dropdown-container">
-                      <button
-                        className="h-9 w-9 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 flex items-center justify-center transition-all"
-                        onClick={() =>
-                          setDropdownOpen(dropdownOpen === student._id ? null : student._id)
-                        }
-                      >
-                        <MoreHorizontal className="h-5 w-5 text-white" />
-                      </button>
-                      {dropdownOpen === student._id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-10 overflow-hidden">
-                          <button
-                            className="w-full text-left px-4 py-3 hover:bg-purple-50 flex items-center text-gray-700 transition-colors"
-                            onClick={() => { handleViewProgress(student); setDropdownOpen(null); }}
-                          >
-                            <TrendingUp className="h-4 w-4 mr-3 text-purple-500" />
-                            View Progress
-                          </button>
-                          <button
-                            className="w-full text-left px-4 py-3 hover:bg-green-50 flex items-center text-gray-700 transition-colors"
-                            onClick={() => {
-                              router.push(`/dashboard/admin/students/edit/${student._id}`);
-                              setDropdownOpen(null);
-                            }}
-                          >
-                            <Edit className="h-4 w-4 mr-3 text-green-500" />
-                            Edit
-                          </button>
-                          <button
-                            className="w-full text-left px-4 py-3 hover:bg-red-50 flex items-center text-red-600 transition-colors"
-                            onClick={() => {
-                              setDeleteDialog({ open: true, studentId: student._id });
-                              setDropdownOpen(null);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-3" />
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          <>
+            <StudentsTable
+              students={studentsList}
+              grades={grades}
+              startIndex={(page - 1) * limit}
+              onViewProgress={handleViewProgress}
+              onEdit={(student) => router.push(`/dashboard/admin/students/edit/${student._id}`)}
+              onDelete={(student) => setDeleteDialog({ open: true, studentId: student._id })}
+            />
 
-                  <div className="pt-14 px-6 pb-6">
-                    <div className="mb-4">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{student.name}</h3>
-                      {student.rollNumber && (
-                        <span className="inline-block px-3 py-1 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 text-sm font-medium rounded-full">
-                          Roll: {student.rollNumber}
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-3 mb-5">
-                      <div className="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                        <Mail className="h-4 w-4 mr-3 text-blue-500 flex-shrink-0" />
-                        <span className="truncate">{student.email}</span>
-                      </div>
-                      {student.parentContact && (
-                        <div className="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                          <Phone className="h-4 w-4 mr-3 text-green-500 flex-shrink-0" />
-                          <span>{student.parentContact}</span>
-                        </div>
-                      )}
-                      {student.gradeId && (
-                        <div className="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                          <BookOpen className="h-4 w-4 mr-3 text-purple-500 flex-shrink-0" />
-                          <span>
-                            Grade: {grades.find((g) => g._id === student.gradeId)?.grade || student.gradeId}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-purple-700 font-medium rounded-xl transition-all flex items-center justify-center shadow-sm"
-                        onClick={() => handleViewProgress(student)}
-                      >
-                        <Award className="h-4 w-4 mr-2" />
-                        Progress
-                      </button>
-                      <button
-                        className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg"
-                        onClick={() => router.push(`/dashboard/admin/students/edit/${student._id}`)}
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <span>
+                  Showing {(page - 1) * limit + 1}–{Math.min(page * limit, totalStudents)} of {totalStudents}
+                </span>
+                <label className="flex items-center gap-2">
+                  Rows per page
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="px-3 py-1.5 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    {PAGE_SIZE_OPTIONS.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage((prev) => prev - 1)}
+                    className="px-4 py-2 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </button>
+                  <span className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 font-semibold rounded-xl shadow-sm">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage((prev) => prev + 1)}
+                    className="px-4 py-2 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 pt-6">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((prev) => prev - 1)}
-              className="px-6 py-3 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </button>
-            <span className="px-6 py-3 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 font-semibold rounded-xl shadow-sm">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage((prev) => prev + 1)}
-              className="px-6 py-3 bg-white border-2 border-gray-300 rounded-xl hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-gray-700 shadow-sm transition-all"
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </button>
-          </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
