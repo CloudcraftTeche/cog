@@ -15,28 +15,39 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Student, Grade } from "@/types/admin/student.types";
+import { Grade } from "@/types/admin/student.types";
 import { getInitials, getCardGradient } from "@/utils/admin/student.utils";
 
-interface StudentsTableProps {
-  students: Student[];
-  grades: Grade[];
-  startIndex: number;
-  onViewProgress: (student: Student) => void;
-  onEdit: (student: Student) => void;
-  onDelete: (student: Student) => void;
+interface StudentRow {
+  _id: string;
+  name: string;
+  email: string;
+  rollNumber?: string;
+  parentContact?: string;
+  gradeId?: string;
+  profilePictureUrl?: string;
 }
 
-export function StudentsTable({
+interface StudentsTableProps<T extends StudentRow> {
+  students: T[];
+  /** Omit to hide the Grade column (e.g. teachers, who only see their own grade). */
+  grades?: Grade[];
+  startIndex: number;
+  onViewProgress: (student: T) => void;
+  onEdit: (student: T) => void;
+  onDelete: (student: T) => void;
+}
+
+export function StudentsTable<T extends StudentRow>({
   students,
   grades,
   startIndex,
   onViewProgress,
   onEdit,
   onDelete,
-}: StudentsTableProps) {
+}: StudentsTableProps<T>) {
   const gradeName = (gradeId?: string) =>
-    gradeId ? grades.find((g) => g._id === gradeId)?.grade || gradeId : "—";
+    gradeId ? grades?.find((g) => g._id === gradeId)?.grade || gradeId : "—";
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -48,7 +59,7 @@ export function StudentsTable({
             <TableHead className="text-purple-900">Roll No.</TableHead>
             <TableHead className="text-purple-900">Email</TableHead>
             <TableHead className="text-purple-900">Parent Contact</TableHead>
-            <TableHead className="text-purple-900">Grade</TableHead>
+            {grades && <TableHead className="text-purple-900">Grade</TableHead>}
             <TableHead className="pr-6 text-right text-purple-900">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -77,11 +88,13 @@ export function StudentsTable({
               <TableCell className="text-gray-700">{student.rollNumber || "—"}</TableCell>
               <TableCell className="text-gray-700">{student.email}</TableCell>
               <TableCell className="text-gray-700">{student.parentContact || "—"}</TableCell>
-              <TableCell>
-                <span className="inline-block px-2.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                  {gradeName(student.gradeId)}
-                </span>
-              </TableCell>
+              {grades && (
+                <TableCell>
+                  <span className="inline-block px-2.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                    {gradeName(student.gradeId)}
+                  </span>
+                </TableCell>
+              )}
               <TableCell className="pr-6 text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
