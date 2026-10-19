@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface TeacherListHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onSearchSubmit: () => void;
+  /** Omit the search props to hide the header search (e.g. when the table has its own). */
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  onSearchSubmit?: () => void;
   onAddNew: () => void;
   totalTeachers?: number;
 }
@@ -35,6 +36,7 @@ export function TeacherListHeader({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
+          {onSearchChange && (
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-300 pointer-events-none" />
@@ -43,7 +45,7 @@ export function TeacherListHeader({
                 placeholder="Search teachers..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSearchSubmit()}
+                onKeyDown={(e) => e.key === "Enter" && onSearchSubmit?.()}
                 className="pl-11 pr-4 py-3 bg-white/10 border-2 border-white/20 text-white placeholder:text-purple-200 rounded-xl focus:bg-white/20 focus:border-white/40 backdrop-blur-sm w-full sm:w-52"
               />
             </div>
@@ -55,6 +57,7 @@ export function TeacherListHeader({
               Search
             </Button>
           </div>
+          )}
 
           <Button
             onClick={onAddNew}
