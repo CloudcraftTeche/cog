@@ -64,3 +64,14 @@ Data flow: page (`app/`) → hook (`hooks/<role>/`) → Axios instance (`lib/api
 ## Docs
 
 `docs/` has longer references (`API.md`, `DATABASE.md`, `ROUTING.md`, `STATE_MANAGEMENT.md`, `SETUP.md`, …). Project convention: document new API routes in `docs/API.md` and new env vars in `docs/SETUP.md`. Copilot-oriented versions of these guidelines live in `.github/copilot-instructions.md` and `.github/instructions/{client,server}.instructions.md`; keep them in sync when conventions change.
+
+## Jira workflow
+
+Tickets go from the Jira board to merged code through three project skills in `.claude/skills/`. Each one talks to Jira through `.claude/scripts/jira.sh`, which reads its credentials from the gitignored `.claude/jira.env` (template: `.claude/jira.env.example`).
+
+1. `/jira-start <KEY>`: reads the ticket, branches off `main` (`feature/<KEY>-…` or `fix/<KEY>-…`), moves the ticket to In Progress, implements, lints and commits locally. Never pushes.
+2. The user verifies locally.
+3. `/jira-pr <KEY>`: pushes, opens the PR against `main`, comments the PR link on the ticket and moves it to In Review.
+4. `/jira-done <KEY>`: after the merge, moves the ticket to Done and deletes the local branch.
+
+Commit messages and PR titles are prefixed with `<KEY>: ` so Jira's GitHub integration can link them.
