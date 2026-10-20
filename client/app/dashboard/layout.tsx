@@ -5,6 +5,7 @@ import { LoadingScreen } from "@/components/dashboard/LoadingScreen";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { InstallPrompt } from "@/components/shared/pwa/InstallPrompt";
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -31,6 +32,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="max-w-full break-words">{children}</div>
         </main>
       </div>
+      {/* Students first; teachers and admins get the prompt in their own PWA stories. */}
+      {user?.role === "student" && <InstallPrompt />}
     </div>
   );
 }
