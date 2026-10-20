@@ -1,3 +1,5 @@
+/* MUI (emotion) styles sit above Tailwind's preflight but below its utilities. */
+@layer theme, base, mui, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 
