@@ -76,6 +76,25 @@ npm run lint               # next lint
 npm run clean:project      # eslint --fix on app/**
 ```
 
+### PWA (installable app)
+
+The client is a Progressive Web App built with [Serwist](https://serwist.pages.dev/docs/next) (`@serwist/next`). No env vars are needed.
+
+- **The service worker only exists in production builds.** `npm run dev` (Turbopack) has none, so test PWA behaviour with `npm run build && npm run start`. The build writes `public/sw.js`, which is gitignored.
+- **Service worker:** [client/app/sw.ts](../client/app/sw.ts). It precaches the build's static assets, the offline page, the logo and the icons. Pages always come from the network, with [client/app/~offline/page.tsx](../client/app/~offline/page.tsx) as the fallback when offline. API calls are never cached. The precache list for `public/` files is in [client/next.config.ts](../client/next.config.ts).
+- **Manifest:** [client/app/manifest.ts](../client/app/manifest.ts), served at `/manifest.webmanifest`. iOS meta tags and splash screens are set in [client/app/layout.tsx](../client/app/layout.tsx).
+- **Icons and splash screens** are generated from `public/logo.png` with `node scripts/generate-pwa-assets.mjs`. Splash sizes are listed in [client/lib/pwa/splash-screens.json](../client/lib/pwa/splash-screens.json). Re-run the script after changing the logo or the list, and commit the output.
+- **Updates:** [client/components/shared/pwa/PwaProvider.tsx](../client/components/shared/pwa/PwaProvider.tsx) registers the worker and checks for a new deployment hourly. When one is waiting, it shows an "A new version of Logos is available" toast, and **Update** activates it and reloads.
+- **Install prompt:** [client/components/shared/pwa/InstallPrompt.tsx](../client/components/shared/pwa/InstallPrompt.tsx) is shown to students on the dashboard. It uses the browser's install dialog where supported, or "Add to Home Screen" instructions on iOS. "Not now" hides it for 14 days.
+
+Testing:
+
+1. `npm run build && npm run start`, then open `http://localhost:3000` in Chrome. Service workers need `localhost` or HTTPS, so use a tunnel or the deployed site to test on a phone.
+2. DevTools → **Application**: **Manifest** should show no installability errors, and **Service workers** should show `sw.js` as activated.
+3. **Offline page:** in **Network**, set throttling to *Offline* and reload. The branded offline page appears, and it reloads by itself when you go back online.
+4. **Update prompt:** with the app open, rebuild and restart the server, then click **Update** next to `sw.js` in **Application → Service workers** (or wait for the hourly check). The update toast appears.
+5. To reset, use **Application → Storage → Clear site data**.
+
 ## Verifying the Setup
 
 1. Start MongoDB, then `npm run dev` in `server` — confirm `🚀 Server running on port <PORT>` in the console.
