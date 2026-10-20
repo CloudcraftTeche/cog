@@ -28,7 +28,8 @@ Usage: jira.sh <command> [args]
   transitions <KEY>          List transitions available from the current status
   transition <KEY> <STATUS>  Move the issue to that status (name, case-insensitive) or alias: progress | review | done
   comment <KEY> <TEXT>       Add a comment (Jira wiki markup)
-  create <PROJECT> <TYPE> <SUMMARY> [DESCRIPTION]   Create an issue, prints its key
+  create <PROJECT> <TYPE> <SUMMARY> [DESCRIPTION] [PARENT] [LABELS]   Create an issue, prints its key
+                             PARENT: epic key for a story, story key for a subtask; LABELS: comma-separated
   search <JQL> [MAX]         List issues matching a JQL query
   meta <PROJECT>             List the project's issue types and statuses
   url <KEY>                  Print the browse URL
@@ -77,8 +78,12 @@ case "$cmd" in
     req POST "/issue/$key/comment" "$(jq -n --arg b "$text" '{body:$b}')" | jq -r '"Comment added: \(.id)"' ;;
   create)
     project="${1:?PROJECT required}"; type="${2:?TYPE required}"; summary="${3:?SUMMARY required}"; desc="${4:-}"
+    parent="${5:-}"; labels="${6:-}"
     req POST "/issue" "$(jq -n --arg p "$project" --arg t "$type" --arg s "$summary" --arg d "$desc" \
-      '{fields:{project:{key:$p}, issuetype:{name:$t}, summary:$s, description:$d}}')" | jq -r '.key' ;;
+      --arg parent "$parent" --arg labels "$labels" \
+      '{fields:({project:{key:$p}, issuetype:{name:$t}, summary:$s, description:$d}
+        + (if $parent != "" then {parent:{key:$parent}} else {} end)
+        + (if $labels != "" then {labels:($labels | split(","))} else {} end))}')" | jq -r '.key' ;;
   search)
     jql="${1:?JQL required}"
     req GET "/search/jql?jql=$(jq -rn --arg q "$jql" '$q|@uri')&maxResults=${2:-20}&fields=summary,status,issuetype" |
