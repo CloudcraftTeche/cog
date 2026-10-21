@@ -34,8 +34,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="max-w-full break-words">{children}</div>
         </main>
       </div>
-      {/* Admins get the prompt in their own PWA story (LOGOS-38). */}
-      {(user?.role === "student" || user?.role === "teacher") && <InstallPrompt />}
+      {user && <InstallPrompt />}
     </div>
   );
 }
