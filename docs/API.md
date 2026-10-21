@@ -197,9 +197,16 @@ Source: [server/src/routes/v1/attendance/index.ts](../server/src/routes/v1/atten
 | GET | `/heatmap` |
 | GET | `/heatmap/teacher/:teacherId` |
 | GET | `/export` |
+| GET | `/report` |
 | GET | `/student/:studentId` |
 | GET | `/grade/:gradeId` |
 | DELETE | `/:attendanceId` |
+
+`GET /report` (admin, superAdmin): per-student attendance totals for the admin attendance overview.
+- Query: `startDate` and `endDate` (ISO dates, both needed to filter by date), `gradeId`, `page` (default 1), `limit` (default 25, max 100), and `all=true` to return every row without paging (used for CSV export).
+- Response: `{ success, message, data: { rows, pagination: { page, limit, total, totalPages } } }`.
+- Each row has `_id, name, email, grade, present, absent, late, excused, total, attendanceRate, lastMarked`. `attendanceRate` is (present + late) ÷ total × 100, rounded to one decimal place.
+- Students are sorted by name and paged before attendance is aggregated, so each request only reads the current page's records.
 
 ## Teacher Attendance — `/api/v1/teacher-attendance`
 Source: [server/src/routes/v1/teacherAttendance/index.ts](../server/src/routes/v1/teacherAttendance/index.ts)
