@@ -12,7 +12,7 @@ export function RetryButton() {
   }, []);
 
   return (
-    <Button onClick={() => window.location.reload()}>
+    <Button onClick={() => window.location.reload()} className="bg-slate-900 text-white hover:bg-slate-800">
       <RefreshCw className="h-4 w-4" />
       Try again
     </Button>
