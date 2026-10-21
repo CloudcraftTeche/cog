@@ -31,6 +31,7 @@ Usage: jira.sh <command> [args]
   create <PROJECT> <TYPE> <SUMMARY> [DESCRIPTION] [PARENT] [LABELS]   Create an issue, prints its key
                              PARENT: epic key for a story, story key for a subtask; LABELS: comma-separated
   edit <KEY> <SUMMARY> [DESCRIPTION]   Replace the summary (and the description, if given)
+  labels <KEY> <LABELS>      Replace the issue's labels (comma-separated, e.g. v1.1.0)
   search <JQL> [MAX]         List issues matching a JQL query
   meta <PROJECT>             List the project's issue types and statuses
   url <KEY>                  Print the browse URL
@@ -93,6 +94,9 @@ case "$cmd" in
       body="$(jq -n --arg s "$summary" '{fields:{summary:$s}}')"
     fi
     req PUT "/issue/$key" "$body" >/dev/null && echo "$key updated" ;;
+  labels)
+    key="${1:?KEY required}"; labels="${2:?LABELS required}"
+    req PUT "/issue/$key" "$(jq -n --arg l "$labels" '{fields:{labels:($l | split(","))}}')" >/dev/null && echo "$key labels: $labels" ;;
   search)
     jql="${1:?JQL required}"
     req GET "/search/jql?jql=$(jq -rn --arg q "$jql" '$q|@uri')&maxResults=${2:-20}&fields=summary,status,issuetype" |
