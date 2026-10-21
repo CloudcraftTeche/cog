@@ -4,7 +4,35 @@ All notable changes to COG (Scripture School) are recorded here. The project fol
 
 ## [Unreleased]
 
-Planned for 2.0.0: installable PWA for all roles, a game engine for KG1 to Grade 5 chapters, and textbook-based game generation.
+Planned for 2.0.0: a game engine for KG1 to Grade 5 chapters, and textbook-based game generation.
+
+## [1.1.0] - 2026-10-21
+
+### Installable app (PWA)
+
+- Logos can be installed to the home screen on Android, iPhone, iPad and desktop, with its own icon and splash screens. Students, teachers, admins and super admins see an install prompt on the dashboard (LOGOS-18, LOGOS-34, LOGOS-38).
+- A "new version available" prompt appears when an update is deployed (LOGOS-18).
+- The app is online-first. It never stores lessons or account data on the device, only the app's own files (LOGOS-25).
+- Losing the connection is handled clearly: an offline banner, friendly error messages, data refresh on reconnect, and submit buttons disabled while offline. If the connection drops as an activity finishes, the answers are kept for a retry (LOGOS-25).
+- A browser test checks that sign-in data is never cached and that an expired session still sends the user to login (LOGOS-41).
+
+### Attendance
+
+- Admin and super-admin attendance overview: a student attendance report with date and grade filters, paging and CSV export (LOGOS-128).
+
+### Fixes
+
+- Teacher dashboard header no longer covers the menu on phones, and the admin dashboard tabs fit a phone screen (LOGOS-34).
+- Offline page button contrast (LOGOS-41).
+
+### Other
+
+- The app version is shown at the bottom of the sidebar (LOGOS-13).
+- Release process documented in `docs/RELEASING.md` (LOGOS-13).
+
+### Upgrade notes
+
+- No database migrations. New API route: `GET /api/v1/attendance/report` (admin, superAdmin).
 
 ## [1.0.0] - 2026-10-20
 
@@ -43,5 +71,6 @@ First tagged release. It marks the system as it stands in production before the 
 - Student and teacher management shown in data tables.
 - File uploads stored on Cloudinary, cleaned up automatically when records are deleted.
 
-[Unreleased]: https://github.com/CloudcraftTeche/cog/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/CloudcraftTeche/cog/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/CloudcraftTeche/cog/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/CloudcraftTeche/cog/releases/tag/v1.0.0
