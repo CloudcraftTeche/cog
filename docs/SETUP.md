@@ -95,6 +95,24 @@ Testing:
 4. **Update prompt:** with the app open, rebuild and restart the server, then click **Update** next to `sw.js` in **Application → Service workers** (or wait for the hourly check). The update toast appears.
 5. To reset, use **Application → Storage → Clear site data**.
 
+**Auth-safety check** ([client/scripts/pwa-audit.mjs](../client/scripts/pwa-audit.mjs)). Run it after changing [client/app/sw.ts](../client/app/sw.ts) or the caching options in `next.config.ts`. It uses Chrome with the service worker active and checks:
+- Chrome reports the app as installable.
+- A session expiry redirects to `/login?…&sessionExpired=true` and clears the token.
+- No API response, access token or signed-in page is stored in Cache Storage.
+
+The script answers every API request itself, so build against an unused API port to make sure nothing reaches a real server:
+
+```bash
+cd client
+NEXT_PUBLIC_SERVERURL=http://localhost:5999/api/v1 NEXT_PUBLIC_SOCKET_URL=http://localhost:5999 npm run build
+npx next start -p 3456 &
+npm install --no-save puppeteer-core@25
+node scripts/pwa-audit.mjs          # set CHROME_PATH if Chrome is not in /Applications
+kill %1 && npm run build            # stop the test server and rebuild with your real .env.local
+```
+
+Last run (LOGOS-41): 9/9 checks passed. Lighthouse 13 (which no longer has a PWA category) scored `/login` and `/~offline` at 100 for accessibility, best practices and SEO, and 93 and 97 for performance.
+
 ## Verifying the Setup
 
 1. Start MongoDB, then `npm run dev` in `server` — confirm `🚀 Server running on port <PORT>` in the console.
