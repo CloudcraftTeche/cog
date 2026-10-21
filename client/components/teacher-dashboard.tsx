@@ -76,14 +76,15 @@ const TeacherDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {}
-      <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+      {/* z-30 keeps the sticky header under the mobile sidebar (z-40 backdrop, z-50 panel). */}
+      <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex justify-between items-start sm:items-center gap-3">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Teacher Dashboard
               </h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
                 Manage your classes, track student progress, and handle
                 assignments
               </p>
@@ -91,13 +92,14 @@ const TeacherDashboard: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex shrink-0 items-center gap-2 p-2.5 sm:px-5 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               type="button"
+              aria-label={isRefreshing ? "Refreshing data" : "Refresh dashboard data"}
             >
               <RefreshCw
                 className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
               />
-              <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+              <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh"}</span>
             </button>
           </div>
         </div>
