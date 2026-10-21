@@ -94,7 +94,7 @@ export function InstallPrompt() {
             Install the Logos app
           </p>
           {installEvent ? (
-            <p className="mt-1 text-sm text-slate-600">Open your lessons straight from your home screen.</p>
+            <p className="mt-1 text-sm text-slate-600">Open Logos straight from your home screen.</p>
           ) : (
             <p className="mt-1 text-sm text-slate-600">
               Tap <Share className="inline h-4 w-4 align-text-bottom" aria-label="Share" /> and then{" "}
