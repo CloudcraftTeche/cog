@@ -113,6 +113,10 @@ kill %1 && npm run build            # stop the test server and rebuild with your
 
 Last run (LOGOS-41): 9/9 checks passed. Lighthouse 13 (which no longer has a PWA category) scored `/login` and `/~offline` at 100 for accessibility, best practices and SEO, and 93 and 97 for performance.
 
+### Database backups
+
+Production is backed up nightly to Backblaze B2 by GitHub Actions, and a restore is tested monthly. The setup (B2 bucket, read-only Atlas user, GitHub secrets) and the emergency restore steps are in [BACKUP.md](BACKUP.md). No app env vars are involved.
+
 ## Verifying the Setup
 
 1. Start MongoDB, then `npm run dev` in `server` — confirm `🚀 Server running on port <PORT>` in the console.
