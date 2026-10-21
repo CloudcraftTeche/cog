@@ -3,6 +3,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Loader2, Target, ArrowRight } from "lucide-react";
 import { Question, TeacherChapter } from "@/utils/chapter/teacherChapter.service";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
 interface QuizSectionProps {
   chapter: TeacherChapter;
   selectedAnswers: Record<number, string>;
@@ -28,6 +30,7 @@ export default function QuizSection({
   const allAnswered = chapter.questions?.every(
     (_, i) => selectedAnswers[i] !== undefined
   );
+  const isOnline = useOnlineStatus();
   return (
     <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/70 backdrop-blur-sm">
       <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100 p-4 sm:p-6">
@@ -98,18 +101,21 @@ export default function QuizSection({
           </div>
         ))}
         {!submitted ? (
-          <Button
-            className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-            disabled={!allAnswered || submitting}
-            onClick={onSubmit}
-          >
-            {submitting ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
-            ) : (
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            )}
-            <span className="text-sm sm:text-base">Submit Quiz</span>
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              disabled={!allAnswered || submitting || !isOnline}
+              onClick={onSubmit}
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
+              ) : (
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              )}
+              <span className="text-sm sm:text-base">Submit Quiz</span>
+            </Button>
+            <OfflineHint />
+          </div>
         ) : (
           <div className="flex flex-col gap-4 sm:gap-6 mt-4 sm:mt-6">
             <div className="flex justify-center">

@@ -11,6 +11,9 @@ const processQueue = (error: any, token: string | null) => {
   });
   failedQueue = [];
 };
+// The app is online-first: requests are never queued, so tell the user plainly when the network is the problem.
+const OFFLINE_MESSAGE = "You're offline. Check your internet connection and try again.";
+const UNREACHABLE_MESSAGE = "Can't reach the server. Check your internet connection and try again.";
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SERVERURL,
   withCredentials: true,
@@ -18,6 +21,9 @@ const api = axios.create({
 });
 api.interceptors.request.use(
   (config) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      return Promise.reject(new AxiosError(OFFLINE_MESSAGE, AxiosError.ERR_NETWORK, config));
+    }
     const token =
       typeof window !== "undefined"
         ? localStorage.getItem("accessToken")
@@ -35,6 +41,9 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+    if (!error.response && error.code === AxiosError.ERR_NETWORK && error.message !== OFFLINE_MESSAGE) {
+      error.message = UNREACHABLE_MESSAGE;
+    }
     if (!originalRequest) {
       return Promise.reject(error);
     }

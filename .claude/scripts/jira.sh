@@ -30,6 +30,7 @@ Usage: jira.sh <command> [args]
   comment <KEY> <TEXT>       Add a comment (Jira wiki markup)
   create <PROJECT> <TYPE> <SUMMARY> [DESCRIPTION] [PARENT] [LABELS]   Create an issue, prints its key
                              PARENT: epic key for a story, story key for a subtask; LABELS: comma-separated
+  edit <KEY> <SUMMARY> [DESCRIPTION]   Replace the summary (and the description, if given)
   search <JQL> [MAX]         List issues matching a JQL query
   meta <PROJECT>             List the project's issue types and statuses
   url <KEY>                  Print the browse URL
@@ -84,6 +85,14 @@ case "$cmd" in
       '{fields:({project:{key:$p}, issuetype:{name:$t}, summary:$s, description:$d}
         + (if $parent != "" then {parent:{key:$parent}} else {} end)
         + (if $labels != "" then {labels:($labels | split(","))} else {} end))}')" | jq -r '.key' ;;
+  edit)
+    key="${1:?KEY required}"; summary="${2:?SUMMARY required}"
+    if [ $# -ge 3 ]; then
+      body="$(jq -n --arg s "$summary" --arg d "$3" '{fields:{summary:$s, description:$d}}')"
+    else
+      body="$(jq -n --arg s "$summary" '{fields:{summary:$s}}')"
+    fi
+    req PUT "/issue/$key" "$body" >/dev/null && echo "$key updated" ;;
   search)
     jql="${1:?JQL required}"
     req GET "/search/jql?jql=$(jq -rn --arg q "$jql" '$q|@uri')&maxResults=${2:-20}&fields=summary,status,issuetype" |

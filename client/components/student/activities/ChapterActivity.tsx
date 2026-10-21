@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { isAxiosError } from "axios";
 import { ArrowLeft, CheckCircle2, Gamepad2, Loader2 } from "lucide-react";
 import { useCompleteChapter } from "@/hooks/student/useChapters";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
 import type {
   ActivityConfig,
   ActivityResult,
@@ -36,10 +39,15 @@ export function ChapterActivity({ chapterId, config, onBack }: Props) {
   const [started, setStarted] = useState(false);
   const [result, setResult] = useState<ActivityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A finished activity that could not be saved because the connection dropped, kept so the
+  // student can send it again instead of replaying the whole activity.
+  const [unsavedResult, setUnsavedResult] = useState<ActivityResult | null>(null);
   const completeMutation = useCompleteChapter();
+  const isOnline = useOnlineStatus();
   const complete = async (activityResult: ActivityResult) => {
     setResult(activityResult);
     setError(null);
+    setUnsavedResult(null);
     try {
       await completeMutation.mutateAsync({
         chapterId,
@@ -48,6 +56,9 @@ export function ChapterActivity({ chapterId, config, onBack }: Props) {
       });
     } catch (completionError) {
       setResult(null);
+      if (isAxiosError(completionError) && !completionError.response) {
+        setUnsavedResult(activityResult);
+      }
       setError(
         completionError instanceof Error
           ? completionError.message
@@ -108,10 +119,12 @@ export function ChapterActivity({ chapterId, config, onBack }: Props) {
             <button
               type="button"
               onClick={() => setStarted(true)}
-              className="mt-6 min-h-14 w-full rounded-2xl bg-sky-600 px-5 text-lg font-black text-white shadow-sm"
+              disabled={!isOnline}
+              className="mt-6 min-h-14 w-full rounded-2xl bg-sky-600 px-5 text-lg font-black text-white shadow-sm disabled:opacity-50"
             >
               Start Activity
             </button>
+            <OfflineHint className="mt-3 justify-center" />
           </div>
         ) : completeMutation.isPending ? (
           <div className="py-10 text-center">
@@ -119,6 +132,21 @@ export function ChapterActivity({ chapterId, config, onBack }: Props) {
             <p className="mt-3 font-bold text-slate-700">
               Saving your result...
             </p>
+          </div>
+        ) : unsavedResult ? (
+          <div className="py-5 text-center">
+            <p className="text-lg text-slate-700">
+              Your answers are still here. Save them when you&apos;re connected.
+            </p>
+            <button
+              type="button"
+              onClick={() => complete(unsavedResult)}
+              disabled={!isOnline}
+              className="mt-6 min-h-14 w-full rounded-2xl bg-sky-600 px-5 text-lg font-black text-white shadow-sm disabled:opacity-50"
+            >
+              Try Again
+            </button>
+            <OfflineHint className="mt-3 justify-center" />
           </div>
         ) : (
           <ActivityEngine config={config.activity} onComplete={complete} />
