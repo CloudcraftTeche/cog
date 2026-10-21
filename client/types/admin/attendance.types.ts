@@ -108,6 +108,54 @@ export interface TeacherReportTableProps {
   onExport: () => void;
 }
 
+export interface StudentAttendanceReportRow {
+  _id: string;
+  name: string;
+  email: string;
+  grade?: string;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  attendanceRate: number;
+  lastMarked?: string;
+}
+
+export interface ReportPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface StudentAttendanceReport {
+  rows: StudentAttendanceReportRow[];
+  pagination: ReportPagination;
+}
+
+export interface StudentReportFilters {
+  startDate?: string;
+  endDate?: string;
+  gradeId?: string;
+}
+
+export interface StudentReportTableProps {
+  rows: StudentAttendanceReportRow[];
+  pagination?: ReportPagination;
+  isLoading: boolean;
+  startDate: string;
+  endDate: string;
+  gradeId: string;
+  grades: { _id: string; grade: string }[];
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+  onGradeChange: (value: string) => void;
+  onPageChange: (page: number) => void;
+  onExport: () => void;
+  isExporting: boolean;
+}
+
 export interface NavigationProps {
   selectedView: string;
   onViewChange: (view: string) => void;
