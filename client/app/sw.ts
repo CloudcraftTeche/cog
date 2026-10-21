@@ -11,7 +11,7 @@ declare const self: ServiceWorkerGlobalScope;
 
 // Caching is deliberately narrow: the build's static assets and the offline page are precached,
 // pages always come from the network, and API calls (a different origin) are never touched, so no
-// user data is stored by the worker. Per-role offline data is added in later PWA stories.
+// user data is stored by the worker, for any role. The app is online-first by design (LOGOS-17).
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   // A new version waits until the user accepts the "update available" prompt.
