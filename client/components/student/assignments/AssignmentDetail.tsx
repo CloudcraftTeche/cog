@@ -39,6 +39,8 @@ import {  SubmissionForm } from "./SubmissionForm";
 import { ContentViewer } from "./Contentviewer";
 import { QuestionForm } from "./QuestionForm";
 import { useRouter } from "next/navigation";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
 import { IAssignment, ISubmission, SubmissionContent } from "@/types/student/assignment.types";
 
 interface AssignmentDetailProps {
@@ -81,6 +83,7 @@ export function AssignmentDetail({
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isOnline = useOnlineStatus();
   const [submitted, setSubmitted] = useState(!!existingSubmission);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -534,7 +537,8 @@ export function AssignmentDetail({
               )}
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              {(canSubmit || isEditing) && <OfflineHint className="w-full sm:w-auto" />}
               {isEditing && (
                 <Button
                   variant="outline"
@@ -561,7 +565,7 @@ export function AssignmentDetail({
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
-                      disabled={!canSubmitNow || isSubmitting}
+                      disabled={!canSubmitNow || isSubmitting || !isOnline}
                       size="lg"
                       className="flex-1 sm:flex-none bg-gradient-to-r from-primary to-info hover:opacity-90 text-white shadow-xl shadow-primary/30 border-0 h-12 px-8 text-base font-semibold"
                     >

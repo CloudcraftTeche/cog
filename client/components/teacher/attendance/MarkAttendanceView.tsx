@@ -7,6 +7,8 @@ import {
   IAttendance,
 } from "@/utils/teacherAttendace/teacherAttendance.service";
 import StudentAttendanceCard from "./StudentAttendanceCard";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
 
 interface MarkAttendanceViewProps {
   students: IStudent[];
@@ -29,6 +31,7 @@ export default function MarkAttendanceView({
   selectedDate,
   onDateChange,
 }: MarkAttendanceViewProps) {
+  const isOnline = useOnlineStatus();
   const getAttendanceStatus = (studentId: string): AttendanceStatus | null => {
     const attendance = attendanceRecords.find(
       (a) =>
@@ -97,6 +100,7 @@ export default function MarkAttendanceView({
             ⚠️ You are marking attendance for a past date
           </p>
         )}
+        <OfflineHint className="mt-2" />
       </div>
       <div className="grid gap-4">
         {students?.map((student) => (
@@ -105,7 +109,7 @@ export default function MarkAttendanceView({
             student={student}
             currentStatus={getAttendanceStatus(student._id)}
             onMarkAttendance={handleMarkAttendance}
-            isLoading={isLoading}
+            isLoading={isLoading || !isOnline}
           />
         ))}
       </div>

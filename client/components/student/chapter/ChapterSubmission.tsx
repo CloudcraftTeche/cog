@@ -17,6 +17,8 @@ import { QuizResults } from './QuizResults';
 import { useSubmitChapter, useCurrentGrade } from '@/hooks/student/useChapters';
 import { calculateQuizScore } from '@/utils/student/chapterUtils';
 import { toast } from 'sonner';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { OfflineHint } from '@/components/shared/pwa/OfflineHint';
 
 interface ChapterSubmissionProps {
   chapter: Chapter;
@@ -48,6 +50,7 @@ export const ChapterSubmission: React.FC<ChapterSubmissionProps> = ({
 
   const { data: gradeData } = useCurrentGrade();
   const submitMutation = useSubmitChapter();
+  const isOnline = useOnlineStatus();
 
   const allAnswered = chapter.questions?.every(
     (_, i) => selectedAnswers[i] !== undefined
@@ -168,18 +171,21 @@ export const ChapterSubmission: React.FC<ChapterSubmissionProps> = ({
 
         {}
         {!submitted ? (
-          <Button
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-            disabled={submitMutation.isPending}
-            onClick={handleSubmit}
-          >
-            {submitMutation.isPending ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
-            ) : (
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            )}
-            <span className="text-sm sm:text-base">Submit Chapter</span>
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium px-6 sm:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              disabled={submitMutation.isPending || !isOnline}
+              onClick={handleSubmit}
+            >
+              {submitMutation.isPending ? (
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
+              ) : (
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              )}
+              <span className="text-sm sm:text-base">Submit Chapter</span>
+            </Button>
+            <OfflineHint className="justify-center" />
+          </div>
         ) : (
           <QuizResults
             score={currentScore}

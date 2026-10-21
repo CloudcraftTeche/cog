@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { InstallPrompt } from "@/components/shared/pwa/InstallPrompt";
+import { OfflineBanner } from "@/components/shared/pwa/OfflineBanner";
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -28,6 +29,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           onMenuOpen={() => setSidebarOpen(true)}
           onLogout={logout}
         />
+        <OfflineBanner />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-full break-words">{children}</div>
         </main>
