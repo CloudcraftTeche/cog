@@ -46,6 +46,9 @@ export function Sidebar({ isOpen, onClose, userRole }: SidebarProps) {
             />
           ))}
         </nav>
+        <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">
+          Logos v{process.env.NEXT_PUBLIC_APP_VERSION}
+        </p>
       </div>
 
       {isOpen && (

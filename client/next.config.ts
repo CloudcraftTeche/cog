@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+import packageJson from "./package.json";
 
 // Files outside the build output that the service worker precaches. They get a fresh revision on
 // every build so an update always replaces them.
@@ -27,6 +28,10 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  // Shown in the sidebar so a user (or an installed app) can report which release it is running.
+  env: {
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },

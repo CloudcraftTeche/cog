@@ -63,7 +63,7 @@ Data flow: page (`app/`) → hook (`hooks/<role>/`) → Axios instance (`lib/api
 
 ## Docs
 
-`docs/` has longer references (`API.md`, `DATABASE.md`, `ROUTING.md`, `STATE_MANAGEMENT.md`, `SETUP.md`, …). Project convention: document new API routes in `docs/API.md` and new env vars in `docs/SETUP.md`. Copilot-oriented versions of these guidelines live in `.github/copilot-instructions.md` and `.github/instructions/{client,server}.instructions.md`; keep them in sync when conventions change.
+`docs/` has longer references (`API.md`, `DATABASE.md`, `ROUTING.md`, `STATE_MANAGEMENT.md`, `SETUP.md`, …). Project convention: document new API routes in `docs/API.md` and new env vars in `docs/SETUP.md`. Releases follow `docs/RELEASING.md` (semver, `CHANGELOG.md`, annotated `vX.Y.Z` tags; client and server share one version). Copilot-oriented versions of these guidelines live in `.github/copilot-instructions.md` and `.github/instructions/{client,server}.instructions.md`; keep them in sync when conventions change.
 
 ## Jira workflow
 
