@@ -2,9 +2,10 @@ import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { Attendance } from "../../../models/attendance/Attendance.schema";
 import { User } from "../../../models/user/User.model";
 import { Teacher } from "../../../models/user/Teacher.model";
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import { Types } from "mongoose";
 import { ApiError } from "../../../utils/ApiError";
+import { Grade } from "../../../models/academic/Grade.model";
 export const createOrUpdateAttendance = async (
   req: AuthenticatedRequest,
   res: Response
@@ -389,5 +390,144 @@ export const deleteAttendance = async (
     res.json({ message: "Attendance record deleted successfully" });
   } catch (e: any) {
     res.status(400).json({ error: e.message });
+  }
+};
+const REPORT_DEFAULT_LIMIT = 25;
+const REPORT_MAX_LIMIT = 100;
+// Per-student attendance totals for the admin attendance overview. Students are paginated before the
+// attendance lookup, so each page only aggregates the records of the students it returns.
+// `all=true` skips pagination and is used for the CSV export.
+export const getStudentAttendanceReport = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { startDate, endDate, gradeId } = req.query;
+    const all = req.query["all"] === "true";
+    const page = Math.max(Number(req.query["page"]) || 1, 1);
+    const limit = Math.min(
+      Math.max(Number(req.query["limit"]) || REPORT_DEFAULT_LIMIT, 1),
+      REPORT_MAX_LIMIT
+    );
+
+    const studentMatch: Record<string, unknown> = { role: "student" };
+    if (gradeId) {
+      studentMatch["gradeId"] = new Types.ObjectId(gradeId as string);
+    }
+    const attendanceMatch: Record<string, unknown> = {
+      $expr: { $eq: ["$studentId", "$$studentId"] },
+    };
+    if (startDate && endDate) {
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      if (start > end) throw new ApiError(400, "startDate must be before endDate");
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      attendanceMatch["date"] = { $gte: start, $lte: end };
+    }
+    const countStatus = (status: string) => ({
+      $sum: { $cond: [{ $eq: ["$status", status] }, 1, 0] },
+    });
+
+    const rowStages = [
+      {
+        $lookup: {
+          from: Attendance.collection.name,
+          let: { studentId: "$_id" },
+          pipeline: [
+            { $match: attendanceMatch },
+            {
+              $group: {
+                _id: null,
+                present: countStatus("present"),
+                absent: countStatus("absent"),
+                late: countStatus("late"),
+                excused: countStatus("excused"),
+                total: { $sum: 1 },
+                lastMarked: { $max: "$date" },
+              },
+            },
+          ],
+          as: "attendance",
+        },
+      },
+      {
+        $lookup: {
+          from: Grade.collection.name,
+          localField: "gradeId",
+          foreignField: "_id",
+          as: "grade",
+        },
+      },
+      {
+        $addFields: {
+          attendance: { $first: "$attendance" },
+          grade: { $first: "$grade" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          grade: "$grade.grade",
+          present: { $ifNull: ["$attendance.present", 0] },
+          absent: { $ifNull: ["$attendance.absent", 0] },
+          late: { $ifNull: ["$attendance.late", 0] },
+          excused: { $ifNull: ["$attendance.excused", 0] },
+          total: { $ifNull: ["$attendance.total", 0] },
+          lastMarked: "$attendance.lastMarked",
+        },
+      },
+      {
+        $addFields: {
+          attendanceRate: {
+            $cond: [
+              { $gt: ["$total", 0] },
+              {
+                $round: [
+                  {
+                    $multiply: [
+                      { $divide: [{ $add: ["$present", "$late"] }, "$total"] },
+                      100,
+                    ],
+                  },
+                  1,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+    ];
+
+    const [result] = await User.aggregate([
+      { $match: studentMatch },
+      { $sort: { name: 1, _id: 1 } },
+      {
+        $facet: {
+          rows: all
+            ? rowStages
+            : [{ $skip: (page - 1) * limit }, { $limit: limit }, ...rowStages],
+          total: [{ $count: "count" }],
+        },
+      },
+    ]);
+    const total: number = result?.total[0]?.count ?? 0;
+
+    res.json({
+      success: true,
+      message: "Student attendance report fetched successfully",
+      data: {
+        rows: result?.rows ?? [],
+        pagination: all
+          ? { page: 1, limit: total, total, totalPages: 1 }
+          : { page, limit, total, totalPages: Math.max(Math.ceil(total / limit), 1) },
+      },
+    });
+  } catch (error) {
+    next(error);
   }
 };

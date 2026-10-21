@@ -9,9 +9,11 @@ import {
   getTodayAttendance,
   getTeacherStats,
   getTeacherHeatmap,
-  getAttendanceByDate
+  getAttendanceByDate,
+  getStudentAttendanceReport
 } from "../../../controllers/v1/attendance";
 import { authenticate } from "../../../middleware/authenticate";
+import { authorizeRoles } from "../../../middleware/authorizeRoles";
 import { Router } from "express";
 import { body, param, query, validationResult } from "express-validator";
 import { Request, Response, NextFunction } from "express";
@@ -92,6 +94,21 @@ router.get(
   ],
   handleValidationErrors,
   exportAttendance
+);
+
+router.get(
+  "/report",
+  authorizeRoles("admin", "superAdmin"),
+  [
+    query("startDate").optional().isISO8601().withMessage("Invalid start date"),
+    query("endDate").optional().isISO8601().withMessage("Invalid end date"),
+    query("gradeId").optional().isMongoId().withMessage("Invalid gradeId"),
+    query("page").optional().isInt({ min: 1 }).withMessage("Invalid page"),
+    query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("limit must be 1-100"),
+    query("all").optional().isBoolean().withMessage("all must be true or false"),
+  ],
+  handleValidationErrors,
+  getStudentAttendanceReport
 );
 
 router.get(

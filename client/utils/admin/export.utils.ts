@@ -1,4 +1,4 @@
-import { AttendanceRecord } from "@/types/admin/attendance.types";
+import { AttendanceRecord, StudentAttendanceReportRow } from "@/types/admin/attendance.types";
 
 
 export const convertAttendanceToCSV = (data: AttendanceRecord[]): string => {
@@ -50,4 +50,46 @@ export const downloadCSV = (csvData: string, filename: string): void => {
 export const generateExportFilename = (status: string): string => {
   const date = new Date().toISOString().split("T")[0];
   return `attendance-${status}-${date}.csv`;
+};
+
+export const convertStudentReportToCSV = (data: StudentAttendanceReportRow[]): string => {
+  if (data.length === 0) return "No data to export";
+
+  const headers = [
+    "Student Name",
+    "Email",
+    "Grade",
+    "Present",
+    "Absent",
+    "Late",
+    "Excused",
+    "Total Marked",
+    "Attendance Rate (%)",
+    "Last Marked",
+  ];
+  const lastMarked = (value?: string) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
+  };
+
+  const csvRows = [
+    headers.join(","),
+    ...data.map((row) =>
+      [
+        `"${row.name}"`,
+        `"${row.email}"`,
+        `"${row.grade || "N/A"}"`,
+        row.present,
+        row.absent,
+        row.late,
+        row.excused,
+        row.total,
+        row.attendanceRate,
+        `"${lastMarked(row.lastMarked)}"`,
+      ].join(","),
+    ),
+  ];
+
+  return csvRows.join("\n");
 };

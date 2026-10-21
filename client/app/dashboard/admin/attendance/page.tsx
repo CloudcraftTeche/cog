@@ -9,7 +9,10 @@ import {
   useAttendanceRecords,
   useExportAttendance,
   useRefreshAttendance,
+  useStudentAttendanceReport,
+  useExportStudentAttendanceReport,
 } from "@/hooks/admin/useAttendance";
+import { useGrades } from "@/hooks/admin/useGrades";
 import {
   useTeacherAttendanceStats,
   useTeacherAttendanceHeatmap,
@@ -24,6 +27,7 @@ import {
 } from "@/lib/admin/validators/attendance.validators";
 import {
   convertAttendanceToCSV,
+  convertStudentReportToCSV,
   downloadCSV,
   generateExportFilename,
 } from "@/utils/admin/export.utils";
@@ -44,6 +48,7 @@ import {
   ExportSection,
   Navigation,
   StatsSection,
+  StudentReportTable,
   TeacherReportTable,
 } from "@/components/admin/attendance/AttendanceComponents";
 export default function AdminAttendancePage() {
@@ -69,6 +74,23 @@ export default function AdminAttendancePage() {
   const [reportStartDate, setReportStartDate] = useState("");
   const [reportEndDate, setReportEndDate] = useState("");
   const isTeachers = audience === "teachers";
+  const [studentReportGradeId, setStudentReportGradeId] = useState("");
+  const [studentReportPage, setStudentReportPage] = useState(1);
+  const {
+    data: studentReport,
+    isLoading: studentReportLoading,
+    error: studentReportError,
+  } = useStudentAttendanceReport(
+    {
+      startDate: reportStartDate,
+      endDate: reportEndDate,
+      gradeId: studentReportGradeId,
+      page: studentReportPage,
+    },
+    selectedView === "overview" && !isTeachers,
+  );
+  const studentReportExportMutation = useExportStudentAttendanceReport();
+  const { data: gradesData } = useGrades("", 1, 100);
   const {
     data: teacherStats,
     isLoading: teacherStatsLoading,
@@ -97,7 +119,10 @@ export default function AdminAttendancePage() {
       teacherHeatmapError?.message ||
       teacherRecordsError?.message ||
       teacherReportError?.message
-    : statsError?.message || heatmapError?.message || recordsError?.message;
+    : statsError?.message ||
+      heatmapError?.message ||
+      recordsError?.message ||
+      studentReportError?.message;
   const handleExport = async (
     status: string,
     startDate?: string,
@@ -171,6 +196,34 @@ export default function AdminAttendancePage() {
     );
     toast.success(`Exported report for ${teacherReport.length} teachers`);
   };
+  const handleStudentReportExport = async () => {
+    const rows = await studentReportExportMutation
+      .mutateAsync({
+        startDate: reportStartDate,
+        endDate: reportEndDate,
+        gradeId: studentReportGradeId,
+      })
+      .catch(() => null);
+    if (!rows) return;
+    if (rows.length === 0) {
+      toast.error("No data available for export");
+      return;
+    }
+    const range =
+      reportStartDate && reportEndDate
+        ? `${reportStartDate}-to-${reportEndDate}`
+        : new Date().toISOString().split("T")[0];
+    downloadCSV(
+      convertStudentReportToCSV(rows),
+      `student-attendance-report-${range}.csv`,
+    );
+    toast.success(`Exported report for ${rows.length} students`);
+  };
+  const resetStudentReportPage =
+    (setter: (value: string) => void) => (value: string) => {
+      setter(value);
+      setStudentReportPage(1);
+    };
   const handleRefresh = () => {
     activeRefresh.mutate();
   };
@@ -231,6 +284,23 @@ export default function AdminAttendancePage() {
                 onStartDateChange={setReportStartDate}
                 onEndDateChange={setReportEndDate}
                 onExport={handleReportExport}
+              />
+            )}
+            {!isTeachers && (
+              <StudentReportTable
+                rows={studentReport?.rows ?? []}
+                pagination={studentReport?.pagination}
+                isLoading={studentReportLoading}
+                startDate={reportStartDate}
+                endDate={reportEndDate}
+                gradeId={studentReportGradeId}
+                grades={gradesData?.data ?? []}
+                onStartDateChange={resetStudentReportPage(setReportStartDate)}
+                onEndDateChange={resetStudentReportPage(setReportEndDate)}
+                onGradeChange={resetStudentReportPage(setStudentReportGradeId)}
+                onPageChange={setStudentReportPage}
+                onExport={handleStudentReportExport}
+                isExporting={studentReportExportMutation.isPending}
               />
             )}
             <ExportSection

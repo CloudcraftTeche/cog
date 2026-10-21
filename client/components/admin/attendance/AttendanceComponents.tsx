@@ -1,9 +1,9 @@
 
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Download, Filter , BarChart3, Calendar, FileSpreadsheet, GraduationCap, Users } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AttendanceHeatmapProps, AttendancePieChartProps, AttendanceTableProps, AttendanceTrendChartProps, AudienceToggleProps, ExportSectionProps, NavigationProps, StatsCardsProps, StatsSectionProps, TeacherReportTableProps } from "@/types/admin/attendance.types";
+import { AttendanceHeatmapProps, AttendancePieChartProps, AttendanceTableProps, AttendanceTrendChartProps, AudienceToggleProps, ExportSectionProps, NavigationProps, StatsCardsProps, StatsSectionProps, StudentAttendanceReportRow, StudentReportTableProps, TeacherReportTableProps } from "@/types/admin/attendance.types";
 
 
 export function Navigation({ selectedView, onViewChange }: NavigationProps) {
@@ -589,7 +589,30 @@ export function AudienceToggle({ audience, onAudienceChange }: AudienceTogglePro
   );
 }
 
-export function TeacherReportTable({
+interface AttendanceReportTableProps {
+  title: string;
+  personHeader: string;
+  exportLabel: string;
+  emptyText: string;
+  rows: StudentAttendanceReportRow[];
+  isLoading: boolean;
+  startDate: string;
+  endDate: string;
+  onStartDateChange: (value: string) => void;
+  onEndDateChange: (value: string) => void;
+  onExport: () => void;
+  exportDisabled?: boolean;
+  extraFilters?: ReactNode;
+  showLastMarked?: boolean;
+  footer?: ReactNode;
+}
+
+// Shared by the teacher and student attendance reports on the overview tab.
+function AttendanceReportTable({
+  title,
+  personHeader,
+  exportLabel,
+  emptyText,
   rows,
   isLoading,
   startDate,
@@ -597,16 +620,31 @@ export function TeacherReportTable({
   onStartDateChange,
   onEndDateChange,
   onExport,
-}: TeacherReportTableProps) {
+  exportDisabled = false,
+  extraFilters,
+  showLastMarked = false,
+  footer,
+}: AttendanceReportTableProps) {
   const today = new Date().toISOString().split("T")[0];
-  const headers = ["Teacher", "Grade", "Present", "Absent", "Late", "Excused", "Total", "Rate"];
+  const headers = [
+    personHeader,
+    "Grade",
+    "Present",
+    "Absent",
+    "Late",
+    "Excused",
+    "Total",
+    "Rate",
+    ...(showLastMarked ? ["Last Marked"] : []),
+  ];
   return (
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <h3 className="text-xl font-bold text-gray-800">
-          Teacher Attendance Report
+          {title}
         </h3>
         <div className="flex flex-wrap items-end gap-4">
+          {extraFilters}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Start Date
@@ -634,11 +672,11 @@ export function TeacherReportTable({
           </div>
           <button
             onClick={onExport}
-            disabled={isLoading || rows.length === 0}
+            disabled={isLoading || rows.length === 0 || exportDisabled}
             className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download size={18} />
-            Export Teacher Report
+            {exportLabel}
           </button>
         </div>
       </div>
@@ -693,18 +731,113 @@ export function TeacherReportTable({
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                     {row.total > 0 ? `${row.attendanceRate}%` : "-"}
                   </td>
+                  {showLastMarked && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {row.lastMarked ? new Date(row.lastMarked).toLocaleDateString() : "-"}
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
                 <td colSpan={headers.length} className="px-6 py-8 text-center text-gray-500">
-                  No teachers found
+                  {emptyText}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      {footer}
     </div>
+  );
+}
+
+export function TeacherReportTable(props: TeacherReportTableProps) {
+  return (
+    <AttendanceReportTable
+      {...props}
+      title="Teacher Attendance Report"
+      personHeader="Teacher"
+      exportLabel="Export Teacher Report"
+      emptyText="No teachers found"
+    />
+  );
+}
+
+export function StudentReportTable({
+  pagination,
+  gradeId,
+  grades,
+  onGradeChange,
+  onPageChange,
+  isExporting,
+  ...props
+}: StudentReportTableProps) {
+  const page = pagination?.page ?? 1;
+  const totalPages = pagination?.totalPages ?? 1;
+  const from = pagination && pagination.total > 0 ? (page - 1) * pagination.limit + 1 : 0;
+  const to = pagination ? Math.min(page * pagination.limit, pagination.total) : 0;
+
+  return (
+    <AttendanceReportTable
+      {...props}
+      title="Student Attendance Report"
+      personHeader="Student"
+      exportLabel={isExporting ? "Exporting..." : "Export Student Report"}
+      emptyText="No students found"
+      exportDisabled={isExporting}
+      showLastMarked
+      extraFilters={
+        <div>
+          <label htmlFor="student-report-grade" className="block text-sm font-medium text-gray-700 mb-2">
+            Grade
+          </label>
+          <select
+            id="student-report-grade"
+            value={gradeId}
+            onChange={(e) => onGradeChange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            <option value="">All grades</option>
+            {grades.map((grade) => (
+              <option key={grade._id} value={grade._id}>
+                {grade.grade}
+              </option>
+            ))}
+          </select>
+        </div>
+      }
+      footer={
+        pagination && pagination.total > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600">
+            <span>
+              Showing {from}–{to} of {pagination.total} students
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onPageChange(page - 1)}
+                disabled={page <= 1 || props.isLoading}
+                aria-label="Previous page"
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => onPageChange(page + 1)}
+                disabled={page >= totalPages || props.isLoading}
+                aria-label="Next page"
+                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        ) : null
+      }
+    />
   );
 }
