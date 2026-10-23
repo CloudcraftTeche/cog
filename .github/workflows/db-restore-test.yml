@@ -1,0 +1,107 @@
+# Monthly proof that the backups can be restored: downloads the newest backup from Backblaze B2,
+# decrypts it and restores it into a throwaway MongoDB inside this job, then checks that every
+# collection has exactly the document count recorded at backup time. See docs/BACKUP.md.
+# Restores run here rather than on developer Macs on purpose (macOS flags decrypt-and-load scripts).
+name: DB restore test
+
+on:
+  schedule:
+    - cron: "30 21 2 * *" # 21:30 UTC on the 2nd = 03:00 India time on the 3rd
+  workflow_dispatch:
+    inputs:
+      backup:
+        description: "Backup to test, e.g. daily/cog-test-2026-10-21T2030Z.archive.gz.enc (default: newest daily)"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-restore-test
+  cancel-in-progress: false
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:8.0.32
+        ports:
+          - 27017:27017
+    env:
+      MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME || 'test' }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      B2_BUCKET: ${{ secrets.B2_BUCKET }}
+      B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.B2_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      REQUESTED_BACKUP: ${{ inputs.backup }}
+    steps:
+      - name: Install MongoDB Database Tools 100.16.1
+        run: |
+          curl -sSfL -o tools.tgz https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.16.1.tgz
+          echo "0b5aea1b9935e066adfd4795f4aaa83fc3feca03204169fa5285d8dd4dfce0cc  tools.tgz" | sha256sum -c -
+          tar -xzf tools.tgz
+          echo "$PWD/mongodb-database-tools-ubuntu2404-x86_64-100.16.1/bin" >> "$GITHUB_PATH"
+
+      - name: Download and verify the backup
+        run: |
+          export AWS_DEFAULT_REGION="$(echo "$B2_ENDPOINT" | sed -E 's#https?://s3\.([^.]+)\..*#\1#')"
+          s3() { aws --endpoint-url "$B2_ENDPOINT" "$@"; }
+          key="$REQUESTED_BACKUP"
+          if [ -z "$key" ]; then
+            key="$(s3 s3api list-objects-v2 --bucket "$B2_BUCKET" --prefix daily/ --query 'Contents[].Key' \
+              --output text | tr '\t' '\n' | grep -E '\.enc$' | sort | tail -n 1 || true)"
+          fi
+          [ -n "$key" ] || { echo "No backups found in daily/"; exit 1; }
+          echo "Testing $key"
+          s3 s3 cp --only-show-errors "s3://$B2_BUCKET/$key" backup.enc
+          s3 s3 cp --only-show-errors "s3://$B2_BUCKET/$key.sha256" expected.sha256
+          s3 s3 cp --only-show-errors "s3://$B2_BUCKET/$key.counts" expected.counts
+          [ "$(awk '{print $1}' expected.sha256)" = "$(sha256sum backup.enc | awk '{print $1}')" ] \
+            || { echo "Checksum mismatch: the stored backup is corrupt"; exit 1; }
+          echo "Checksum OK"
+
+      - name: Decrypt and restore into the throwaway MongoDB
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE \
+            -in backup.enc -out dump.archive.gz
+          mongorestore --uri=mongodb://127.0.0.1:27017 --gzip --archive=dump.archive.gz \
+            --nsFrom="$MONGO_DB_NAME.*" --nsTo="restore_test.*" --quiet
+
+      - name: Check every collection count matches the backup
+        run: |
+          docker exec "${{ job.services.mongo.id }}" mongosh --quiet --eval '
+            const d = db.getSiblingDB("restore_test");
+            d.getCollectionNames().sort().forEach(c => print(c + " " + d[c].countDocuments()));
+          ' | sort > actual.counts
+          echo "Collection counts after restore:"; sed 's/^/  /' actual.counts
+          diff -u expected.counts actual.counts && echo "All counts match the backup."
+          [ -s actual.counts ] || { echo "Nothing was restored"; exit 1; }
+
+      - name: Remove the decrypted data
+        if: always()
+        run: rm -f backup.enc dump.archive.gz
+
+      - name: Email an alert
+        if: failure()
+        env:
+          SMTP_HOST: ${{ secrets.ALERT_SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.ALERT_SMTP_PORT }}
+          SMTP_USER: ${{ secrets.ALERT_SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.ALERT_SMTP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SMTP_HOST" ] || [ -z "$ALERT_EMAIL_TO" ]; then
+            echo "Alert SMTP secrets are not set; GitHub's own failure email still goes to the workflow owner."
+            exit 0
+          fi
+          if [ "${SMTP_PORT:-587}" = "465" ]; then url="smtps://$SMTP_HOST:465"; tls=""; else url="smtp://$SMTP_HOST:${SMTP_PORT:-587}"; tls="--ssl-reqd"; fi
+          printf 'From: Logos backups <%s>\r\nTo: %s\r\nSubject: [Logos] Database RESTORE TEST FAILED\r\n\r\nThe monthly restore test failed: the latest backup may not be usable.\r\nDetails: %s\r\n' \
+            "$SMTP_USER" "$ALERT_EMAIL_TO" "$RUN_URL" > mail.txt
+          curl -sS --url "$url" $tls --user "$SMTP_USER:$SMTP_PASSWORD" \
+            --mail-from "$SMTP_USER" --mail-rcpt "$ALERT_EMAIL_TO" --upload-file mail.txt

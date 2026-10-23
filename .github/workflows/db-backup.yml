@@ -1,0 +1,59 @@
+# Nightly encrypted backup of the production MongoDB database to Backblaze B2. See docs/BACKUP.md.
+name: DB backup
+
+on:
+  schedule:
+    - cron: "30 20 * * *" # 20:30 UTC = 02:00 India time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install MongoDB Database Tools 100.16.1
+        run: |
+          curl -sSfL -o tools.tgz https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.16.1.tgz
+          echo "0b5aea1b9935e066adfd4795f4aaa83fc3feca03204169fa5285d8dd4dfce0cc  tools.tgz" | sha256sum -c -
+          tar -xzf tools.tgz
+          echo "$PWD/mongodb-database-tools-ubuntu2404-x86_64-100.16.1/bin" >> "$GITHUB_PATH"
+
+      - name: Dump, encrypt, upload and prune
+        env:
+          MONGO_BACKUP_URI: ${{ secrets.MONGO_BACKUP_URI }}
+          MONGO_DB_NAME: ${{ vars.MONGO_DB_NAME || 'test' }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+        run: bash ops/db-backup/backup.sh
+
+      - name: Email an alert
+        if: failure()
+        env:
+          SMTP_HOST: ${{ secrets.ALERT_SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.ALERT_SMTP_PORT }}
+          SMTP_USER: ${{ secrets.ALERT_SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.ALERT_SMTP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SMTP_HOST" ] || [ -z "$ALERT_EMAIL_TO" ]; then
+            echo "Alert SMTP secrets are not set; GitHub's own failure email still goes to the workflow owner."
+            exit 0
+          fi
+          if [ "${SMTP_PORT:-587}" = "465" ]; then url="smtps://$SMTP_HOST:465"; tls=""; else url="smtp://$SMTP_HOST:${SMTP_PORT:-587}"; tls="--ssl-reqd"; fi
+          printf 'From: Logos backups <%s>\r\nTo: %s\r\nSubject: [Logos] Database backup FAILED\r\n\r\nLast night'"'"'s database backup failed.\r\nDetails: %s\r\n' \
+            "$SMTP_USER" "$ALERT_EMAIL_TO" "$RUN_URL" > mail.txt
+          curl -sS --url "$url" $tls --user "$SMTP_USER:$SMTP_PASSWORD" \
+            --mail-from "$SMTP_USER" --mail-rcpt "$ALERT_EMAIL_TO" --upload-file mail.txt

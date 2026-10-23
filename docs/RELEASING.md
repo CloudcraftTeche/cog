@@ -49,7 +49,7 @@ Change a ticket's labels with `.claude/scripts/jira.sh labels <KEY> v1.1.0`.
    awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > /tmp/notes.md
    gh release create vX.Y.Z --title "vX.Y.Z" --notes-file /tmp/notes.md --verify-tag
    ```
-8. **Deploy** from the tag. Run any migration listed under Upgrade notes only after it has been approved, and back up the database first.
+8. **Deploy** from the tag. Run any migration listed under Upgrade notes only after it has been approved, and back up the database first: run **DB backup** by hand (see [BACKUP.md](BACKUP.md)).
 
 ## Hotfixes
 
