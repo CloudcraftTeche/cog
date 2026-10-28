@@ -59,5 +59,6 @@ Branch `fix/<KEY>-…` off `main`. When it merges, cut a PATCH release with the 
 
 | Version | Date | Highlights |
 |---|---|---|
+| [1.2.0](https://github.com/CloudcraftTeche/cog/releases/tag/v1.2.0) | 2026-10-28 | Chapter games from the database, Grade 1 textbook structure, nightly backups |
 | [1.1.0](https://github.com/CloudcraftTeche/cog/releases/tag/v1.1.0) | 2026-10-21 | Installable app (PWA) for all roles, student attendance report |
 | [1.0.0](https://github.com/CloudcraftTeche/cog/releases/tag/v1.0.0) | 2026-10-20 | Baseline release |
