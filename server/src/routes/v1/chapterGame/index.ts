@@ -11,6 +11,7 @@ import {
   checkGameAnswerHandler,
   submitGameHandler,
   reorderChapterGamesHandler,
+  approveChapterDraftsHandler,
   previewGameHandler,
   previewCheckHandler,
   previewSubmitHandler,
@@ -99,6 +100,14 @@ router.patch(
   [gameIdParam, body("status").isIn(["draft", "published", "rejected"]).withMessage("Invalid status")],
   validate,
   setChapterGameStatusHandler
+);
+router.patch(
+  "/chapter/:chapterId/approve-drafts",
+  authenticate,
+  authorizeRoles(...STAFF),
+  [param("chapterId").isMongoId().withMessage("Invalid chapter ID")],
+  validate,
+  approveChapterDraftsHandler
 );
 router.patch(
   "/chapter/:chapterId/order",

@@ -198,6 +198,6 @@ npm run load:games -- ../../cog-textbooks/grade-1.games.json --by <admin email> 
 
 ## Reviewing
 
-An admin, a super admin, or the grade's teacher opens each draft and checks it against the lesson. They fix or reject anything wrong, then publish. In the app: **Chapters → a chapter's Games button**. The textbook lesson is on the left and the games on the right, each with Preview, Edit, Approve, Reject and Delete.
+An admin, a super admin, or the grade's teacher opens each draft and checks it against the lesson. They fix or reject anything wrong, then publish. In the app: **Chapters → a chapter's Games button**. The textbook lesson is on the left and the games on the right, each with Preview, Edit, Approve, Reject and Delete. **Approve all drafts** publishes every remaining draft in the chapter at once, after you've checked them.
 
 **Publishing to a chapter students have already finished:** students who already completed the chapter keep their completion. The new game appears for them to play, but it doesn't affect their result. Students who haven't finished must play it too. Draft and publish before a chapter goes live.

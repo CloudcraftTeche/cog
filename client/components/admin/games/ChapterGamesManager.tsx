@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowDown,
   ArrowUp,
+  CheckCheck,
   CheckCircle2,
   ChevronLeft,
   Eye,
@@ -24,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getGamePlugin } from "@/components/student/games/registry";
 import {
   apiErrorMessage,
+  useApproveAllDrafts,
   useDeleteGame,
   useGameChapter,
   useReorderGames,
@@ -54,6 +56,7 @@ export function ChapterGamesManager({ chapterId, backHref }: { chapterId: string
   const setStatus = useSetGameStatus();
   const deleteGame = useDeleteGame();
   const reorder = useReorderGames(chapterId);
+  const approveAll = useApproveAllDrafts(chapterId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newType, setNewType] = useState<GameType | null>(null);
   const [addType, setAddType] = useState<GameType>("memory_verse");
@@ -78,6 +81,16 @@ export function ChapterGamesManager({ chapterId, backHref }: { chapterId: string
     }
   };
 
+  const approveAllDrafts = async () => {
+    if (!window.confirm(`Approve all ${counts.draft} draft game(s)? Students in this grade can play them straight away.`)) return;
+    try {
+      const approved = await approveAll.mutateAsync();
+      toast.success(`${approved} game(s) approved: students can now play them`);
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "The games could not be approved"));
+    }
+  };
+
   const move = async (index: number, by: number) => {
     if (!games) return;
     const ids = games.map((game) => game._id);
@@ -93,7 +106,7 @@ export function ChapterGamesManager({ chapterId, backHref }: { chapterId: string
     (total, game) => ({ ...total, [game.status]: total[game.status] + 1 }),
     { published: 0, draft: 0, rejected: 0 }
   );
-  const busy = setStatus.isPending || deleteGame.isPending || reorder.isPending;
+  const busy = setStatus.isPending || deleteGame.isPending || reorder.isPending || approveAll.isPending;
   const gradeName = chapter && typeof chapter.gradeId === "object" ? chapter.gradeId.grade : undefined;
 
   return (
@@ -115,6 +128,16 @@ export function ChapterGamesManager({ chapterId, backHref }: { chapterId: string
             {counts.published} approved · {counts.draft} draft · {counts.rejected} rejected. Students only see approved games, and
             must finish all of them to complete the chapter.
           </p>
+          {counts.draft > 0 && (
+            <Button
+              type="button"
+              onClick={approveAllDrafts}
+              disabled={busy}
+              className="mt-4 bg-white font-semibold text-indigo-700 hover:bg-indigo-50"
+            >
+              <CheckCheck className="mr-2 h-4 w-4" /> Approve all drafts ({counts.draft})
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">

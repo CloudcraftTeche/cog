@@ -144,6 +144,26 @@ export const deleteChapterGameHandler = async (req: AuthenticatedRequest, res: R
   }
 };
 
+// Approves (publishes) every draft in a chapter at once, recording the reviewer. Rejected games stay rejected.
+export const approveChapterDraftsHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const chapter = await Chapter.findById(req.params.chapterId).select("gradeId");
+    if (!chapter) throw new ApiError(404, "Chapter not found");
+    await assertStaffCanAccessGrade(req, chapter.gradeId);
+    const result = await ChapterGame.updateMany(
+      { chapterId: chapter._id, status: "draft" },
+      { $set: { status: "published", reviewedBy: req.userId, reviewedAt: new Date() } }
+    );
+    res.status(200).json({
+      success: true,
+      message: `${result.modifiedCount} game(s) approved`,
+      data: { approved: result.modifiedCount },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Sets the play order of a chapter's games: `ids` lists every game in the chapter, first to last.
 export const reorderChapterGamesHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {

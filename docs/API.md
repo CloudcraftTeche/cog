@@ -311,6 +311,7 @@ Games drafted from the textbook in Claude Code are loaded as `draft` / `source: 
 | PUT | `/:id` | staff | Update `title`, `instructions`, `order`, `config`, `answerKey` (re-validated). |
 | PATCH | `/:id/status` | staff | `{ status: "draft" \| "published" \| "rejected" }`; records `reviewedBy` / `reviewedAt`. |
 | DELETE | `/:id` | staff | Delete a game. |
+| PATCH | `/chapter/:chapterId/approve-drafts` | staff | Publishes every `draft` game of the chapter and records `reviewedBy` / `reviewedAt`; rejected games are left alone. Returns `{ approved }`. |
 | PATCH | `/chapter/:chapterId/order` | staff | `{ ids: [gameId, ...] }` lists every game of the chapter in play order; sets `order` 0..n. |
 | GET | `/:id/preview` | staff | The game as a student receives it (answers removed), for any status. |
 | POST | `/:id/preview/check` | staff | Like the student `check`, for any status. Nothing saved. |

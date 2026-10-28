@@ -118,6 +118,17 @@ export const useReorderGames = (chapterId: string) => {
   });
 };
 
+export const useApproveAllDrafts = (chapterId: string) => {
+  const invalidate = useInvalidateGames();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch<{ data: { approved: number } }>(`/chapter-games/chapter/${chapterId}/approve-drafts`);
+      return data.data.approved;
+    },
+    onSuccess: invalidate,
+  });
+};
+
 export const useGamePreview = (gameId: string | null) =>
   useQuery({
     queryKey: staffGameKeys.preview(gameId ?? ""),
