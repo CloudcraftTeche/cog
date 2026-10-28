@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { isAxiosError } from "axios";
-import { ArrowLeft, CheckCircle2, Gamepad2, Loader2 } from "lucide-react";
+import { CheckCircle2, Gamepad2, Loader2 } from "lucide-react";
 import { useCompleteChapter } from "@/hooks/student/useChapters";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
@@ -87,15 +87,7 @@ export function ChapterActivity({ chapterId, config, onBack }: Props) {
     );
   return (
     <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
-      <div className="flex items-center gap-3 border-b border-slate-100 bg-sky-50 p-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white text-slate-700"
-          aria-label="Back to chapter"
-        >
-          <ArrowLeft />
-        </button>
+      <div className="border-b border-slate-100 bg-sky-50 p-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
             Interactive Activity
