@@ -54,6 +54,7 @@ erDiagram
 | `Teacher` / `users` | A `User` discriminator. Adds qualifications, specializations, required `gradeId`, and `createdBy`. |
 | `Grade` / `grades` | Grade metadata plus embedded `units[]`, `isActive`, and academic year. Defined in [server/src/models/academic/Grade.model.ts](../server/src/models/academic/Grade.model.ts). |
 | `Chapter` / `chapters` | References a `gradeId`, an embedded unit by `unitId`, and its creator via `createdBy`. Embeds learning content, questions, and per-student progress. Defined in [server/src/models/academic/Chapter.model.ts](../server/src/models/academic/Chapter.model.ts). |
+| `Lesson` / `lessons` | Textbook lesson text per grade (`gradeId` + unique `lessonNumber`): title, reading portion, objectives, introduction, story, questions, memory verse and source pages. Copyrighted, so only the lesson routes read it (admins, super admins, teachers for their own grade). Defined in [server/src/models/academic/Lesson.model.ts](../server/src/models/academic/Lesson.model.ts). |
 | `Assignment` / `assignments` | References `gradeId` and `createdBy`; stores content metadata, timing, marks, status, and optional Cloudinary URLs/public IDs. Defined in [server/src/models/assignment/Assignment.schema.ts](../server/src/models/assignment/Assignment.schema.ts). |
 | `Submission` / `submissions` | Connects a student to an assignment and stores submitted content and grading data. |
 | `Attendance` and `TeacherAttendance` | Attendance records reference the relevant user and grade. |
@@ -101,7 +102,7 @@ Schemas enforce data rules at the persistence layer. Examples include:
 
 MongoDB does not automatically cascade deletes between these collections. This project implements cascading cleanup with Mongoose middleware. For example:
 
-- Deleting a grade removes associated assignments, submissions, attendance, chapters, teacher-chapter records, chats, and related Cloudinary media.
+- Deleting a grade removes associated assignments, submissions, attendance, chapters, teacher-chapter records, lessons, chats, and related Cloudinary media.
 - Deleting a teacher removes created assignments and chapters, related submissions and attendance, teacher-progress records, and media.
 - Deleting a student removes submissions and attendance, deletes progress embedded in chapters, and removes uploaded media.
 - Deleting an assignment deletes its submissions and associated Cloudinary files.

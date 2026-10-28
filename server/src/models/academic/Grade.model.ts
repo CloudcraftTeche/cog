@@ -80,6 +80,7 @@ GradeSchema.pre(
       const { TeacherChapter } = await import(
         "../academic/TeacherChapter.model"
       );
+      const { Lesson } = await import("../academic/Lesson.model");
       const { Student } = await import("../user/Student.model");
       const { Teacher } = await import("../user/Teacher.model");
       const { Announcement } = await import("../announcement");
@@ -166,6 +167,7 @@ GradeSchema.pre(
       );
       await Chapter.deleteMany({ gradeId });
       await TeacherChapter.deleteMany({ gradeId });
+      await Lesson.deleteMany({ gradeId });
       await Student.updateMany({ gradeId }, { $unset: { gradeId: "" } });
       await Teacher.updateMany({ gradeId }, { $unset: { gradeId: "" } });
       await ChatRoom.deleteMany({ gradeId });
