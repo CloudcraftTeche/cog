@@ -908,7 +908,8 @@ export const markChapterCompleteHandler = async (
       "grade-1-chapter-18-matching": { type: "matching", expected: ["babylon", "nebuchadnezzar", "three-young-men", "fiery-furnace"] },
     };
     const configuredActivity = activityAnswers[activityId];
-    if (!configuredActivity || chapter.chapterNumber !== Number(activityId.match(/chapter-(\d+)$/)?.[1])) {
+    // IDs are "grade-1-chapter-<n>", or "grade-1-chapter-<n>-<kind>" when a chapter has several activities.
+    if (!configuredActivity || chapter.chapterNumber !== Number(activityId.match(/chapter-(\d+)(?:-[a-z]+)?$/)?.[1])) {
       throw new ApiError(400, "Activity does not belong to this chapter");
     }
     const normalizedAnswers = answers.map((answer) => String(answer));
