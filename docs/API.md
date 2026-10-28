@@ -298,7 +298,7 @@ Copyrighted textbook text. Roles `admin`, `superAdmin` and `teacher`; teachers o
 ## Chapter Games — `/api/v1/chapter-games`
 Source: [server/src/routes/v1/chapterGame/index.ts](../server/src/routes/v1/chapterGame/index.ts)
 
-Games attached to chapters (Grades 1-5 game engine). Game types and their config / answer-key shapes are defined in [server/src/utils/games/gameTypes.ts](../server/src/utils/games/gameTypes.ts). Answer keys are never sent to students. Staff routes: `admin`, `superAdmin`, `teacher` (teachers only for their own grade). Student routes: `student`, only for chapters in their own grade, only `published` games.
+Games attached to chapters (Grades 1-5 game engine). Types: `scramble`, `matching`, `coloring`, `memory_verse`, `story_order`, `true_false`, `missing_word`. Their config / answer-key shapes are defined in [server/src/utils/games/gameTypes.ts](../server/src/utils/games/gameTypes.ts). Answer keys are never sent to students. Staff routes: `admin`, `superAdmin`, `teacher` (teachers only for their own grade). Student routes: `student`, only for chapters in their own grade, only `published` games.
 
 | Method | Path | Roles | Notes |
 |---|---|---|---|
@@ -309,7 +309,7 @@ Games attached to chapters (Grades 1-5 game engine). Game types and their config
 | PATCH | `/:id/status` | staff | `{ status: "draft" \| "published" \| "rejected" }`; records `reviewedBy` / `reviewedAt`. |
 | DELETE | `/:id` | staff | Delete a game. |
 | GET | `/chapter/:chapterId/play` | student | Published games with answers removed (scramble letters shuffled, matching sides shuffled) plus the student's previous `result`. |
-| POST | `/:id/check` | student | `{ itemId, answer }` → `{ correct }`. Instant feedback, nothing saved. |
+| POST | `/:id/check` | student | `{ itemId, answer }` → `{ correct, explanation }` (`explanation` is the optional teaching note for true/false and missing word, else `null`). Instant feedback, nothing saved. |
 | POST | `/:id/submit` | student | `{ answers: { [itemId]: answer } }`. Every item must be answered (finishing passes); returns score, per-item results and whether the chapter is now completed. Writes `activityProgress` keyed by the game's `key`; the chapter completes when every published game is finished. Starts the chapter for the student if they had not started it (locked chapters are refused). |
 
 ## Error Responses

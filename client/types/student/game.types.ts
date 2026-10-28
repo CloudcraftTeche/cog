@@ -1,5 +1,5 @@
 // Chapter games as served by GET /chapter-games/chapter/:chapterId/play (answers removed).
-export type GameType = 'scramble' | 'matching' | 'coloring';
+export type GameType = 'scramble' | 'matching' | 'coloring' | 'memory_verse' | 'story_order' | 'true_false' | 'missing_word';
 
 export interface ScrambleConfig {
   questions: { id: string; hint: string; letters: string[] }[];
@@ -13,6 +13,31 @@ export interface MatchingConfig {
 export interface ColoringConfig {
   imageLabel: string;
   sections: string[];
+}
+
+export interface MemoryVerseConfig {
+  reference: string;
+  rounds: number;
+  words: { id: string; text: string }[];
+}
+
+export interface StoryOrderConfig {
+  prompt: string;
+  events: { id: string; text: string }[];
+}
+
+export interface TrueFalseConfig {
+  statements: { id: string; text: string }[];
+}
+
+export interface MissingWordConfig {
+  sentences: { id: string; before: string; after: string }[];
+  bank: string[];
+}
+
+export interface CheckResult {
+  correct: boolean;
+  explanation: string | null;
 }
 
 export interface GameResult {

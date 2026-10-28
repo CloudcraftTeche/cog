@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { chapterKeys } from '@/hooks/student/useChapters';
-import type { GameAnswers, PlayableGame, SubmitGameResponse } from '@/types/student/game.types';
+import type { CheckResult, GameAnswers, PlayableGame, SubmitGameResponse } from '@/types/student/game.types';
 
 export const gameKeys = {
   all: ['chapter-games'] as const,
@@ -23,8 +23,8 @@ export const useChapterGames = (chapterId: string) =>
 export const useCheckGameAnswer = () =>
   useMutation({
     mutationFn: async ({ gameId, itemId, answer }: { gameId: string; itemId: string; answer: string }) => {
-      const { data } = await api.post<{ data: { correct: boolean } }>(`/chapter-games/${gameId}/check`, { itemId, answer });
-      return data.data.correct;
+      const { data } = await api.post<{ data: CheckResult }>(`/chapter-games/${gameId}/check`, { itemId, answer });
+      return { correct: data.data.correct, explanation: data.data.explanation ?? null };
     },
   });
 
