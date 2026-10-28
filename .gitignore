@@ -57,3 +57,8 @@ server/dist/
 next-env.d.ts
 # Jira credentials for the /jira-* Claude skills
 .claude/jira.env
+
+# Textbooks are copyrighted: never commit PDFs or extracted lesson text (LOGOS-90)
+*.pdf
+*.lessons.json
+cog-textbooks/
