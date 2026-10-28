@@ -288,7 +288,7 @@ Source: [server/src/routes/v1/dashboard/index.ts](../server/src/routes/v1/dashbo
 ## Lessons (textbook library) — `/api/v1/lessons`
 Source: [server/src/routes/v1/lesson/index.ts](../server/src/routes/v1/lesson/index.ts)
 
-Copyrighted textbook text. Roles `admin`, `superAdmin` and `teacher`; teachers only see their own grade (another grade's `gradeId` → 403, another grade's lesson → 404). Responses carry `Cache-Control: no-store`. Students have no access, and lesson text is never included in chapter responses. Lessons are loaded by migration from a local extraction (`npm run extract:lessons` in `server/`); there are no write routes.
+Copyrighted textbook text. Roles `admin`, `superAdmin` and `teacher`; teachers only see their own grade (another grade's `gradeId` → 403, another grade's lesson → 404). Responses carry `Cache-Control: no-store`. Students have no access, and lesson text is never included in chapter responses. Lessons are extracted locally with `npm run extract:lessons` and loaded with `npm run load:lessons` (both in `server/`, files kept outside the repo); there are no write routes.
 
 | Method | Path | Notes |
 |---|---|---|

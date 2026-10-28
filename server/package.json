@@ -9,7 +9,8 @@
     "start": "node -r tsconfig-paths/register dist/server.js",
     "lint": "tsc --noEmit",
     "migrate": "ts-node src/migrations/addCascadingDeletes.migration.ts",
-    "extract:lessons": "ts-node src/scripts/textbook/extractLessons.ts"
+    "extract:lessons": "ts-node src/scripts/textbook/extractLessons.ts",
+    "load:lessons": "ts-node src/scripts/textbook/loadLessons.ts"
   },
   "keywords": [],
   "author": "",
