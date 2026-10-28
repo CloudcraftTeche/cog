@@ -197,9 +197,16 @@ export const submitGameHandler = async (req: AuthenticatedRequest, res: Response
 
     const chapter = await Chapter.findById(game.chapterId);
     if (!chapter) throw new ApiError(404, "Chapter not found");
-    const progress = chapter.studentProgress?.find((p) => p.studentId.toString() === String(req.userId));
-    if (!progress || progress.status === "locked" || progress.status === "accessible") {
-      throw new ApiError(403, "Start this chapter before playing its games");
+    // Finishing a game starts the chapter if the student had not started it yet; locked chapters stay locked.
+    let progress = chapter.studentProgress?.find((p) => p.studentId.toString() === String(req.userId));
+    if (progress?.status === "locked") throw new ApiError(403, "This chapter is locked");
+    if (!progress) {
+      chapter.studentProgress = chapter.studentProgress ?? [];
+      chapter.studentProgress.push({ studentId: new Types.ObjectId(String(req.userId)), status: "in_progress", startedAt: new Date() } as any);
+      progress = chapter.studentProgress[chapter.studentProgress.length - 1];
+    } else if (progress.status === "accessible") {
+      progress.status = "in_progress";
+      progress.startedAt = progress.startedAt ?? new Date();
     }
 
     const activityProgress = progress.activityProgress ?? [];
