@@ -8,20 +8,11 @@
  * lessons, or if the JSON file is inside the repository.
  */
 import fs from "fs";
-import path from "path";
 import mongoose from "mongoose";
 import { connectToDatabase } from "../../lib/mongoose";
 import { Grade } from "../../models/academic/Grade.model";
 import { Lesson } from "../../models/academic/Lesson.model";
-
-const findRepoRoot = (from: string): string => {
-  let dir = from;
-  while (dir !== path.dirname(dir)) {
-    if (fs.existsSync(path.join(dir, ".git"))) return dir;
-    dir = path.dirname(dir);
-  }
-  throw new Error("Could not locate the repository root");
-};
+import { assertOutsideRepo } from "./outsideRepo";
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
@@ -37,10 +28,7 @@ const parseArgs = () => {
 
 const main = async () => {
   const { jsonPath, gradeName, apply } = parseArgs();
-  const relative = path.relative(findRepoRoot(__dirname), path.resolve(jsonPath));
-  if (!relative.startsWith("..") && !path.isAbsolute(relative)) {
-    throw new Error("The lessons file must be outside the repository.");
-  }
+  assertOutsideRepo("The lessons file", jsonPath);
 
   const data = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
   if (!Array.isArray(data.lessons) || !data.lessons.length) throw new Error("No lessons in the file");
