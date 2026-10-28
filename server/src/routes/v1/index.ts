@@ -18,6 +18,7 @@ import teacherAttendaceRoutes from "./teacherAttendance";
 import todoListRoutes from "./todo";
 import dashboard from "./dashboard";
 import lessonRoutes from "./lesson";
+import chapterGameRoutes from "./chapterGame";
 const router = Router();
 router.get("/health", (_, res) => {
   res.json({
@@ -43,6 +44,7 @@ router.get("/health", (_, res) => {
       teacherChapters: "/api/v1/teacher-chapters",
       todoList: "/api/v1/todo-list",
       lessons: "/api/v1/lessons",
+      chapterGames: "/api/v1/chapter-games",
     },
     contact: {
       name: "Support Team",
@@ -68,4 +70,5 @@ router.use("/attendance", attendanceRoutes);
 router.use("/teacher-attendance", teacherAttendaceRoutes);
 router.use("/todo", todoListRoutes);
 router.use("/lessons", lessonRoutes);
+router.use("/chapter-games", chapterGameRoutes);
 export default router;

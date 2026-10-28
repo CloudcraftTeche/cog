@@ -342,6 +342,8 @@ ChapterSchema.pre(
           }
         }
       }
+      const { ChapterGame } = await import("./ChapterGame.model");
+      await ChapterGame.deleteMany({ chapterId: this._id });
       next();
     } catch (error: any) {
       console.error("Error in Chapter cascading delete:", error);
