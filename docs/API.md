@@ -310,7 +310,7 @@ Games attached to chapters (Grades 1-5 game engine). Game types and their config
 | DELETE | `/:id` | staff | Delete a game. |
 | GET | `/chapter/:chapterId/play` | student | Published games with answers removed (scramble letters shuffled, matching sides shuffled) plus the student's previous `result`. |
 | POST | `/:id/check` | student | `{ itemId, answer }` → `{ correct }`. Instant feedback, nothing saved. |
-| POST | `/:id/submit` | student | `{ answers: { [itemId]: answer } }`. Every item must be answered (finishing passes); returns score, per-item results and whether the chapter is now completed. Writes `activityProgress` keyed by the game's `key`; the chapter completes when every published game is finished. The student must have started the chapter. |
+| POST | `/:id/submit` | student | `{ answers: { [itemId]: answer } }`. Every item must be answered (finishing passes); returns score, per-item results and whether the chapter is now completed. Writes `activityProgress` keyed by the game's `key`; the chapter completes when every published game is finished. Starts the chapter for the student if they had not started it (locked chapters are refused). |
 
 ## Error Responses
 
