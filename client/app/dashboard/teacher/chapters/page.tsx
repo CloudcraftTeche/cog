@@ -291,6 +291,7 @@ export default function TeacherChaptersPage() {
                           index={chapterIndex}
                           unitName={unitGroup.unit.name}
                           onViewScores={handleViewScores}
+                          onManageGames={(chapterId) => router.push(`/dashboard/teacher/chapters/games/${chapterId}`)}
                           onEdit={handleEdit}
                           onViewSubmissions={handleViewSubmissions}
                           onDelete={handleDeleteChapter}

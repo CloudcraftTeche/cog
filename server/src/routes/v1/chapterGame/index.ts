@@ -10,6 +10,10 @@ import {
   getPlayableGamesHandler,
   checkGameAnswerHandler,
   submitGameHandler,
+  reorderChapterGamesHandler,
+  previewGameHandler,
+  previewCheckHandler,
+  previewSubmitHandler,
 } from "../../../controllers/v1/chapterGame";
 import { authenticate } from "../../../middleware/authenticate";
 import { authorizeRoles } from "../../../middleware/authorizeRoles";
@@ -95,6 +99,39 @@ router.patch(
   [gameIdParam, body("status").isIn(["draft", "published", "rejected"]).withMessage("Invalid status")],
   validate,
   setChapterGameStatusHandler
+);
+router.patch(
+  "/chapter/:chapterId/order",
+  authenticate,
+  authorizeRoles(...STAFF),
+  [
+    param("chapterId").isMongoId().withMessage("Invalid chapter ID"),
+    body("ids").isArray({ min: 1 }).withMessage("ids must list the chapter's games"),
+    body("ids.*").isMongoId().withMessage("Invalid game ID"),
+  ],
+  validate,
+  reorderChapterGamesHandler
+);
+router.get("/:id/preview", authenticate, authorizeRoles(...STAFF), [gameIdParam], validate, previewGameHandler);
+router.post(
+  "/:id/preview/check",
+  authenticate,
+  authorizeRoles(...STAFF),
+  [
+    gameIdParam,
+    body("itemId").isString().notEmpty().withMessage("itemId is required"),
+    body("answer").isString().withMessage("answer must be a string"),
+  ],
+  validate,
+  previewCheckHandler
+);
+router.post(
+  "/:id/preview/submit",
+  authenticate,
+  authorizeRoles(...STAFF),
+  [gameIdParam, body("answers").isObject().withMessage("answers must be an object of itemId to answer")],
+  validate,
+  previewSubmitHandler
 );
 router.delete("/:id", authenticate, authorizeRoles(...STAFF), [gameIdParam], validate, deleteChapterGameHandler);
 export default router;

@@ -1,6 +1,7 @@
 import { Response, NextFunction } from "express";
 import { ApiError } from "../../../utils/ApiError";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
+import { Chapter } from "../../../models/academic/Chapter.model";
 import { Lesson } from "../../../models/academic/Lesson.model";
 import { Teacher } from "../../../models/user/Teacher.model";
 
@@ -57,6 +58,33 @@ export const getLessonByIdHandler = async (
     if (gradeId && lesson.gradeId.toString() !== gradeId) {
       throw new ApiError(404, "Lesson not found");
     }
+    noStore(res);
+    res.status(200).json({
+      success: true,
+      message: "Lesson fetched",
+      data: lesson,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// The lesson a chapter was made from (same grade, lessonNumber = chapterNumber), shown next
+// to a chapter's games while reviewing them. 404 when the chapter has no textbook lesson.
+export const getLessonForChapterHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const chapter = await Chapter.findById(req.params.chapterId).select("gradeId chapterNumber").lean();
+    if (!chapter) throw new ApiError(404, "Chapter not found");
+    const gradeId = await resolveGradeScope(req);
+    if (gradeId && chapter.gradeId.toString() !== gradeId) {
+      throw new ApiError(403, "You can only view lessons for your own grade");
+    }
+    const lesson = await Lesson.findOne({ gradeId: chapter.gradeId, lessonNumber: chapter.chapterNumber }).lean();
+    if (!lesson) throw new ApiError(404, "This chapter has no textbook lesson");
     noStore(res);
     res.status(200).json({
       success: true,

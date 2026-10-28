@@ -20,6 +20,7 @@ import {
   FileCheck,
   BookOpen,
   FilePlus2,
+  Gamepad2,
 } from "lucide-react";
 
 interface ContentItem {
@@ -59,6 +60,7 @@ interface ChapterCardProps {
   index: number;
   unitName?: string; 
   onViewScores: (chapterId: string) => void;
+  onManageGames: (chapterId: string) => void;
   onViewSubmissions: (chapterId: string) => void;
   onEdit: (chapterId: string) => void;
   onDelete: (chapterId: string) => void;
@@ -69,6 +71,7 @@ export default function ChapterCard({
   index,
   unitName,
   onViewScores,
+  onManageGames,
   onViewSubmissions,
   onEdit,
   onDelete,
@@ -266,6 +269,15 @@ export default function ChapterCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onManageGames(chapter._id)}
+            className="w-full bg-gradient-to-r from-sky-50 to-cyan-50 hover:from-sky-100 hover:to-cyan-100 border-sky-200 hover:border-sky-300 text-sky-700 hover:text-sky-800 font-semibold rounded-xl transition-all duration-300"
+          >
+            <Gamepad2 className="h-4 w-4 mr-2" />
+            Games
+          </Button>
         </div>
       </CardContent>
     </Card>

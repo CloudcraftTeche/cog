@@ -170,6 +170,7 @@ export default function AdminChaptersPage() {
             onToggleGrade={toggleGrade}
             onToggleUnit={toggleUnit}
             onViewScores={handleViewScores}
+            onManageGames={(chapterId) => router.push(`/dashboard/admin/chapters/games/${chapterId}`)}
             onEdit={handleEdit}
             onDelete={handleDeleteChapter}
             onViewSubmissions={handleViewSubmissions}

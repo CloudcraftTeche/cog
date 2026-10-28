@@ -293,6 +293,7 @@ Copyrighted textbook text. Roles `admin`, `superAdmin` and `teacher`; teachers o
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/` | Optional `?gradeId=`. Returns `gradeId`, `lessonNumber`, `title`, `readingPortion`, `memoryVerse` (no story), sorted by lesson number. Teachers default to their own grade. |
+| GET | `/chapter/:chapterId` | The lesson a chapter was made from (same grade, `lessonNumber` = `chapterNumber`), shown next to the chapter's games for review. 404 if there is none. |
 | GET | `/:id` | Full lesson: objectives, introduction, story, questions, memory verse, source pages. |
 
 ## Chapter Games — `/api/v1/chapter-games`
@@ -304,12 +305,16 @@ Games drafted from the textbook in Claude Code are loaded as `draft` / `source: 
 
 | Method | Path | Roles | Notes |
 |---|---|---|---|
-| GET | `/?chapterId=` | staff | All games of a chapter (draft, published, rejected), including `answerKey`. |
+| GET | `/?chapterId=` | staff | All games of a chapter (draft, published, rejected), including `answerKey`; `reviewedBy` is populated with the reviewer's `name`. |
 | GET | `/:id` | staff | One game including `answerKey`. |
 | POST | `/` | staff | Create. Body: `chapterId`, `type`, `title`, `config`, optional `answerKey`, `instructions`, `order`, `key`, `source` (`manual`/`ai`). Always created as `draft`; config is validated per type. |
 | PUT | `/:id` | staff | Update `title`, `instructions`, `order`, `config`, `answerKey` (re-validated). |
 | PATCH | `/:id/status` | staff | `{ status: "draft" \| "published" \| "rejected" }`; records `reviewedBy` / `reviewedAt`. |
 | DELETE | `/:id` | staff | Delete a game. |
+| PATCH | `/chapter/:chapterId/order` | staff | `{ ids: [gameId, ...] }` lists every game of the chapter in play order; sets `order` 0..n. |
+| GET | `/:id/preview` | staff | The game as a student receives it (answers removed), for any status. |
+| POST | `/:id/preview/check` | staff | Like the student `check`, for any status. Nothing saved. |
+| POST | `/:id/preview/submit` | staff | Scores `{ answers }` like the student `submit` without saving anything. |
 | GET | `/chapter/:chapterId/play` | student | Published games with answers removed (scramble letters shuffled, matching sides shuffled) plus the student's previous `result`. |
 | POST | `/:id/check` | student | `{ itemId, answer }` → `{ correct, explanation }` (`explanation` is the optional teaching note for true/false and missing word, else `null`). Instant feedback, nothing saved. |
 | POST | `/:id/submit` | student | `{ answers: { [itemId]: answer } }`. Every item must be answered (finishing passes); returns score, per-item results and whether the chapter is now completed. Writes `activityProgress` keyed by the game's `key`; the chapter completes when every published game is finished. Starts the chapter for the student if they had not started it (locked chapters are refused). |
