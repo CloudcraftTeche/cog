@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Chapter } from "@/utils/chapter/studentChapter.service";
+import { gradeNameOf, isGameGrade } from "@/utils/student/gameGrades";
 
 interface ChapterCardItemProps {
   chapter: Chapter;
@@ -128,7 +129,7 @@ export default function ChapterCardItem({
             {chapter.contentItems?.length || 0} Content{" "}
             {chapter.contentItems?.length !== 1 ? "Items" : "Item"}
           </span>
-          <span>{chapter.questions?.length || 0} Questions</span>
+          <span>{isGameGrade(gradeNameOf(chapter.gradeId)) ? "Games" : `${chapter.questions?.length || 0} Questions`}</span>
         </div>
 
         {chapter.score !== undefined && chapter.score > 0 && (

@@ -4,6 +4,7 @@ import { CheckCircle, BookOpen, Play, FileText, Award } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import type { Chapter } from '@/types/student/chapter.types';
+import { gradeNameOf, isGameGrade } from "@/utils/student/gameGrades";
 
 interface ChapterHeaderProps {
   chapter: Chapter;
@@ -79,8 +80,9 @@ export const ChapterHeader: React.FC<ChapterHeaderProps> = ({ chapter }) => {
                 variant="outline"
                 className="text-gray-600 border-gray-300 text-xs"
               >
-                {chapter.questions?.length ?? 0} Question
-                {(chapter.questions?.length ?? 0) !== 1 ? 's' : ''}
+                {isGameGrade(gradeNameOf(chapter.gradeId))
+                  ? 'Games'
+                  : `${chapter.questions?.length ?? 0} Question${(chapter.questions?.length ?? 0) !== 1 ? 's' : ''}`}
               </Badge>
             </div>
           </div>

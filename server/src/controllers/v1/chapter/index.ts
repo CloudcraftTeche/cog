@@ -4,6 +4,8 @@ import { ApiError } from "../../../utils/ApiError";
 import { AuthenticatedRequest } from "../../../middleware/authenticate";
 import { Grade } from "../../../models/academic/Grade.model";
 import { Chapter } from "../../../models/academic/Chapter.model";
+import { ChapterGame } from "../../../models/academic/ChapterGame.model";
+import { isGameGrade } from "../../../utils/games/gameGrades";
 import { Student } from "../../../models/user/Student.model";
 import { createEmailTransporter } from "../../../utils/email/transporter";
 import { Teacher } from "../../../models/user/Teacher.model";
@@ -680,6 +682,15 @@ export const submitChapterHandler = async (
 
     const chapter = await Chapter.findOne({ _id: chapterId, gradeId });
     if (!chapter) throw new ApiError(404, "Chapter not found");
+
+    // Grades 1-5 (LOGOS-70): games replace the quiz. A chapter with published games completes when
+    // they are all finished (chapterGame submit); one without games can be marked done after the lesson.
+    if (req.userRole === "student" && isGameGrade(grade.grade)) {
+      if (answers.length > 0) throw new ApiError(400, "This grade uses games instead of the quiz");
+      if (await ChapterGame.exists({ chapterId: chapter._id, status: "published" })) {
+        throw new ApiError(400, "Finish this chapter's games to complete it");
+      }
+    }
 
     let finalScore: number;
     let correctCount = 0;

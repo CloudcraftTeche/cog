@@ -102,6 +102,8 @@ Source: [server/src/routes/v1/grade/index.ts](../server/src/routes/v1/grade/inde
 ## Chapters — `/api/v1/chapters`
 Source: [server/src/routes/v1/chapter/index.ts](../server/src/routes/v1/chapter/index.ts)
 
+Grades 1-5 use games instead of the quiz (LOGOS-70). For their students, `POST /:gradeId/chapters/:chapterId/submit` refuses quiz `answers` (400) and refuses chapters that have published games (400; those complete through `POST /chapter-games/:id/submit`). A chapter without published games can be marked done with `{ score }`.
+
 | Method | Path |
 |---|---|
 | POST | `/bulk` |

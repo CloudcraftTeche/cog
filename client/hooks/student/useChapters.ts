@@ -138,6 +138,21 @@ export const useSubmitChapter = () => {
 };
 
 
+// Grades 1-5 chapters without games (LOGOS-70): the child marks the chapter done after the lesson.
+export const useMarkChapterDone = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ chapterId, gradeId }: { chapterId: string; gradeId: string }) => {
+      const { data } = await api.post(`/chapters/${gradeId}/chapters/${chapterId}/submit`, { score: 100 });
+      return data;
+    },
+    onSuccess: (_, { chapterId }) => {
+      queryClient.invalidateQueries({ queryKey: chapterKeys.detail(chapterId) });
+      queryClient.invalidateQueries({ queryKey: chapterKeys.lists() });
+    },
+  });
+};
+
 export const useCurrentGrade = () => {
   return useQuery({
     queryKey: chapterKeys.grade(),

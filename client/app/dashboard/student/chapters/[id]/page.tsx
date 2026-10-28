@@ -17,6 +17,7 @@ import {
 } from "@/utils/student/chapterUtils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
 import { ChapterGames } from "@/components/student/games/ChapterGames";
+import { gradeNameOf, isGameGrade } from "@/utils/student/gameGrades";
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
@@ -25,12 +26,17 @@ export default function ChapterDetailPage() {
   >({});
   const [submitted, setSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [lessonDone, setLessonDone] = useState(false);
   const { data: chapter, isLoading, isError, error } = useChapter(id);
   const { data: allChaptersData } = useChaptersList({
     page: 1,
     limit: 100,
   });
   const startChapterMutation = useStartChapter();
+  // The chapter detail has no per-student flags; the list entry does.
+  const listEntry = allChaptersData?.chapters.find((item) => item._id === id);
+  const chapterCompleted = !!(listEntry?.isCompleted || chapter?.isCompleted);
+  const usesGames = isGameGrade(gradeNameOf(chapter?.gradeId));
   const nextChapter = useMemo(() => {
     if (!chapter || !allChaptersData?.chapters) return null;
     return findNextChapter(chapter, allChaptersData.chapters);
@@ -122,8 +128,25 @@ export default function ChapterDetailPage() {
         <ChapterHeader chapter={chapter} />
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
-          <ChapterGames chapterId={chapter._id} />
-          {chapter.questions && chapter.questions.length > 0 && (
+          {usesGames ? (
+            // Grades 1-5 (LOGOS-70): lesson, then games; the quiz is not shown (past results stay stored).
+            lessonDone || chapterCompleted || !chapter.contentItems?.length ? (
+              <ChapterGames
+                chapterId={chapter._id}
+                gradeId={chapter.gradeId._id}
+                chapterCompleted={chapterCompleted}
+                onNextChapter={handleNextChapter}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLessonDone(true)}
+                className="min-h-14 w-full rounded-2xl bg-sky-600 px-5 text-lg font-black text-white shadow-sm"
+              >
+                I finished the lesson. Let&apos;s play!
+              </button>
+            )
+          ) : chapter.questions && chapter.questions.length > 0 && (
             <ChapterSubmission
               chapter={chapter}
               selectedAnswers={selectedAnswers}

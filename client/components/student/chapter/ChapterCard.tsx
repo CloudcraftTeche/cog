@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Chapter } from "@/types/student/chapter.types";
 import { isChapterAccessible } from "@/utils/student/chapterUtils";
+import { gradeNameOf, isGameGrade } from "@/utils/student/gameGrades";
 interface ChapterCardProps {
   chapter: Chapter;
   index: number;
@@ -107,7 +108,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ chapter, index }) => {
             {chapter.contentItems?.length ?? 0} Content{" "}
             {(chapter.contentItems?.length ?? 0) !== 1 ? "Items" : "Item"}
           </span>
-          <span>{chapter.questions?.length ?? 0} Questions</span>
+          <span>{isGameGrade(gradeNameOf(chapter.gradeId)) ? "Games" : `${chapter.questions?.length ?? 0} Questions`}</span>
         </div>
         {chapter.score !== undefined && chapter.score > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100">
