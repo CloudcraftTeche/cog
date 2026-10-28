@@ -134,6 +134,8 @@ TeacherSchema.pre(
           return Promise.allSettled(deletePromises);
         })
       );
+      const { ChapterGame } = await import("../academic/ChapterGame.model");
+      await ChapterGame.deleteMany({ chapterId: { $in: chapters.map((c) => c._id) } });
       await Chapter.deleteMany({ createdBy: teacherId });
       await TeacherChapter.updateMany(
         { "teacherProgress.teacherId": teacherId },

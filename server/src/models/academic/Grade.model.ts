@@ -168,6 +168,8 @@ GradeSchema.pre(
       await Chapter.deleteMany({ gradeId });
       await TeacherChapter.deleteMany({ gradeId });
       await Lesson.deleteMany({ gradeId });
+      const { ChapterGame } = await import("../academic/ChapterGame.model");
+      await ChapterGame.deleteMany({ gradeId });
       await Student.updateMany({ gradeId }, { $unset: { gradeId: "" } });
       await Teacher.updateMany({ gradeId }, { $unset: { gradeId: "" } });
       await ChatRoom.deleteMany({ gradeId });

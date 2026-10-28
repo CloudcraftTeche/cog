@@ -11,7 +11,8 @@
     "migrate": "ts-node src/migrations/addCascadingDeletes.migration.ts",
     "extract:lessons": "ts-node src/scripts/textbook/extractLessons.ts",
     "load:lessons": "ts-node src/scripts/textbook/loadLessons.ts",
-    "migrate:grade1-reset": "ts-node src/migrations/resetGrade1Units.migration.ts"
+    "migrate:grade1-reset": "ts-node src/migrations/resetGrade1Units.migration.ts",
+    "migrate:grade1-games": "ts-node src/migrations/migrateGradeOneActivities.migration.ts"
   },
   "keywords": [],
   "author": "",
