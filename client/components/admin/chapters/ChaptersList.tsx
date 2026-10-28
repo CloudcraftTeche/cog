@@ -25,6 +25,7 @@ interface ChaptersListProps {
   onToggleGrade: (gradeId: string) => void;
   onToggleUnit: (unitKey: string) => void;
   onViewScores: (chapterId: string) => void;
+  onManageGames: (chapterId: string) => void;
   onEdit: (chapterId: string) => void;
   onDelete: (chapterId: string) => void;
   onViewSubmissions: (chapterId: string) => void;
@@ -37,6 +38,7 @@ export default function ChaptersList({
   onToggleGrade,
   onToggleUnit,
   onViewScores,
+  onManageGames,
   onEdit,
   onDelete,
   onViewSubmissions,
@@ -145,6 +147,7 @@ export default function ChaptersList({
                               index={chapterIndex}
                               unitName={unitGroup.unit.name}
                               onViewScores={onViewScores}
+                              onManageGames={onManageGames}
                               onEdit={onEdit}
                               onDelete={onDelete}
                               onViewSubmissions={onViewSubmissions}

@@ -29,6 +29,16 @@ const validateGame = (type: unknown, config: unknown, answerKey: unknown) => {
   if (error) throw new ApiError(400, error);
 };
 
+const checkItem = (game: IChapterGame, itemId: string, answer: unknown) => {
+  const definition = GAME_TYPES[game.type];
+  if (!definition.items(game.config).includes(itemId)) throw new ApiError(400, "Unknown item for this game");
+  return {
+    itemId,
+    correct: definition.isCorrect(game.answerKey, itemId, String(answer), game.config),
+    explanation: definition.explain?.(game.config, itemId) ?? null,
+  };
+};
+
 const findStaffGame = async (req: AuthenticatedRequest) => {
   const game = await ChapterGame.findById(req.params.id).select("+answerKey");
   if (!game) throw new ApiError(404, "Game not found");
@@ -41,7 +51,11 @@ export const listChapterGamesHandler = async (req: AuthenticatedRequest, res: Re
     const chapter = await Chapter.findById(req.query.chapterId).select("gradeId");
     if (!chapter) throw new ApiError(404, "Chapter not found");
     await assertStaffCanAccessGrade(req, chapter.gradeId);
-    const games = await ChapterGame.find({ chapterId: chapter._id }).select("+answerKey").sort({ order: 1, createdAt: 1 }).lean();
+    const games = await ChapterGame.find({ chapterId: chapter._id })
+      .select("+answerKey")
+      .populate("reviewedBy", "name")
+      .sort({ order: 1, createdAt: 1 })
+      .lean();
     res.status(200).json({ success: true, message: "Games fetched", data: games });
   } catch (error) {
     next(error);
@@ -130,6 +144,92 @@ export const deleteChapterGameHandler = async (req: AuthenticatedRequest, res: R
   }
 };
 
+// Approves (publishes) every draft in a chapter at once, recording the reviewer. Rejected games stay rejected.
+export const approveChapterDraftsHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const chapter = await Chapter.findById(req.params.chapterId).select("gradeId");
+    if (!chapter) throw new ApiError(404, "Chapter not found");
+    await assertStaffCanAccessGrade(req, chapter.gradeId);
+    const result = await ChapterGame.updateMany(
+      { chapterId: chapter._id, status: "draft" },
+      { $set: { status: "published", reviewedBy: req.userId, reviewedAt: new Date() } }
+    );
+    res.status(200).json({
+      success: true,
+      message: `${result.modifiedCount} game(s) approved`,
+      data: { approved: result.modifiedCount },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Sets the play order of a chapter's games: `ids` lists every game in the chapter, first to last.
+export const reorderChapterGamesHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const chapter = await Chapter.findById(req.params.chapterId).select("gradeId");
+    if (!chapter) throw new ApiError(404, "Chapter not found");
+    await assertStaffCanAccessGrade(req, chapter.gradeId);
+    const ids: string[] = req.body.ids;
+    const games = await ChapterGame.find({ chapterId: chapter._id }).select("_id");
+    const existing = games.map((game) => game._id.toString());
+    if (ids.length !== existing.length || new Set(ids).size !== ids.length || ids.some((id) => !existing.includes(id))) {
+      throw new ApiError(400, "ids must list every game in the chapter exactly once");
+    }
+    await ChapterGame.bulkWrite(ids.map((id, order) => ({ updateOne: { filter: { _id: id }, update: { $set: { order } } } })));
+    res.status(200).json({ success: true, message: "Games reordered", data: ids });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Staff preview: the game exactly as a student receives it, for any status. Nothing is saved.
+export const previewGameHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const game = await findStaffGame(req);
+    res.status(200).json({
+      success: true,
+      message: "Game preview",
+      data: {
+        _id: game._id,
+        key: game.key,
+        type: game.type,
+        title: game.title,
+        instructions: game.instructions,
+        order: game.order,
+        config: GAME_TYPES[game.type].toStudent(game.config, game.answerKey),
+        result: null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const previewCheckHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const game = await findStaffGame(req);
+    res.status(200).json({ success: true, message: "Answer checked", data: checkItem(game, req.body.itemId, req.body.answer) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const previewSubmitHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const game = await findStaffGame(req);
+    const result = scoreGame(game.type, game.config, game.answerKey, req.body.answers as GameAnswers);
+    if (!result.finished) throw new ApiError(400, "Answer every item to finish the game");
+    res.status(200).json({
+      success: true,
+      message: "Preview finished (not saved)",
+      data: { score: result.score, total: result.total, chapterCompleted: false },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Students: published games only, with every answer removed.
 export const getPlayableGamesHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -174,18 +274,7 @@ const findPlayableGame = async (req: AuthenticatedRequest) => {
 export const checkGameAnswerHandler = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const game = await findPlayableGame(req);
-    const { itemId, answer } = req.body;
-    const definition = GAME_TYPES[game.type];
-    if (!definition.items(game.config).includes(itemId)) throw new ApiError(400, "Unknown item for this game");
-    res.status(200).json({
-      success: true,
-      message: "Answer checked",
-      data: {
-        itemId,
-        correct: definition.isCorrect(game.answerKey, itemId, String(answer), game.config),
-        explanation: definition.explain?.(game.config, itemId) ?? null,
-      },
-    });
+    res.status(200).json({ success: true, message: "Answer checked", data: checkItem(game, req.body.itemId, req.body.answer) });
   } catch (error) {
     next(error);
   }

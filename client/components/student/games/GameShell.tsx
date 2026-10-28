@@ -6,7 +6,7 @@ import { CheckCircle2, Gamepad2, Loader2, RotateCcw, Star, Volume2, VolumeX } fr
 import { useCheckGameAnswer, useSubmitGame } from "@/hooks/student/useChapterGames";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
-import type { GameAnswers, GameResult, PlayableGame } from "@/types/student/game.types";
+import type { CheckResult, GameAnswers, GameResult, PlayableGame } from "@/types/student/game.types";
 import { isGameSoundOn, playGameSound, setGameSoundOn, type GameSound } from "@/utils/student/gameSounds";
 import { getGamePlugin } from "./registry";
 import { ReadAloudButton } from "./primitives/ReadAloudButton";
@@ -19,6 +19,9 @@ interface Props {
   position: number;
   count: number;
   onChapterCompleted?: () => void;
+  // Staff preview (LOGOS-77) passes its own check/submit so nothing is saved to student progress.
+  checkAnswer?: (itemId: string, answer: string) => Promise<CheckResult>;
+  submitAnswers?: (answers: GameAnswers) => Promise<{ score: number; total: number; chapterCompleted?: boolean }>;
 }
 
 // Finishing a game passes it; stars only show how many answers were right.
@@ -34,7 +37,7 @@ const errorMessage = (error: unknown) =>
       ? error.message
       : "Unable to save your result. Please try again.";
 
-export function GameShell({ chapterId, game, position, count, onChapterCompleted }: Props) {
+export function GameShell({ chapterId, game, position, count, onChapterCompleted, checkAnswer, submitAnswers }: Props) {
   const plugin = getGamePlugin(game.type);
   const isOnline = useOnlineStatus();
   const checkMutation = useCheckGameAnswer();
@@ -55,7 +58,9 @@ export function GameShell({ chapterId, game, position, count, onChapterCompleted
   const check = useCallback(
     async (itemId: string, answer: string) => {
       try {
-        const result = await checkMutation.mutateAsync({ gameId: game._id, itemId, answer });
+        const result = checkAnswer
+          ? await checkAnswer(itemId, answer)
+          : await checkMutation.mutateAsync({ gameId: game._id, itemId, answer });
         playSound(result.correct ? "correct" : "wrong");
         setError(null);
         return result;
@@ -64,14 +69,16 @@ export function GameShell({ chapterId, game, position, count, onChapterCompleted
         return { correct: false, explanation: null };
       }
     },
-    [checkMutation, game._id, playSound]
+    [checkAnswer, checkMutation, game._id, playSound]
   );
 
   const submit = async (answers: GameAnswers) => {
     setPhase("saving");
     setError(null);
     try {
-      const saved = await submitMutation.mutateAsync({ gameId: game._id, answers });
+      const saved = submitAnswers
+        ? await submitAnswers(answers)
+        : await submitMutation.mutateAsync({ gameId: game._id, answers });
       setResult({ score: saved.score, total: saved.total });
       setUnsaved(null);
       setPhase("done");
