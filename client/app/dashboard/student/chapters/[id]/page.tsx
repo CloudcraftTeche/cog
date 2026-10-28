@@ -16,8 +16,7 @@ import {
   calculateQuizScore,
 } from "@/utils/student/chapterUtils";
 import { LoadingState } from "@/components/shared/LoadingComponent";
-import { ChapterActivity } from "@/components/student/activities/ChapterActivity";
-import { getGradeOneActivities } from "@/utils/student/gradeOneActivities";
+import { ChapterGames } from "@/components/student/games/ChapterGames";
 export default function ChapterDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
@@ -112,10 +111,6 @@ export default function ChapterDetailPage() {
       />
     );
   }
-  const gradeOneActivities = getGradeOneActivities(
-    chapter.gradeId.grade,
-    chapter.chapterNumber
-  );
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -127,22 +122,7 @@ export default function ChapterDetailPage() {
         <ChapterHeader chapter={chapter} />
         <div className="space-y-6 sm:space-y-8">
           <ChapterContent chapter={chapter} />
-          {gradeOneActivities.length > 0 && !submitted && (
-            <section className="space-y-4">
-              <div className="rounded-3xl bg-sky-50 p-5">
-                <h2 className="text-xl font-black text-slate-900">Interactive Activities</h2>
-                <p className="mt-1 text-slate-600">{gradeOneActivities.length === 1 ? "Complete this activity to finish this chapter." : "Complete all activities to finish this chapter."}</p>
-              </div>
-              {gradeOneActivities.map((activity) => (
-                <ChapterActivity
-                  key={activity.id}
-                  chapterId={chapter._id}
-                  config={activity}
-                  onBack={() => router.push(`/dashboard/student/chapters/${chapter._id}`)}
-                />
-              ))}
-            </section>
-          )}
+          <ChapterGames chapterId={chapter._id} />
           {chapter.questions && chapter.questions.length > 0 && (
             <ChapterSubmission
               chapter={chapter}

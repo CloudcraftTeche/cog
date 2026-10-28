@@ -6,7 +6,6 @@ import type {
   ChapterDetailResponse,
   ChapterQueryParams,
   SubmitChapterData,
-  CompleteChapterResponse,
   Grade,
 } from '@/types/student/chapter.types';
 
@@ -127,39 +126,6 @@ export const useSubmitChapter = () => {
 
       if (!data.success) {
         throw new Error(data.message || 'Failed to submit chapter');
-      }
-
-      return data;
-    },
-    onSuccess: (_, { chapterId }) => {
-      queryClient.invalidateQueries({ queryKey: chapterKeys.detail(chapterId) });
-      queryClient.invalidateQueries({ queryKey: chapterKeys.lists() });
-    },
-  });
-};
-
-
-export const useCompleteChapter = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      chapterId,
-      activityId,
-      answers,
-    }: {
-      chapterId: string;
-      activityId: string;
-      answers: string[];
-    }) => {
-      const grade = await getCurrentUserGrade();
-      const { data } = await api.post<CompleteChapterResponse>(
-        `/chapters/${grade._id}/chapters/${chapterId}/complete`,
-        { activityId, answers }
-      );
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to complete chapter');
       }
 
       return data;

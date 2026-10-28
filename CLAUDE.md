@@ -58,7 +58,7 @@ Data flow: page (`app/`) → hook (`hooks/<role>/`) → Axios instance (`lib/api
 - **No `middleware.ts` route guard.** Auth and role gating are client-side, per layout or page. The server's per-route `authorizeRoles` is the real enforcement.
 - **Query keys are defined per hook file** (`chapterKeys`, `gradeKeys`, …), with no central registry. Reuse the sibling file's key shape so invalidation keeps working. Defaults (`providers/query-provider.tsx`): `staleTime` 60s, no refetch on window focus, `retry: 1`.
 - No global state library; local React state only. Toasts use Sonner. Chat uses `hooks/useSocket.ts`, which authenticates with the same `localStorage` access token.
-- `utils/student/gradeOneActivities.ts` holds hard-coded grade 1 chapter activities (e.g. scrambled words); results are stored in the chapter's `activityProgress`.
+- Chapter games come from the `ChapterGame` collection (`/api/v1/chapter-games`, answer keys stay on the server). On the client, `components/student/games/registry.ts` maps each game type to a component, `GameShell.tsx` wraps every game, and `primitives/useTapOrDrag.ts` is the touch drag/tap primitive. Server-side type rules live in `server/src/utils/games/gameTypes.ts`; a new game type needs an entry in both. Results are stored in the chapter's `activityProgress`, keyed by the game's `key`.
 - Misspelled paths are load-bearing — do not rename in passing: `components/admin/announcemnets`, `utils/teacherAttendace`, `hooks/admin/Useadmindashboard.ts`, `server/DockerFile`, `client/DockerFile`.
 
 ## Docs
