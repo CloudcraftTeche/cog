@@ -10,6 +10,7 @@
 import fs from "fs";
 import path from "path";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf";
+import { assertOutsideRepo, findRepoRoot } from "./outsideRepo";
 
 export interface ExtractedLesson {
   lessonNumber: number;
@@ -27,24 +28,6 @@ const PAGES_PER_LESSON = 3;
 const PAGE_HEADER = /^\d*\s*COG KERALA STATE SUNDAY SCHOOL DEPARTMENT\s*$/;
 const BIBLE_REFERENCE =
   /((?:[1-3]|I{1,3})?\s*[A-Za-z]+\.?\s*\d+\s*:\s*\d+(?:\s*-\s*\d+)?)\.?\s*$/;
-
-const findRepoRoot = (from: string): string => {
-  let dir = from;
-  while (dir !== path.dirname(dir)) {
-    if (fs.existsSync(path.join(dir, ".git"))) return dir;
-    dir = path.dirname(dir);
-  }
-  throw new Error("Could not locate the repository root");
-};
-
-const assertOutsideRepo = (label: string, filePath: string, repoRoot: string) => {
-  const relative = path.relative(repoRoot, path.resolve(filePath));
-  if (!relative.startsWith("..") && !path.isAbsolute(relative)) {
-    throw new Error(
-      `${label} must be outside the repository (got ${filePath}). Textbook content must never be committed.`
-    );
-  }
-};
 
 const readPages = async (pdfPath: string): Promise<string[][]> => {
   const data = new Uint8Array(fs.readFileSync(pdfPath));

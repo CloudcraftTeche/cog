@@ -300,6 +300,8 @@ Source: [server/src/routes/v1/chapterGame/index.ts](../server/src/routes/v1/chap
 
 Games attached to chapters (Grades 1-5 game engine). Types: `scramble`, `matching`, `coloring`, `memory_verse`, `story_order`, `true_false`, `missing_word`. Their config / answer-key shapes are defined in [server/src/utils/games/gameTypes.ts](../server/src/utils/games/gameTypes.ts). Answer keys are never sent to students. Staff routes: `admin`, `superAdmin`, `teacher` (teachers only for their own grade). Student routes: `student`, only for chapters in their own grade, only `published` games.
 
+Games drafted from the textbook in Claude Code are loaded as `draft` / `source: ai` with `npm run load:games` (in `server/`); see [GAME_DRAFTING.md](GAME_DRAFTING.md).
+
 | Method | Path | Roles | Notes |
 |---|---|---|---|
 | GET | `/?chapterId=` | staff | All games of a chapter (draft, published, rejected), including `answerKey`. |
