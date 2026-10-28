@@ -1,15 +1,19 @@
 import type { ComponentType } from "react";
-import type { GameAnswers, GameType } from "@/types/student/game.types";
+import type { CheckResult, GameAnswers, GameType } from "@/types/student/game.types";
 import type { GameSound } from "@/utils/student/gameSounds";
 import { ScrambleGame, isScrambleConfig } from "./types/ScrambleGame";
 import { MatchingGame, isMatchingConfig } from "./types/MatchingGame";
 import { ColoringGame, isColoringConfig } from "./types/ColoringGame";
+import { MemoryVerseGame, isMemoryVerseConfig } from "./types/MemoryVerseGame";
+import { StoryOrderGame, isStoryOrderConfig } from "./types/StoryOrderGame";
+import { TrueFalseGame, isTrueFalseConfig } from "./types/TrueFalseGame";
+import { MissingWordGame, isMissingWordConfig } from "./types/MissingWordGame";
 
 // What every game component receives from the shared GameShell.
 export interface GameComponentProps<C> {
   config: C;
   // Asks the server whether one item (a word, a pair) is right. Plays the matching sound.
-  check: (itemId: string, answer: string) => Promise<boolean>;
+  check: (itemId: string, answer: string) => Promise<CheckResult>;
   // Called once every item has an answer; the shell submits it and shows the result.
   finish: (answers: GameAnswers) => void;
   reportProgress: (done: number, total: number) => void;
@@ -33,6 +37,10 @@ export const GAME_REGISTRY: Record<GameType, GamePlugin<unknown>> = {
   scramble: register({ type: "scramble", label: "Scrambled Words", isValidConfig: isScrambleConfig, Component: ScrambleGame }),
   matching: register({ type: "matching", label: "Match the Following", isValidConfig: isMatchingConfig, Component: MatchingGame }),
   coloring: register({ type: "coloring", label: "Coloring Time", isValidConfig: isColoringConfig, Component: ColoringGame }),
+  memory_verse: register({ type: "memory_verse", label: "Memory Verse", isValidConfig: isMemoryVerseConfig, Component: MemoryVerseGame }),
+  story_order: register({ type: "story_order", label: "Story Order", isValidConfig: isStoryOrderConfig, Component: StoryOrderGame }),
+  true_false: register({ type: "true_false", label: "True or Not True", isValidConfig: isTrueFalseConfig, Component: TrueFalseGame }),
+  missing_word: register({ type: "missing_word", label: "Missing Word", isValidConfig: isMissingWordConfig, Component: MissingWordGame }),
 };
 
 export const getGamePlugin = (type: string): GamePlugin<unknown> | null =>

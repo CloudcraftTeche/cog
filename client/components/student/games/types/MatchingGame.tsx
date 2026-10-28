@@ -25,7 +25,7 @@ export function MatchingGame({ config, check, finish, reportProgress, disabled }
     if (matched[leftId] || matchedRight.has(rightId)) return;
     setChecking(true);
     try {
-      const correct = await check(leftId, rightId);
+      const { correct } = await check(leftId, rightId);
       if (!correct) {
         setWrongTarget(rightId);
         window.setTimeout(() => setWrongTarget(null), 700);

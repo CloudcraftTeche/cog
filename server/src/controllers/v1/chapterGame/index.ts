@@ -180,7 +180,11 @@ export const checkGameAnswerHandler = async (req: AuthenticatedRequest, res: Res
     res.status(200).json({
       success: true,
       message: "Answer checked",
-      data: { itemId, correct: definition.isCorrect(game.answerKey, itemId, String(answer)) },
+      data: {
+        itemId,
+        correct: definition.isCorrect(game.answerKey, itemId, String(answer), game.config),
+        explanation: definition.explain?.(game.config, itemId) ?? null,
+      },
     });
   } catch (error) {
     next(error);

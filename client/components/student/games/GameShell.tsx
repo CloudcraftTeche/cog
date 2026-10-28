@@ -9,6 +9,7 @@ import { OfflineHint } from "@/components/shared/pwa/OfflineHint";
 import type { GameAnswers, GameResult, PlayableGame } from "@/types/student/game.types";
 import { isGameSoundOn, playGameSound, setGameSoundOn, type GameSound } from "@/utils/student/gameSounds";
 import { getGamePlugin } from "./registry";
+import { ReadAloudButton } from "./primitives/ReadAloudButton";
 
 type Phase = "intro" | "playing" | "saving" | "done" | "unsaved";
 
@@ -54,13 +55,13 @@ export function GameShell({ chapterId, game, position, count, onChapterCompleted
   const check = useCallback(
     async (itemId: string, answer: string) => {
       try {
-        const correct = await checkMutation.mutateAsync({ gameId: game._id, itemId, answer });
-        playSound(correct ? "correct" : "wrong");
+        const result = await checkMutation.mutateAsync({ gameId: game._id, itemId, answer });
+        playSound(result.correct ? "correct" : "wrong");
         setError(null);
-        return correct;
+        return result;
       } catch (checkError) {
         setError(isAxiosError(checkError) && !checkError.response ? "No connection. Your answer was not checked." : errorMessage(checkError));
-        return false;
+        return { correct: false, explanation: null };
       }
     },
     [checkMutation, game._id, playSound]
@@ -145,7 +146,12 @@ export function GameShell({ chapterId, game, position, count, onChapterCompleted
         ) : phase === "intro" ? (
           <div className="py-5 text-center">
             <Gamepad2 className="mx-auto mb-4 text-sky-500" size={64} />
-            {game.instructions && <p className="text-lg text-slate-700">{game.instructions}</p>}
+            {game.instructions && (
+              <div className="flex items-center justify-center gap-3">
+                <p className="text-lg text-slate-700">{game.instructions}</p>
+                <ReadAloudButton text={game.instructions} label="Read the instructions aloud" />
+              </div>
+            )}
             <button
               type="button"
               onClick={() => setPhase("playing")}

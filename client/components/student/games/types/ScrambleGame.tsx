@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Lightbulb, Loader2, RotateCcw, SkipForward, XCircle } from "lucide-react";
 import type { GameAnswers, ScrambleConfig } from "@/types/student/game.types";
 import type { GameComponentProps } from "../registry";
+import { ReadAloudButton } from "../primitives/ReadAloudButton";
 
 // After this many wrong tries a child may move on, so nobody gets stuck on one word.
 const TRIES_BEFORE_SKIP = 2;
@@ -42,7 +43,7 @@ export function ScrambleGame({ config, check, finish, reportProgress, playSound,
   const submitWord = async () => {
     setChecking(true);
     try {
-      const correct = await check(question.id, word);
+      const { correct } = await check(question.id, word);
       setFeedback(correct ? "correct" : "wrong");
       if (correct) window.setTimeout(() => next(word), 650);
       else setWrongTries((tries) => tries + 1);
@@ -65,7 +66,10 @@ export function ScrambleGame({ config, check, finish, reportProgress, playSound,
       </div>
       <div className="rounded-3xl bg-amber-50 p-5 text-center">
         <p className="text-lg font-bold text-slate-800">Unscramble the word!</p>
-        <p className="mt-2 text-slate-600">Hint: {question.hint}</p>
+        <p className="mt-2 flex items-center justify-center gap-2 text-slate-600">
+          Hint: {question.hint}
+          <ReadAloudButton text={question.hint} label="Read the hint aloud" />
+        </p>
       </div>
       <div
         className="flex min-h-16 flex-wrap justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 bg-white p-3"

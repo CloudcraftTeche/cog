@@ -5,14 +5,16 @@
 // - isCorrect: checks one answer against the answer key
 // New game types (LOGOS-65) are added here.
 
-export type GameType = "scramble" | "matching" | "coloring";
+export type GameType = "scramble" | "matching" | "coloring" | "memory_verse" | "story_order" | "true_false" | "missing_word";
 export type GameAnswers = Record<string, string>;
 
 interface GameTypeDefinition {
   validate: (config: any, answerKey: any) => string | null;
   toStudent: (config: any, answerKey: any) => unknown;
   items: (config: any) => string[];
-  isCorrect: (answerKey: any, itemId: string, answer: string) => boolean;
+  isCorrect: (answerKey: any, itemId: string, answer: string, config: any) => boolean;
+  // Optional teaching note shown after a child answers (CR-06, LOGOS-142).
+  explain?: (config: any, itemId: string) => string | undefined;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>
@@ -113,7 +115,115 @@ const coloring: GameTypeDefinition = {
   isCorrect: (_answerKey, _itemId, answer) => isNonEmptyString(answer),
 };
 
-export const GAME_TYPES: Record<GameType, GameTypeDefinition> = { scramble, matching, coloring };
+// Normalises a word for comparison: case and surrounding punctuation do not matter.
+const normalizeWord = (word: string) => word.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+const verseWords = (text: string) => text.trim().split(/\s+/).filter(Boolean);
+const optionalExplanation = (value: unknown) => value === undefined || typeof value === "string";
+
+// config: { reference, text, rounds? }. Each round hides more words; the last hides them all.
+// Items are word positions w0..wn; any copy of the right word is accepted ("the" and "the").
+const memory_verse: GameTypeDefinition = {
+  validate: (config) => {
+    if (!isNonEmptyString(config?.reference)) return "Memory verse needs a reference, e.g. John 3:16";
+    if (!isNonEmptyString(config?.text)) return "Memory verse needs the verse text";
+    const count = verseWords(config.text).length;
+    if (count < 2 || count > 40) return "Memory verse must have between 2 and 40 words";
+    if (config.rounds !== undefined && (!Number.isInteger(config.rounds) || config.rounds < 1 || config.rounds > 5)) {
+      return "Rounds must be a whole number from 1 to 5";
+    }
+    return null;
+  },
+  toStudent: (config) => ({
+    reference: config.reference,
+    rounds: config.rounds ?? 3,
+    words: verseWords(config.text).map((text: string, index: number) => ({ id: `w${index}`, text })),
+  }),
+  items: (config) => verseWords(config.text).map((_: string, index: number) => `w${index}`),
+  isCorrect: (_answerKey, itemId, answer, config) => {
+    const word = verseWords(config.text)[Number(itemId.slice(1))];
+    return word !== undefined && normalizeWord(word) === normalizeWord(answer);
+  },
+};
+
+// config: { prompt?, events: [{ id, text }] }, answerKey: { order: [eventId, ...] }. Items are slots p1..pn.
+const story_order: GameTypeDefinition = {
+  validate: (config, answerKey) => {
+    const events = config?.events;
+    if (!Array.isArray(events) || events.length < 3 || events.length > 6) return "Story order needs 3 to 6 events";
+    if (!hasUniqueIds(events) || events.some((e: any) => !isNonEmptyString(e?.id) || !isNonEmptyString(e?.text))) {
+      return "Each story event needs a unique id and text";
+    }
+    const order = answerKey?.order;
+    const ids = events.map((e: any) => e.id);
+    if (!Array.isArray(order) || order.length !== ids.length || [...order].sort().join() !== [...ids].sort().join()) {
+      return "The answer key must list every event exactly once, in story order";
+    }
+    return null;
+  },
+  toStudent: (config) => ({ prompt: config.prompt ?? "", events: shuffle(config.events) }),
+  items: (config) => config.events.map((_: unknown, index: number) => `p${index + 1}`),
+  isCorrect: (answerKey, itemId, answer) => answerKey?.order?.[Number(itemId.slice(1)) - 1] === answer,
+};
+
+// config: { statements: [{ id, text, explanation? }] }, answerKey: { [statementId]: "true" | "false" }.
+const true_false: GameTypeDefinition = {
+  validate: (config, answerKey) => {
+    const statements = config?.statements;
+    if (!Array.isArray(statements) || !statements.length) return "True or false needs at least one statement";
+    if (!hasUniqueIds(statements)) return "Statement ids must be unique";
+    for (const statement of statements) {
+      if (!isNonEmptyString(statement?.id) || !isNonEmptyString(statement?.text)) return "Each statement needs an id and text";
+      if (!optionalExplanation(statement.explanation)) return "Explanation must be text";
+      if (answerKey?.[statement.id] !== "true" && answerKey?.[statement.id] !== "false") {
+        return `Statement ${statement.id} needs the answer "true" or "false"`;
+      }
+    }
+    return null;
+  },
+  toStudent: (config) => ({ statements: config.statements.map(({ id, text }: any) => ({ id, text })) }),
+  items: (config) => config.statements.map((statement: any) => statement.id),
+  isCorrect: (answerKey, itemId, answer) => answerKey?.[itemId] === answer,
+  explain: (config, itemId) => config.statements.find((s: any) => s.id === itemId)?.explanation,
+};
+
+// config: { sentences: [{ id, before, after, explanation? }], bank: [word] }, answerKey: { [sentenceId]: word }.
+const missing_word: GameTypeDefinition = {
+  validate: (config, answerKey) => {
+    const { sentences, bank } = config ?? {};
+    if (!Array.isArray(sentences) || !sentences.length || sentences.length > 8) return "Missing word needs 1 to 8 sentences";
+    if (!Array.isArray(bank) || !bank.every(isNonEmptyString) || new Set(bank).size !== bank.length) {
+      return "The word bank must be a list of different words";
+    }
+    if (bank.length < sentences.length) return "The word bank needs at least one word per sentence";
+    if (!hasUniqueIds(sentences)) return "Sentence ids must be unique";
+    for (const sentence of sentences) {
+      if (!isNonEmptyString(sentence?.id) || typeof sentence.before !== "string" || typeof sentence.after !== "string") {
+        return "Each sentence needs an id and the text before and after the gap";
+      }
+      if (!sentence.before.trim() && !sentence.after.trim()) return "A sentence needs words around the gap";
+      if (!optionalExplanation(sentence.explanation)) return "Explanation must be text";
+      if (!bank.includes(answerKey?.[sentence.id])) return `The answer for ${sentence.id} must be one of the bank words`;
+    }
+    return null;
+  },
+  toStudent: (config) => ({
+    sentences: config.sentences.map(({ id, before, after }: any) => ({ id, before, after })),
+    bank: shuffle(config.bank),
+  }),
+  items: (config) => config.sentences.map((sentence: any) => sentence.id),
+  isCorrect: (answerKey, itemId, answer) => answerKey?.[itemId] === answer,
+  explain: (config, itemId) => config.sentences.find((s: any) => s.id === itemId)?.explanation,
+};
+
+export const GAME_TYPES: Record<GameType, GameTypeDefinition> = {
+  scramble,
+  matching,
+  coloring,
+  memory_verse,
+  story_order,
+  true_false,
+  missing_word,
+};
 
 export const isGameType = (type: unknown): type is GameType =>
   typeof type === "string" && Object.prototype.hasOwnProperty.call(GAME_TYPES, type);
@@ -125,7 +235,7 @@ export const scoreGame = (type: GameType, config: any, answerKey: any, answers: 
   const results = items.map((itemId) => ({
     itemId,
     answered: isNonEmptyString(answers?.[itemId]),
-    correct: isNonEmptyString(answers?.[itemId]) && definition.isCorrect(answerKey, itemId, answers[itemId]),
+    correct: isNonEmptyString(answers?.[itemId]) && definition.isCorrect(answerKey, itemId, answers[itemId], config),
   }));
   return {
     finished: results.every((result) => result.answered),
